@@ -44,13 +44,6 @@ jobs:
         env:
           KOC_STUDENT_BROWSER: '1'
           TEST_DATABASE_URL: postgres://runner:ci-only-password@127.0.0.1:55432/kocbenefits_test?sslmode=disable
-      - name: Purchase approval browser acceptance with real API
-        run: |
-          export KOC_CHROME="$(command -v google-chrome || command -v chromium)"
-          go test -tags=integration ./internal/management -run '^TestSavingsBrowser$' -count=1 -v
-        env:
-          KOC_SAVINGS_BROWSER: '1'
-          TEST_DATABASE_URL: postgres://runner:ci-only-password@127.0.0.1:55432/kocbenefits_test?sslmode=disable
       - name: Check generated files
         run: |
           go tool oapi-codegen --config api/codegen.yaml api/openapi.yaml

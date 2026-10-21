@@ -260,120 +260,6 @@
 .student-panel .catalog-search button {
   margin-left: auto;
 }
-.student-savings {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
-  gap: 24px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
-}
-.student-savings-summary {
-  display: grid;
-  align-content: start;
-  gap: 5px;
-}
-.student-savings-period,
-.student-savings-status,
-.student-savings-breakdown p {
-  color: var(--muted);
-  font-size: 12px;
-}
-.student-savings h2 {
-  font-size: 18px;
-}
-.student-savings-total {
-  color: var(--red);
-  font-size: 30px;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-.student-savings-breakdown {
-  min-width: 0;
-}
-.student-savings-summary {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.student-savings td:last-child:not([colspan]) {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.student-savings td small {
-  display: inline;
-  font-size: 11px;
-  margin-left: 8px;
-}
-.student-purchase-list {
-  display: grid;
-  gap: 16px;
-}
-.student-purchase {
-  padding: 22px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.student-purchase-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.student-purchase h2 {
-  font-size: 18px;
-}
-.student-purchase p,
-.student-purchase time {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
-.student-purchase dl {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-.student-purchase dt {
-  font-size: 11px;
-  color: var(--muted);
-}
-.student-purchase dd {
-  margin: 6px 0 0;
-  font-size: 16px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.student-purchase .purchase-savings {
-  color: var(--red);
-}
-.student-savings table {
-  width: 100%;
-  min-width: 0;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 13px;
-}
-.student-savings th,
-.student-savings td {
-  padding: 10px 0;
-  text-align: left;
-  overflow-wrap: anywhere;
-  border-bottom: 1px solid var(--line);
-}
-.student-savings th:last-child {
-  text-align: right;
-  width: 30%;
-}
-.student-savings td {
-  color: var(--muted);
-}
-.student-savings-breakdown p {
-  margin: 10px 0 0;
-  line-height: 1.6;
-}
 .student-panel .support-card {
   overflow-wrap: anywhere;
 }
@@ -390,26 +276,6 @@
   }
 }
 @media (max-width: 760px) {
-  .student-savings {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-    padding: 18px;
-  }
-  .student-savings-summary {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-  }
-  .student-savings-total {
-    text-align: right;
-    font-size: 26px;
-  }
-  .student-savings h2 {
-    font-size: 16px;
-  }
-  .student-savings-period,
-  .student-savings-status {
-    grid-column: 1 / -1;
-  }
   .student-panel .app-body {
     padding-bottom: 85px;
   }
@@ -454,19 +320,6 @@
   }
 }
 @media (max-width: 390px) {
-  .student-purchase {
-    padding: 18px;
-  }
-  .student-purchase dl {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-  .student-purchase dl > div {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-  }
   .student-panel #student-main {
     padding-left: 14px;
     padding-right: 14px;

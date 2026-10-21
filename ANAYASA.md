@@ -1,6 +1,6 @@
 # KoçBenefits Proje Anayasası
 
-Sürüm: 1.5
+Sürüm: 1.4
 Tarih: 21 Ekim 2026
 Durum: Proje sahibi Yönetici Genel Bakış'ı kabul edip 3D öğrenci deneyimi ve avantaj detaylarını onayladı. 3D bu onayla gerçek katalog, hesap bazlı favoriler ve koşullu kullanım bilgileriyle incelemeye hazırlandı. Normal kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Özel e-postasız yönetici istisnası normal hesaplara uygulanmaz. [Güncel teslim raporu](docs/TESLIM_3D.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) esas alınır; sonraki teslimlerin kabul noktaları korunur.
 
@@ -41,10 +41,10 @@ Altı ana bölüm korunur:
 
 | Bölüm | İlk gerçek sürümde beklenen davranış |
 | --- | --- |
-| Genel Bakış | Gerçek yayımlanmış avantajlar, kategori erişimi ve yalnızca yönetici onaylı alışverişlerden aylık tasarruf |
+| Genel Bakış | Gerçek yayımlanmış avantajlar, öne çıkanlar ve kategori erişimi; uydurma tasarruf veya kullanım sayısı yok |
 | Avantajları Keşfet | Arama, kategori filtresi, açık durum etiketleri ve detay sayfasına erişim |
 | Favorilerim | Öğrenci hesabına bağlı ekleme/çıkarma; boş ve artık erişilemeyen avantaj durumları |
-| Alışveriş Geçmişi | Yalnızca oturum sahibinin yönetici onaylı alışverişleri; sahte kayıt yok |
+| Kullanım Geçmişi | Doğrulanmış kullanım sistemi yokken açıklayıcı boş ekran; sahte kayıt yok |
 | Profil ve Hesap | Ad, e-posta, temel hesap işlemleri ve anlaşılır çıkış |
 | Yardım ve Destek | Kullanım açıklamaları ve yalnızca tanımlanmış gerçek iletişim bilgileri |
 
@@ -63,7 +63,7 @@ Mevcut 12 bölüm korunur. Bir bölümün bulunması, arkasında doğrulanmamı�
 | Öğrenci Doğrulama | Hesap, e-posta doğrulaması ve varsa öğrenci uygunluk incelemesinin ayrı durumları |
 | Yayımlanmış Avantajlar | O anda aktif avantajlar, arama, düzenleme ve askıya alma |
 | Süresi Dolan ve Askıdaki | Nedenin görünmesi ve kontrollü yeniden yayımlama |
-| Alışveriş Yönetimi | Yönetici tarafından girilen alışverişler; ayrı onay/ret ve gerekçeli onay geri alma |
+| Kullanım Kayıtları | Doğrulama altyapısı yokken açıklayıcı boş durum |
 | Analitik | Tanımı belli, gerçekten toplanan görüntüleme/favori ölçümleri; bunları kullanım diye sunmama |
 | Kullanıcı ve Rol Yönetimi | Öğrenci/yönetici rolleri ve hesap durumu; sunucuda yetki kontrolü |
 | İşlem Günlüğü | Önemli yönetim değişiklikleri, yapan kişi ve sunucu zamanı |
@@ -97,13 +97,9 @@ Telefonda başlık, işletme, indirim/ayrıcalık, durum ve kullanım öğesi ko
 
 Yalnızca avantajın seçili yöntemi gösterilir: **indirim kodu, bağlantı, QR veya üyelik kartı**. Kopyalama başarısız olursa elle kopyalama yolu bulunur. QR/kart için gerçek işletme kabul biçimi belirlenmeden demo görsel gerçek hak gibi sunulamaz. Tek kullanımlık kupon veya dinamik QR ayrıca kararlaştırılmadıkça kapsamda değildir.
 
-**Kod görüntüleme veya kopyalama, bağlantı açma, QR ya da kart gösterme doğrulanmış kullanım değildir.** Proje sahibi aylık tasarruf için **yönetici onaylı alışveriş kayıtlarını** seçmiştir. Yönetici öğrenci, avantaj, alışveriş tarihi, indirim öncesi ve ödenen tutar ile fiş/referans bilgisini girer; gerçek alışverişi ve KoçBenefits indiriminin uygulandığını inceleyerek ayrıca onaylar. Bu, otomatik kasa doğrulaması değildir.
+**Kod görüntüleme veya kopyalama, bağlantı açma, QR ya da kart gösterme doğrulanmış kullanım değildir.** Kullanım geçmişinin açılması için işletmede kullanımın nasıl doğrulanacağı, kim tarafından kaydedileceği ve tekrar kayıtların nasıl önleneceği ayrıca onaylanmalıdır. Bu altyapı ilk sürümün zorunlu bağımlılığı değildir.
 
-- Tasarruf, aynı alışverişin indirim öncesi tutarı eksi ödenen tutardır; yalnızca TRY ve tam kuruş hesabı kullanılır. Avantajın metnindeki yüzdeden tahmini tasarruf üretilmez.
-- Ay, onay gününden değil alışveriş tarihinden belirlenir; Türkiye takvim ayı esas alınır. Bekleyen/reddedilen/geri alınan kayıtlar toplama girmez.
-- Aynı işletmede normalize edilmiş fiş/referans tekrar kaydedilemez. Şubelerde tekrar eden fiş numaraları için şube bilgisini içeren bir referans kullanılır.
-- Hatalı kayıt ve iadede onay gerekçeyle geri alınır. Alışverişin tutarı, tarihi, öğrenci ve avantaj ilişkisi sonradan değiştirilmez; yönetim kararları işlem günlüğüne kaydedilir.
-- Öğrenci yalnızca kendi onaylı alışverişlerini ve tasarrufunu görür. Referans ve yönetici notları öğrenci API'sine gönderilmez. Yeni öğrenci formu, fiş yükleme veya kasa entegrasyonu bu teslimde yoktur.
+Proje sahibinin son kararıyla aylık tasarruf ve ona bağlı yönetici onaylı alışveriş akışı geri alınmıştır. Yeniden açıkça talep edilene kadar bu özellikler kapsam dışındadır.
 
 ## 7 Demo ile gerçek sistemin ayrılması
 

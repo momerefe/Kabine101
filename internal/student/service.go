@@ -30,8 +30,6 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 	r.Get("/api/student/benefits/{id}/redemption", s.redemption)
 	r.Get("/api/student/favorites", s.favorites)
 	r.Get("/api/student/settings", s.settings)
-	r.Get("/api/student/savings", s.savings)
-	r.Get("/api/student/purchases", s.purchases)
 	r.Group(func(r chi.Router) {
 		r.Use(s.auth.CSRF)
 		r.Put("/api/student/favorites/{id}", s.favorite)

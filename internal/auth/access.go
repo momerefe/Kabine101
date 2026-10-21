@@ -10,11 +10,6 @@ import (
 )
 
 func (s *Service) CSRF(next http.Handler) http.Handler { return s.csrf(next) }
-
-// EligibleStudent applies the canonical identity and configured school-domain policy.
-func (s *Service) EligibleStudent(a database.Account) bool {
-	return a.Role == "student" && s.eligible(a)
-}
 func (s *Service) RequireAdmin(w http.ResponseWriter, r *http.Request) (pgtype.UUID, []byte, bool) {
 	a, h, ok := s.requireAdmin(w, r)
 	return a.ID, h, ok

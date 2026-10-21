@@ -10,7 +10,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { newRecordId } from '../api/record-id';
 import { Overview } from './Overview';
-import { PurchaseManagement } from './PurchaseManagement';
 import type { components } from '../api/schema.gen';
 type Business = components['schemas']['Business'];
 type Benefit = components['schemas']['Benefit'];
@@ -23,7 +22,7 @@ const nav = [
   ['students', 'Öğrenci Doğrulama', '✓'],
   ['published', 'Yayımlanmış Avantajlar', '☑'],
   ['archived', 'Süresi Dolan / Askıdaki', 'Ⅱ'],
-  ['usage', 'Alışveriş Yönetimi', '▣'],
+  ['usage', 'Kullanım Kayıtları', '▣'],
   ['analytics', 'Analitik', '▥'],
   ['users', 'Kullanıcı ve Rol Yönetimi', '♙'],
   ['audit', 'İşlem Günlüğü', '≡'],
@@ -273,19 +272,19 @@ export function Management({
               csrf={session.csrf_token}
               accountId={session.user!.id}
             />
-          ) : section === 'usage' ? (
-            <PurchaseManagement
-              accountId={session.user!.id}
-              csrf={session.csrf_token}
-            />
           ) : section === 'overview' ? (
             <Overview accountId={session.user!.id} />
           ) : (
             <section className="surface management-intro">
-              <h2>Sonraki teslim</h2>
+              <h2>
+                {section === 'usage'
+                  ? 'Doğrulanmış kullanım kaydı bulunmuyor.'
+                  : 'Sonraki teslim'}
+              </h2>
               <p>
-                Bu bölüm 3E yönetim bütünlüğü tesliminde gerçek verilerle
-                tamamlanacak.
+                {section === 'usage'
+                  ? 'Kod veya QR görüntülemek doğrulanmış kullanım sayılmaz. Kullanım doğrulama altyapısı henüz mevcut değil.'
+                  : 'Bu bölüm 3E yönetim bütünlüğü tesliminde gerçek verilerle tamamlanacak.'}
               </p>
               <a className="text-link" href="#admin/businesses">
                 İşletmelere dön →

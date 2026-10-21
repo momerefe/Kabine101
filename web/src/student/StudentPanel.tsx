@@ -19,7 +19,6 @@ import {
   type Redemption,
 } from './student-api';
 import '../student.css';
-import { MonthlySavings, PurchaseHistory } from './StudentSavings';
 import qrcode from 'qrcode-generator';
 
 qrcode.stringToBytes = (value) => Array.from(new TextEncoder().encode(value));
@@ -36,7 +35,7 @@ const sections = [
   ['overview', 'Genel Bakış', 'Genel Bakış', 'grid'],
   ['discover', 'Avantajları Keşfet', 'Keşfet', 'compass'],
   ['favorites', 'Favorilerim', 'Favoriler', 'heart'],
-  ['history', 'Alışveriş Geçmişi', 'Geçmiş', 'clock'],
+  ['history', 'Kullanım Geçmişi', 'Geçmiş', 'clock'],
   ['profile', 'Profil ve Hesap', 'Profil', 'user'],
   ['help', 'Yardım ve Destek', 'Yardım', 'help'],
 ];
@@ -455,7 +454,6 @@ export function StudentPanel({
               <Heading title={`Merhaba, ${account.name.split(' ')[0]}.`}>
                 Küçük ayrıcalıklar, güzel keşifler. Bugün ne yapmak istersin?
               </Heading>
-              <MonthlySavings accountId={accountId} />
               <section className="hero">
                 <div className="hero-copy">
                   <div className="eyebrow">
@@ -569,11 +567,13 @@ export function StudentPanel({
             </>
           ) : route === 'history' ? (
             <>
-              <Heading title="Alışveriş Geçmişi">
-                Yönetici onaylı alışverişlerin, gerçek tutarların ve
-                tasarrufların. Tarihler İstanbul saatine göredir.
+              <Heading title="Kullanım Geçmişi">
+                Doğrulanmış avantaj kullanımlarının yer alacağı bölüm.
               </Heading>
-              <PurchaseHistory accountId={accountId} />
+              <Empty title="Henüz doğrulanmış bir kullanım yok.">
+                Kod görüntülemek, bağlantı açmak veya QR göstermek kullanım
+                onayı değildir. Bu işlemler kullanım kaydı oluşturmaz.
+              </Empty>
             </>
           ) : route === 'profile' ? (
             <>
@@ -624,10 +624,6 @@ export function StudentPanel({
                     [
                       'Kod veya QR görüntülediğimde kullanılmış sayılır mı?',
                       'Hayır. Görüntüleme ve bağlantı açma kullanım onayı değildir; kullanım geçmişinde kayıt oluşturmaz.',
-                    ],
-                    [
-                      'Tasarrufum nasıl hesaplanır?',
-                      'Gerçek fiş ve uygulanan sponsorluk yönetici tarafından doğrulandıktan sonra indirim öncesi tutar ile ödenen tutarın farkı tasarrufuna eklenir. Genel bakış yalnızca bu ayın onaylı alışverişlerini gösterir. Hata veya iade nedeniyle onayı geri alınan alışverişler toplamdan ve onaylı geçmişten çıkarılır.',
                     ],
                     [
                       'Favorilerim nerede tutuluyor?',

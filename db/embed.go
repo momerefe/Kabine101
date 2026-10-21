@@ -7,4 +7,4 @@ import "embed"
 //go:embed migrations/*.sql
 var Migrations embed.FS
 
-const SchemaVersion = 6
+const SchemaVersion = 5

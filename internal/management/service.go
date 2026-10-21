@@ -36,15 +36,12 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 	r.Get("/api/admin/businesses/{id}", s.business)
 	r.Get("/api/admin/benefits", s.benefits)
 	r.Get("/api/admin/benefits/{id}", s.benefit)
-	r.Get("/api/admin/purchases", s.purchases)
 	r.Group(func(r chi.Router) {
 		r.Use(s.auth.CSRF)
 		r.Put("/api/admin/businesses/{id}", s.putBusiness)
 		r.Put("/api/admin/benefits/{id}", s.putBenefit)
 		r.Post("/api/admin/benefits/{id}/publish", s.publish)
 		r.Post("/api/admin/benefits/{id}/suspend", s.suspend)
-		r.Post("/api/admin/purchases", s.createPurchase)
-		r.Post("/api/admin/purchases/{id}/review", s.reviewPurchase)
 	})
 }
 func reply(w http.ResponseWriter, status int, v any) {

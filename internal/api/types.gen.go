@@ -338,10 +338,6 @@ const (
 	OverviewActivityActionBenefitSave           OverviewActivityAction = "benefit.save"
 	OverviewActivityActionBenefitSuspend        OverviewActivityAction = "benefit.suspend"
 	OverviewActivityActionBusinessSave          OverviewActivityAction = "business.save"
-	OverviewActivityActionPurchaseApproved      OverviewActivityAction = "purchase.approved"
-	OverviewActivityActionPurchaseCreate        OverviewActivityAction = "purchase.create"
-	OverviewActivityActionPurchaseRejected      OverviewActivityAction = "purchase.rejected"
-	OverviewActivityActionPurchaseRevoked       OverviewActivityAction = "purchase.revoked"
 )
 
 // Valid indicates whether the value is a known member of the OverviewActivityAction enum.
@@ -363,14 +359,6 @@ func (e OverviewActivityAction) Valid() bool {
 		return true
 	case OverviewActivityActionBusinessSave:
 		return true
-	case OverviewActivityActionPurchaseApproved:
-		return true
-	case OverviewActivityActionPurchaseCreate:
-		return true
-	case OverviewActivityActionPurchaseRejected:
-		return true
-	case OverviewActivityActionPurchaseRevoked:
-		return true
 	default:
 		return false
 	}
@@ -381,7 +369,6 @@ const (
 	OverviewActivityEntityTypeAccount  OverviewActivityEntityType = "account"
 	OverviewActivityEntityTypeBenefit  OverviewActivityEntityType = "benefit"
 	OverviewActivityEntityTypeBusiness OverviewActivityEntityType = "business"
-	OverviewActivityEntityTypePurchase OverviewActivityEntityType = "purchase"
 )
 
 // Valid indicates whether the value is a known member of the OverviewActivityEntityType enum.
@@ -392,8 +379,6 @@ func (e OverviewActivityEntityType) Valid() bool {
 	case OverviewActivityEntityTypeBenefit:
 		return true
 	case OverviewActivityEntityTypeBusiness:
-		return true
-	case OverviewActivityEntityTypePurchase:
 		return true
 	default:
 		return false
@@ -409,66 +394,6 @@ const (
 func (e PublishBenefitRequestConditionsReviewed) Valid() bool {
 	switch e {
 	case True:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PurchaseCurrency.
-const (
-	PurchaseCurrencyTRY PurchaseCurrency = "TRY"
-)
-
-// Valid indicates whether the value is a known member of the PurchaseCurrency enum.
-func (e PurchaseCurrency) Valid() bool {
-	switch e {
-	case PurchaseCurrencyTRY:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PurchaseStatus.
-const (
-	PurchaseStatusApproved PurchaseStatus = "approved"
-	PurchaseStatusPending  PurchaseStatus = "pending"
-	PurchaseStatusRejected PurchaseStatus = "rejected"
-	PurchaseStatusRevoked  PurchaseStatus = "revoked"
-)
-
-// Valid indicates whether the value is a known member of the PurchaseStatus enum.
-func (e PurchaseStatus) Valid() bool {
-	switch e {
-	case PurchaseStatusApproved:
-		return true
-	case PurchaseStatusPending:
-		return true
-	case PurchaseStatusRejected:
-		return true
-	case PurchaseStatusRevoked:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PurchaseReviewDecision.
-const (
-	PurchaseReviewDecisionApproved PurchaseReviewDecision = "approved"
-	PurchaseReviewDecisionRejected PurchaseReviewDecision = "rejected"
-	PurchaseReviewDecisionRevoked  PurchaseReviewDecision = "revoked"
-)
-
-// Valid indicates whether the value is a known member of the PurchaseReviewDecision enum.
-func (e PurchaseReviewDecision) Valid() bool {
-	switch e {
-	case PurchaseReviewDecisionApproved:
-		return true
-	case PurchaseReviewDecisionRejected:
-		return true
-	case PurchaseReviewDecisionRevoked:
 		return true
 	default:
 		return false
@@ -538,36 +463,6 @@ func (e StudentBenefitStatus) Valid() bool {
 	}
 }
 
-// Defines values for StudentPurchaseCurrency.
-const (
-	StudentPurchaseCurrencyTRY StudentPurchaseCurrency = "TRY"
-)
-
-// Valid indicates whether the value is a known member of the StudentPurchaseCurrency enum.
-func (e StudentPurchaseCurrency) Valid() bool {
-	switch e {
-	case StudentPurchaseCurrencyTRY:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for StudentPurchaseStatus.
-const (
-	StudentPurchaseStatusApproved StudentPurchaseStatus = "approved"
-)
-
-// Valid indicates whether the value is a known member of the StudentPurchaseStatus enum.
-func (e StudentPurchaseStatus) Valid() bool {
-	switch e {
-	case StudentPurchaseStatusApproved:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for StudentRedemptionMethod.
 const (
 	StudentRedemptionMethodCode       StudentRedemptionMethod = "code"
@@ -586,21 +481,6 @@ func (e StudentRedemptionMethod) Valid() bool {
 	case StudentRedemptionMethodMembership:
 		return true
 	case StudentRedemptionMethodQr:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for StudentSavingsCurrency.
-const (
-	StudentSavingsCurrencyTRY StudentSavingsCurrency = "TRY"
-)
-
-// Valid indicates whether the value is a known member of the StudentSavingsCurrency enum.
-func (e StudentSavingsCurrency) Valid() bool {
-	switch e {
-	case StudentSavingsCurrencyTRY:
 		return true
 	default:
 		return false
@@ -783,16 +663,6 @@ type BusinessListResponse struct {
 // BusinessResponse defines model for BusinessResponse.
 type BusinessResponse struct {
 	Business Business `json:"business"`
-}
-
-// BusinessSavings defines model for BusinessSavings.
-type BusinessSavings struct {
-	BusinessId    string `json:"business_id"`
-	BusinessName  string `json:"business_name"`
-	PurchaseCount int64  `json:"purchase_count"`
-
-	// SavingsAmount TRY decimal string, never a floating point amount.
-	SavingsAmount string `json:"savings_amount"`
 }
 
 // BusinessWrite defines model for BusinessWrite.
@@ -979,78 +849,6 @@ type PublishBenefitRequest struct {
 // PublishBenefitRequestConditionsReviewed defines model for PublishBenefitRequest.ConditionsReviewed.
 type PublishBenefitRequestConditionsReviewed bool
 
-// Purchase Administrative purchase; name/title snapshots and monetary values are immutable.
-type Purchase struct {
-	BenefitId    string           `json:"benefit_id"`
-	BenefitTitle string           `json:"benefit_title"`
-	BusinessId   string           `json:"business_id"`
-	BusinessName string           `json:"business_name"`
-	CreatedAt    time.Time        `json:"created_at"`
-	Currency     PurchaseCurrency `json:"currency"`
-	Id           string           `json:"id"`
-
-	// OriginalAmount TRY decimal string, never a floating point amount.
-	OriginalAmount string `json:"original_amount"`
-
-	// PaidAmount TRY decimal string, never a floating point amount.
-	PaidAmount   string `json:"paid_amount"`
-	PurchaseDate string `json:"purchase_date"`
-	Reference    string `json:"reference"`
-	ReviewReason string `json:"review_reason"`
-
-	// ReviewedAt RFC3339 timestamp, or empty string for pending.
-	ReviewedAt string `json:"reviewed_at"`
-
-	// SavingsAmount TRY decimal string, never a floating point amount.
-	SavingsAmount string         `json:"savings_amount"`
-	Status        PurchaseStatus `json:"status"`
-	StudentEmail  string         `json:"student_email"`
-	StudentId     string         `json:"student_id"`
-	StudentName   string         `json:"student_name"`
-}
-
-// PurchaseCurrency defines model for Purchase.Currency.
-type PurchaseCurrency string
-
-// PurchaseStatus defines model for Purchase.Status.
-type PurchaseStatus string
-
-// PurchaseCreate Purchase date must not be after today in Istanbul and must fall within benefit validity. Include branch in receipt reference when needed.
-type PurchaseCreate struct {
-	BenefitId string `json:"benefit_id"`
-	Id        string `json:"id"`
-
-	// OriginalAmount Positive TRY decimal, at most two fractional digits; max 9999999.99.
-	OriginalAmount string `json:"original_amount"`
-
-	// PaidAmount TRY decimal, between zero and original_amount.
-	PaidAmount   string `json:"paid_amount"`
-	PurchaseDate string `json:"purchase_date"`
-	Reference    string `json:"reference"`
-	StudentEmail string `json:"student_email"`
-}
-
-// PurchaseList defines model for PurchaseList.
-type PurchaseList struct {
-	Purchases []Purchase `json:"purchases"`
-	Truncated bool       `json:"truncated"`
-}
-
-// PurchaseResponse defines model for PurchaseResponse.
-type PurchaseResponse struct {
-	// Purchase Administrative purchase; name/title snapshots and monetary values are immutable.
-	Purchase Purchase `json:"purchase"`
-}
-
-// PurchaseReview defines model for PurchaseReview.
-type PurchaseReview struct {
-	Decision PurchaseReviewDecision `json:"decision"`
-	Reason   string                 `json:"reason"`
-}
-
-// PurchaseReviewDecision defines model for PurchaseReview.Decision.
-type PurchaseReviewDecision string
-
 // RegisterRequest defines model for RegisterRequest.
 type RegisterRequest struct {
 	Email    string `json:"email"`
@@ -1138,37 +936,6 @@ type StudentFavoriteResponse struct {
 	IsFavorite bool `json:"is_favorite"`
 }
 
-// StudentPurchase defines model for StudentPurchase.
-type StudentPurchase struct {
-	BenefitTitle string                  `json:"benefit_title"`
-	BusinessName string                  `json:"business_name"`
-	Currency     StudentPurchaseCurrency `json:"currency"`
-	Id           string                  `json:"id"`
-
-	// OriginalAmount TRY decimal string, never a floating point amount.
-	OriginalAmount string `json:"original_amount"`
-
-	// PaidAmount TRY decimal string, never a floating point amount.
-	PaidAmount   string `json:"paid_amount"`
-	PurchaseDate string `json:"purchase_date"`
-
-	// SavingsAmount TRY decimal string, never a floating point amount.
-	SavingsAmount string                `json:"savings_amount"`
-	Status        StudentPurchaseStatus `json:"status"`
-}
-
-// StudentPurchaseCurrency defines model for StudentPurchase.Currency.
-type StudentPurchaseCurrency string
-
-// StudentPurchaseStatus defines model for StudentPurchase.Status.
-type StudentPurchaseStatus string
-
-// StudentPurchaseList defines model for StudentPurchaseList.
-type StudentPurchaseList struct {
-	Purchases []StudentPurchase `json:"purchases"`
-	Truncated bool              `json:"truncated"`
-}
-
 // StudentRedemption Exactly one method-applicable payload is returned.
 type StudentRedemption struct {
 	Code            *string                 `json:"code,omitempty"`
@@ -1180,20 +947,6 @@ type StudentRedemption struct {
 
 // StudentRedemptionMethod defines model for StudentRedemption.Method.
 type StudentRedemptionMethod string
-
-// StudentSavings defines model for StudentSavings.
-type StudentSavings struct {
-	Businesses    []BusinessSavings      `json:"businesses"`
-	Currency      StudentSavingsCurrency `json:"currency"`
-	Month         string                 `json:"month"`
-	PurchaseCount int64                  `json:"purchase_count"`
-
-	// TotalSavings TRY decimal string, never a floating point amount.
-	TotalSavings string `json:"total_savings"`
-}
-
-// StudentSavingsCurrency defines model for StudentSavings.Currency.
-type StudentSavingsCurrency string
 
 // StudentSettings defines model for StudentSettings.
 type StudentSettings struct {
@@ -1260,22 +1013,6 @@ type PutBusinessParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
 }
 
-// GetAdminPurchasesParams defines parameters for GetAdminPurchases.
-type GetAdminPurchasesParams struct {
-	Q      *string `form:"q,omitempty" json:"q,omitempty"`
-	Status *string `form:"status,omitempty" json:"status,omitempty"`
-}
-
-// CreatePurchaseParams defines parameters for CreatePurchase.
-type CreatePurchaseParams struct {
-	XCSRFToken string `json:"X-CSRF-Token"`
-}
-
-// ReviewPurchaseParams defines parameters for ReviewPurchase.
-type ReviewPurchaseParams struct {
-	XCSRFToken string `json:"X-CSRF-Token"`
-}
-
 // AdminLoginParams defines parameters for AdminLogin.
 type AdminLoginParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
@@ -1339,12 +1076,6 @@ type SuspendBenefitJSONRequestBody = SuspendBenefitRequest
 
 // PutBusinessJSONRequestBody defines body for PutBusiness for application/json ContentType.
 type PutBusinessJSONRequestBody = BusinessWrite
-
-// CreatePurchaseJSONRequestBody defines body for CreatePurchase for application/json ContentType.
-type CreatePurchaseJSONRequestBody = PurchaseCreate
-
-// ReviewPurchaseJSONRequestBody defines body for ReviewPurchase for application/json ContentType.
-type ReviewPurchaseJSONRequestBody = PurchaseReview
 
 // AdminLoginJSONRequestBody defines body for AdminLogin for application/json ContentType.
 type AdminLoginJSONRequestBody = AdminLoginRequest

@@ -15,10 +15,6 @@ function timestamp(value: string, dateOnly = false) {
   }).format(new Date(dateOnly ? `${value}T12:00:00+03:00` : value));
 }
 const actionLabels: Record<string, string> = {
-  'purchase.create': 'Alışveriş kaydedildi',
-  'purchase.approved': 'Alışveriş onaylandı',
-  'purchase.rejected': 'Alışveriş reddedildi',
-  'purchase.revoked': 'Alışveriş onayı geri alındı',
   'business.save': 'İşletme kaydedildi',
   'benefit.save': 'Avantaj kaydedildi',
   'benefit.publish': 'Avantaj yayımlandı',

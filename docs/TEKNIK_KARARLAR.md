@@ -2,19 +2,6 @@
 
 Tarih: 21 Ekim 2026
 
-## Yönetici onaylı alışveriş ve tasarruf kararı
-
-Proje sahibi öğrenci ana sayfasında aylık tasarrufu istedi ve kaynağını yönetici onaylı alışverişler olarak seçti. Mevcut Go/PostgreSQL/React temeli korunur; yeni kütüphane, dosya deposu veya ayrı hizmet eklenmez.
-
-- Şema 6, `purchases` ve karar geçmişini tutan `purchase_events` tablolarını ekler. Alışveriş tutarları tam kuruş `bigint`, API tutarları ondalık metin, arayüz gösterimi `Intl` + `BigInt` kullanır. JavaScript kayan noktalı aritmetiğiyle para hesaplanmaz.
-- Alışveriş kaydı ve açık onay ayrıdır. Bekleyen → onaylı/reddedilen; onaylı → geri alınan geçişleri sunucuda ve veritabanında korunur. Finansal alanlar değişmez; karar ve işlem günlüğü aynı transaction içinde saklanır.
-- Hesap, işletme, avantaj ve kayıt kilitleri mevcut yönetim işlemleriyle tutarlı sıradadır. İstemci UUID'siyle aynı isteğin tekrarı ikinci kayıt/olay oluşturmaz. İşletme başına normalize edilmiş fiş referansı bütün durumlarda tekildir.
-- Onayda öğrenci uygunluğu ve avantaj/işletme koşulları tekrar denetlenir. İade/hata için onay geri alma, öğrencinin veya işletmenin sonradan kapanmasıyla engellenmez.
-- Ay, sunucunun İstanbul takvimine göre alışveriş tarihinden belirlenir. Toplam ile işletme kırılımı aynı veritabanı görünümünden ve listenin 1000 kayıt sınırından bağımsız hesaplanır. Arayüz kompakt olmak için ilk üç işletmeyi gösterir; tümü toplama dahildir.
-- Öğrenci geçmişi yalnızca kendi onaylı kayıtlarının izinli alanlarını döndürür. Yöneticiye özel referans ve inceleme gerekçeleri öğrenciye gönderilmez. Yerel servisleri proje sahibi başlatır; gerçek backend/browser kabul testleri CI'ın izole veritabanında çalışır.
-
-İşleyiş ve yerel güncelleme komutları [tasarruf tesliminde](TESLIM_TASARRUF.md).
-
 ## 3D devam kararı
 
 Proje sahibi Yönetici Genel Bakış'ı kabul etti ve planlanan öğrenci deneyimi/avantaj detaylarının geliştirilmesini açıkça onayladı.

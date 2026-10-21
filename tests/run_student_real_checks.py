@@ -183,7 +183,7 @@ def main():
         button('Avantajı paylaş · bağlantıyı kopyala')
         copy_result(base + '/#benefit/' + code_id)
         route('history', '.empty-state')
-        assert dev.evaluate("document.querySelector('#student-main').innerText.includes('Henüz yönetici onaylı alışverişin yok')"), 'invented usage history'
+        assert dev.evaluate("document.querySelector('#student-main').innerText.includes('Henüz doğrulanmış bir kullanım yok')"), 'invented usage history'
         assert not dev.evaluate("!!document.querySelector('#student-main table')"), 'unexpected usage rows'
         route('profile', '.student-profile')
         dev.evaluate("document.querySelector('.student-profile a[href=\"#forgot-password\"]').click()")

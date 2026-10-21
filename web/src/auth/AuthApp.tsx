@@ -58,7 +58,7 @@ const titles: Record<Mode, string> = {
   overview: 'Genel Bakış',
   discover: 'Avantajları Keşfet',
   favorites: 'Favorilerim',
-  history: 'Alışveriş Geçmişi',
+  history: 'Kullanım Geçmişi',
   profile: 'Profil ve Hesap',
   help: 'Yardım ve Destek',
   benefit: 'Avantaj detayı',
@@ -79,8 +79,6 @@ const studentQueryKeys = [
   'student-benefit',
   'student-redemption',
   'student-settings',
-  'student-savings',
-  'student-purchases',
 ];
 
 function safeNext(value: string | null): string {
@@ -718,7 +716,6 @@ function AccountPage({
       client.removeQueries({ queryKey: ['management-businesses'] });
       client.removeQueries({ queryKey: ['management-benefits'] });
       client.removeQueries({ queryKey: ['management-overview'] });
-      client.removeQueries({ queryKey: ['management-purchases'] });
       client.removeQueries({
         predicate: (query) =>
           studentQueryKeys.includes(String(query.queryKey[0])),
@@ -1225,7 +1222,6 @@ export function AuthApp() {
           'management-businesses',
           'management-benefits',
           'management-overview',
-          'management-purchases',
         ].includes(String(query.queryKey[0])) &&
         (session.data?.user?.role !== 'admin' ||
           query.queryKey[1] !== session.data?.user?.id),
