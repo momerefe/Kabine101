@@ -1,6 +1,9 @@
 -- name: FindAccountByEmail :one
 SELECT * FROM accounts WHERE email = $1;
 
+-- name: FindAccountByUsername :one
+SELECT * FROM accounts WHERE lower(username) = lower(sqlc.arg(username)::text);
+
 -- name: FindAccountByID :one
 SELECT * FROM accounts WHERE id = $1;
 
@@ -10,6 +13,10 @@ SELECT * FROM accounts WHERE id = $1 FOR UPDATE;
 -- name: CreateAccount :one
 INSERT INTO accounts (name,email,password_hash,role,status,eligibility_status)
 VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;
+
+-- name: CreateOperator :one
+INSERT INTO accounts (name,username,password_hash,role,status,eligibility_status)
+VALUES ($1,$2,$3,'admin','active','approved') RETURNING *;
 
 -- name: ListAccounts :many
 SELECT * FROM accounts ORDER BY created_at DESC;
@@ -52,7 +59,9 @@ UPDATE accounts SET status=$2,eligibility_status=$3,updated_at=now() WHERE id=$1
 UPDATE accounts SET role=$2,updated_at=now() WHERE id=$1;
 
 -- name: CountActiveAdmins :one
-SELECT count(*) FROM accounts WHERE role='admin' AND status='active' AND eligibility_status='approved' AND email_verified_at IS NOT NULL AND split_part(email,'@',2) = $1;
+SELECT count(*) FROM accounts WHERE role='admin' AND status='active' AND eligibility_status='approved'
+AND ((username IS NOT NULL AND email IS NULL AND email_verified_at IS NULL)
+     OR (username IS NULL AND email_verified_at IS NOT NULL AND split_part(email,'@',2) = sqlc.arg(school_domain)::text));
 
 -- name: FindSession :one
 SELECT * FROM sessions WHERE token_hash=$1;

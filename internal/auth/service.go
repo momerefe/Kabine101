@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/mail"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -35,6 +36,7 @@ type Account struct {
 	ID                string `json:"id"`
 	Name              string `json:"name"`
 	Email             string `json:"email"`
+	Username          string `json:"username"`
 	Role              string `json:"role"`
 	Status            string `json:"status"`
 	EmailVerified     bool   `json:"email_verified"`
@@ -42,7 +44,7 @@ type Account struct {
 }
 
 func publicAccount(a database.Account) Account {
-	return Account{ID: a.ID.String(), Name: a.Name, Email: a.Email, Role: a.Role, Status: a.Status, EmailVerified: a.EmailVerifiedAt.Valid, EligibilityStatus: a.EligibilityStatus}
+	return Account{ID: a.ID.String(), Name: a.Name, Email: a.Email.String, Username: a.Username.String, Role: a.Role, Status: a.Status, EmailVerified: a.EmailVerifiedAt.Valid, EligibilityStatus: a.EligibilityStatus}
 }
 
 func New(pool *pgxpool.Pool, cfg config.Config, mailer Mailer) (*Service, error) {
@@ -70,8 +72,26 @@ func (s *Service) email(raw string) (string, bool) {
 }
 
 func (s *Service) eligible(a database.Account) bool {
-	_, school := s.email(a.Email)
-	return school && a.Status == "active" && a.EligibilityStatus == "approved" && a.EmailVerifiedAt.Valid && (a.Role == "student" || a.Role == "admin")
+	if a.Status != "active" || a.EligibilityStatus != "approved" {
+		return false
+	}
+	if a.Username.Valid {
+		return validUsername(a.Username.String) && !a.Email.Valid && !a.EmailVerifiedAt.Valid && a.Role == "admin"
+	}
+	_, school := s.email(a.Email.String)
+	return a.Email.Valid && school && a.EmailVerifiedAt.Valid && (a.Role == "student" || a.Role == "admin")
+}
+
+var usernamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{2,31}$`)
+
+func validUsername(username string) bool { return usernamePattern.MatchString(username) }
+
+// Identity namespaces keep per-account rate limits distinct across login types.
+func accountIdentity(a database.Account) string {
+	if a.Username.Valid {
+		return "username:" + strings.ToLower(a.Username.String)
+	}
+	return "email:" + a.Email.String
 }
 
 func (s *Service) passwordWork(ctx context.Context, work func() error) error {
@@ -125,7 +145,7 @@ func (s *Service) createAccount(ctx context.Context, name, email, password, role
 	}
 	defer tx.Rollback(ctx)
 	q := s.q.WithTx(tx)
-	a, err := q.CreateAccount(ctx, database.CreateAccountParams{Name: name, Email: email, PasswordHash: hash, Role: role, Status: status, EligibilityStatus: eligibility})
+	a, err := q.CreateAccount(ctx, database.CreateAccountParams{Name: name, Email: pgtype.Text{String: email, Valid: true}, PasswordHash: hash, Role: role, Status: status, EligibilityStatus: eligibility})
 	if err != nil {
 		var pe *pgconn.PgError
 		if errors.As(err, &pe) && pe.Code == "23505" {
@@ -162,6 +182,37 @@ func (s *Service) BootstrapAdmin(ctx context.Context, name, email, password stri
 	return s.sendToken(ctx, a.ID, "verify_email")
 }
 
+// BootstrapOperator creates a new, email-free administrator through the private
+// provisioning path. It never promotes an existing account or sends email.
+func (s *Service) BootstrapOperator(ctx context.Context, name, username, password string) error {
+	name, username = strings.TrimSpace(name), strings.TrimSpace(username)
+	if !validName(name) || !validUsername(username) {
+		return errors.New("invalid operator name or username")
+	}
+	var hash string
+	if err := s.passwordWork(ctx, func() error { var err error; hash, err = HashOperatorPassword(password); return err }); err != nil {
+		return err
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	q := s.q.WithTx(tx)
+	a, err := q.CreateOperator(ctx, database.CreateOperatorParams{Name: name, Username: pgtype.Text{String: username, Valid: true}, PasswordHash: hash})
+	if err != nil {
+		var pe *pgconn.PgError
+		if errors.As(err, &pe) && pe.Code == "23505" {
+			return errConflict
+		}
+		return err
+	}
+	if err = audit(ctx, q, pgtype.UUID{}, "account.operator_bootstrapped", a.ID); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 // sendToken commits token replacement before SMTP, so a failed delivery can be
 // recovered using resend. Tokens and passwords are never included in errors.
 func (s *Service) sendToken(ctx context.Context, id pgtype.UUID, purpose string) error {
@@ -178,6 +229,9 @@ func (s *Service) sendToken(ctx context.Context, id pgtype.UUID, purpose string)
 	a, err := q.LockAccount(ctx, id)
 	if err != nil {
 		return err
+	}
+	if !a.Email.Valid || a.Username.Valid {
+		return errInvalidToken
 	}
 	if a.Status == "disabled" || a.Status == "rejected" || (purpose == "verify_email" && a.EmailVerifiedAt.Valid) {
 		return nil
@@ -202,7 +256,7 @@ func (s *Service) sendToken(ctx context.Context, id pgtype.UUID, purpose string)
 	}
 	mailctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
-	if err = s.mailer.Send(mailctx, a.Email, subject, "İşlemi tamamlamak için bu bağlantıyı açın:\n\n"+s.cfg.AppOrigin+"/#"+path+"?token="+token+"\n\nBu işlemi siz istemediyseniz bu iletiyi yok sayın."); err != nil {
+	if err = s.mailer.Send(mailctx, a.Email.String, subject, "İşlemi tamamlamak için bu bağlantıyı açın:\n\n"+s.cfg.AppOrigin+"/#"+path+"?token="+token+"\n\nBu işlemi siz istemediyseniz bu iletiyi yok sayın."); err != nil {
 		return errMailUnavailable
 	}
 	return nil
@@ -238,7 +292,7 @@ func (s *Service) consumeToken(ctx context.Context, raw, purpose, password strin
 	if err != nil {
 		return err
 	}
-	if a.Status == "disabled" || a.Status == "rejected" {
+	if !a.Email.Valid || a.Username.Valid || a.Status == "disabled" || a.Status == "rejected" {
 		return errInvalidToken
 	}
 	if _, err = q.ConsumeAccountToken(ctx, database.ConsumeAccountTokenParams{TokenHash: hash, Purpose: purpose}); errors.Is(err, pgx.ErrNoRows) {

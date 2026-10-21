@@ -2,6 +2,16 @@
 
 Tarih: 21 Ekim 2026
 
+## Sonraki düzenleme — e-postasız özel yönetici
+
+Proje sahibinin talebiyle ayrı kullanıcı adı kimliği eklendi; seçilen hesap yerel veritabanında oluşturuldu. E-posta alanı NULL, e-posta doğrulama kaydı yoktur; sahte adres kullanılmaz. Parola CLI'ın gizli girişinden alınıp Argon2id özetiyle saklandı; kaynak koduna veya bu rapora yazılmadı.
+
+Şema 4 kimlik türlerini veritabanında ayırır. Kullanıcı adı hesabı yalnızca yönetici olabilir. Öğrenciler okul alan adı + e-posta doğrulaması + yönetici onayı ve normal parola kuralına tabidir. Özel yönetici aynı CSRF, deneme sınırı ve sunucu oturumu korumalarını kullanır. E-posta ile sıfırlama özel hesabı hedefleyemez. Bu kimlik web arayüzünden oluşturulamaz.
+
+Yedi yeni güvenlik senaryosu dahil 18 ana PostgreSQL kimlik entegrasyon senaryosu geçti; Go test/vet ve web derlemesi geçti. Tam izole tarayıcı testi bu düzenlemede geçici migration yürütülebilir dosyasının Windows Application Control engeli nedeniyle başlayamadı; aşağıdaki önceki tam tarayıcı sonucu 3B ilk teslimine aittir. Güncel özel hesabın girişi, yönetici erişimi, e-postasız profil, 320 px görünüm, HttpOnly oturumu ve çıkışı çalışan yerel uygulamada Chrome ile ayrıca doğrulandı. Parolanın kaynak dosyalarında bulunmadığı kontrol edildi. Güvenlik ayarları değiştirilmedi.
+
+Aşağıdaki bölümler ilk 3B tesliminin kaydıdır; güncel şema 4 ve özel yönetici kararı bu ekle birlikte okunmalıdır.
+
 ## Tamamlanan
 
 Proje sahibinin devam talimatı ve kesinleştirdiği `stu.koc.k12.tr` + e-posta doğrulaması + yönetici onayı kuralı uygulandı. Backend, arayüz ve bağımsız güvenlik testleri GPT‑6.1 Sol alt işleri olarak yürütüldü; API sözleşmesi, SMTP, birleştirme, tarayıcı kontrolleri ve teslim incelemesi ana ajan tarafından tamamlandı.

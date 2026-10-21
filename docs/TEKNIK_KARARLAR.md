@@ -4,6 +4,8 @@ Tarih: 21 Ekim 2026
 
 ## 3B devam kararı
 
+**Sonraki hesap kararı:** Proje sahibi normal hesaplardan ayrı, e-postasız bir özel yönetici istedi. Şema 4, `email` veya `username` kimliğinden tam birini zorunlu kılar. Kullanıcı adı kimliği yalnızca yönetici olabilir; öğrenci rolüne dönüştürülemez. Ayrı yönetici giriş uç noktası aynı oturum, CSRF, deneme sınırı ve Argon2id kontrollerini kullanır. Özel yönetici parolası için 8–128 karakter; normal hesaplarda 15–128 korunur. Seçilen gerçek parola hiçbir kaynak veya dokümanda tutulmaz; yalnızca veritabanındaki özeti kullanılır. Bu istisna okul hesabını e-posta doğrulamasından muaf tutmaz.
+
 Proje sahibi CelikPanel değerlendirmesinin ardından planlandığı şekilde devam edilmesini ve alt işlerin GPT‑6.1 Sol'e verilmesini onayladı. Ardından **`stu.koc.k12.tr`** okul alan adını ve **e-posta doğrulaması + yönetici onayı** kuralını belirledi. Aşağıdaki 3A bölümleri önceki teslimin tarihsel kaydıdır; güncel işlevler 3B teslim raporundadır.
 
 - Go/Chi + PostgreSQL/sqlc/migrate korunur. CelikPanel kaynak kodu veya lisanslı parçaları kopyalanmaz.

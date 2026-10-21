@@ -1,4 +1,4 @@
-param([ValidateSet('api','web','mail','admin-create','db-up','db-version','seed-demo','generate','check','build')][string]$Task = 'api', [string]$Name, [string]$Email)
+param([ValidateSet('api','web','mail','admin-create','db-up','db-version','seed-demo','generate','check','build')][string]$Task = 'api', [string]$Name, [string]$Email, [string]$Username)
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 if (Test-Path '.tools/go/bin') { $env:Path = "$PWD/.tools/go/bin;$env:Path" }
@@ -18,8 +18,9 @@ switch ($Task) {
         Run '.tools/mailpit/mailpit.exe' @('--listen','127.0.0.1:8025','--smtp','127.0.0.1:1025','--database','.local/mailpit.db','--disable-version-check','--smtp-disable-rdns','--max','100','--quiet')
     }
     'admin-create' {
-        if (!$Name -or !$Email) { throw 'Provide -Name and -Email. Password is requested privately by the Go command.' }
-        Run 'go' @('run','./cmd/admin','-name',$Name,'-email',$Email)
+        if (!$Name -or (!$Email -and !$Username) -or ($Email -and $Username)) { throw 'Provide -Name and either -Email or -Username. Password is requested privately.' }
+        if ($Username) { Run 'go' @('run','./cmd/admin','-name',$Name,'-username',$Username) }
+        else { Run 'go' @('run','./cmd/admin','-name',$Name,'-email',$Email) }
     }
     'db-up' { Run 'go' @('run','./cmd/db','up') }
     'db-version' { Run 'go' @('run','./cmd/db','version') }

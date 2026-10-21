@@ -26,6 +26,7 @@ type Route = { mode: Mode; token: string; next: string };
 type AuthAction =
   | { kind: 'register'; name: string; email: string; password: string }
   | { kind: 'login'; email: string; password: string }
+  | { kind: 'admin-login'; username: string; password: string }
   | { kind: 'logout' }
   | { kind: 'verify-email'; token: string }
   | { kind: 'forgot-password' | 'resend-verification'; email: string }
@@ -120,6 +121,12 @@ async function authRequest(action: AuthAction, csrf: string) {
       result = await api.POST('/api/auth/login', {
         ...options,
         body: { email: action.email, password: action.password },
+      });
+      break;
+    case 'admin-login':
+      result = await api.POST('/api/auth/admin-login', {
+        ...options,
+        body: { username: action.username, password: action.password },
       });
       break;
     case 'logout':
@@ -329,7 +336,7 @@ function AuthForm({
         navigate('login/student', '', true);
       }
       const updated = await refresh();
-      if (action.kind === 'login')
+      if (action.kind === 'login' || action.kind === 'admin-login')
         navigate(
           route.next === '/admin' || route.mode === 'login/admin'
             ? 'admin'
@@ -372,6 +379,7 @@ function AuthForm({
     const form = event.currentTarget;
     const values = new FormData(form);
     const email = String(values.get('email') || '').trim();
+    const username = String(values.get('username') || '').trim();
     const passwordValue = String(values.get('password') || '');
     if (
       register &&
@@ -398,7 +406,14 @@ function AuthForm({
         password: passwordValue,
       };
     else if (isLogin)
-      action = { kind: 'login', email, password: passwordValue };
+      action =
+        admin && !username.includes('@')
+          ? { kind: 'admin-login', username, password: passwordValue }
+          : {
+              kind: 'login',
+              email: admin ? username : email,
+              password: passwordValue,
+            };
     else if (reset)
       action = {
         kind: 'reset-password',
@@ -496,14 +511,18 @@ function AuthForm({
             )}
             {needsEmail && (
               <Field
-                name="email"
+                name={admin ? 'username' : 'email'}
                 label={
-                  admin ? 'Yönetici e-posta adresi' : 'Okul e-posta adresi'
+                  admin
+                    ? 'Kullanıcı adı veya okul e-postası'
+                    : 'Okul e-posta adresi'
                 }
-                type="email"
+                type={admin ? 'text' : 'email'}
                 autoComplete="username"
                 maxLength={254}
-                hint={`Okul alan adı: @${session.school_domain}`}
+                hint={
+                  admin ? undefined : `Okul alan adı: @${session.school_domain}`
+                }
               />
             )}
             {password && (
@@ -532,7 +551,7 @@ function AuthForm({
       <div className="auth-help">
         {isLogin && (
           <a className="text-link" href="#forgot-password">
-            Parolamı unuttum
+            {admin ? 'Okul hesabımın parolasını unuttum' : 'Parolamı unuttum'}
           </a>
         )}
         <a
@@ -541,7 +560,9 @@ function AuthForm({
         >
           {reset
             ? 'Yeni parola bağlantısı iste'
-            : 'Doğrulama e-postasını yeniden gönder'}
+            : admin
+              ? 'Okul hesabı için doğrulama e-postası gönder'
+              : 'Doğrulama e-postasını yeniden gönder'}
         </a>
         {!isLogin && (
           <a className="text-link" href="#login/student">
@@ -550,8 +571,9 @@ function AuthForm({
         )}
       </div>
       <p className="auth-security">
-        Hesabın e-posta doğrulaması ve yönetici onayı tamamlandığında
-        etkinleşir. Yönetici hesabı bu ekrandan oluşturulamaz.
+        {admin
+          ? 'Parola yenileme ve e-posta doğrulaması yalnızca okul e-postalı hesaplar içindir. Yönetici hesabı bu ekrandan oluşturulamaz.'
+          : 'Hesabın e-posta doğrulaması ve yönetici onayı tamamlandığında etkinleşir. Yönetici hesabı bu ekrandan oluşturulamaz.'}
       </p>
       <LocalEmail enabled={session.local_email} />
     </>
@@ -621,21 +643,27 @@ function AccountPage({
           <p>KoçBenefits hesabına giriş yaptın.</p>
           <dl className="account-details">
             <div>
-              <dt>Okul e-postası</dt>
-              <dd>{user.email}</dd>
+              <dt>{user.username ? 'Kullanıcı adı' : 'Okul e-postası'}</dt>
+              <dd>{user.username || user.email}</dd>
             </div>
             <div>
               <dt>Hesap durumu</dt>
-              <dd>{statusLabels[user.status]}</dd>
+              <dd>
+                {user.username ? 'Yönetici hesabı' : statusLabels[user.status]}
+              </dd>
             </div>
-            <div>
-              <dt>E-posta doğrulaması</dt>
-              <dd>{user.email_verified ? 'Doğrulandı' : 'Bekliyor'}</dd>
-            </div>
-            <div>
-              <dt>Yönetici onayı</dt>
-              <dd>{eligibilityLabels[user.eligibility_status]}</dd>
-            </div>
+            {!user.username && (
+              <>
+                <div>
+                  <dt>E-posta doğrulaması</dt>
+                  <dd>{user.email_verified ? 'Doğrulandı' : 'Bekliyor'}</dd>
+                </div>
+                <div>
+                  <dt>Yönetici onayı</dt>
+                  <dd>{eligibilityLabels[user.eligibility_status]}</dd>
+                </div>
+              </>
+            )}
             <div>
               <dt>Rol</dt>
               <dd>{user.role === 'admin' ? 'Yönetici' : 'Öğrenci'}</dd>
@@ -713,7 +741,8 @@ function AdminAccounts({
             {accounts.data.length} hesap ·{' '}
             {
               accounts.data.filter(
-                (account) => account.eligibility_status === 'pending',
+                (account) =>
+                  !account.username && account.eligibility_status === 'pending',
               ).length
             }{' '}
             başvuru bekliyor
@@ -727,53 +756,70 @@ function AdminAccounts({
                     {statusLabels[account.status]}
                   </span>
                 </div>
-                <p className="account-email">{account.email}</p>
+                <p className="account-email">
+                  {account.username || account.email}
+                </p>
                 <dl className="account-meta">
-                  <div>
-                    <dt>E-posta</dt>
-                    <dd>
-                      {account.email_verified ? 'Doğrulandı' : 'Doğrulanmadı'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Onay</dt>
-                    <dd>{eligibilityLabels[account.eligibility_status]}</dd>
-                  </div>
-                  <div>
-                    <dt>Rol</dt>
-                    <dd>{account.role === 'admin' ? 'Yönetici' : 'Öğrenci'}</dd>
-                  </div>
-                </dl>
-                <div className="account-actions">
-                  {account.eligibility_status === 'pending' && (
+                  {account.username ? (
+                    <div>
+                      <dt>Hesap türü</dt>
+                      <dd>Özel yönetici</dd>
+                    </div>
+                  ) : (
                     <>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() =>
-                          setAction({
-                            account,
-                            kind: 'review',
-                            value: 'approved',
-                          })
-                        }
-                      >
-                        Onayla
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() =>
-                          setAction({
-                            account,
-                            kind: 'review',
-                            value: 'rejected',
-                          })
-                        }
-                      >
-                        Reddet
-                      </button>
+                      <div>
+                        <dt>E-posta</dt>
+                        <dd>
+                          {account.email_verified
+                            ? 'Doğrulandı'
+                            : 'Doğrulanmadı'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Onay</dt>
+                        <dd>{eligibilityLabels[account.eligibility_status]}</dd>
+                      </div>
+                      <div>
+                        <dt>Rol</dt>
+                        <dd>
+                          {account.role === 'admin' ? 'Yönetici' : 'Öğrenci'}
+                        </dd>
+                      </div>
                     </>
                   )}
-                  {account.status === 'active' &&
+                </dl>
+                <div className="account-actions">
+                  {!account.username &&
+                    account.eligibility_status === 'pending' && (
+                      <>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() =>
+                            setAction({
+                              account,
+                              kind: 'review',
+                              value: 'approved',
+                            })
+                          }
+                        >
+                          Onayla
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() =>
+                            setAction({
+                              account,
+                              kind: 'review',
+                              value: 'rejected',
+                            })
+                          }
+                        >
+                          Reddet
+                        </button>
+                      </>
+                    )}
+                  {!account.username &&
+                    account.status === 'active' &&
                     account.email_verified &&
                     account.eligibility_status === 'approved' && (
                       <button
@@ -894,7 +940,7 @@ function AdminConfirmation({
       <p id="confirm-description">
         <strong>{action.account.name}</strong>
         <br />
-        {action.account.email}
+        {action.account.username || action.account.email}
       </p>
       <p>
         {action.kind === 'role'

@@ -200,6 +200,65 @@
             'application/json':
               'schema':
                 '$ref': '#/components/schemas/Error'
+  '/api/auth/admin-login':
+    'post':
+      'operationId': 'adminLogin'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/AdminLoginRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/LoginResponse'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
   '/api/auth/logout':
     'post':
       'operationId': 'logout'
@@ -653,6 +712,7 @@
         - 'id'
         - 'name'
         - 'email'
+        - 'username'
         - 'role'
         - 'status'
         - 'email_verified'
@@ -664,6 +724,10 @@
           'type': 'string'
         'email':
           'type': 'string'
+          'description': 'Empty for an operator account; no fabricated email.'
+        'username':
+          'type': 'string'
+          'description': 'Operator login name; empty for school email accounts.'
         'role':
           'type': 'string'
           'enum':
@@ -765,6 +829,17 @@
         - 'password'
       'properties':
         'email':
+          'type': 'string'
+        'password':
+          'type': 'string'
+    'AdminLoginRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'username'
+        - 'password'
+      'properties':
+        'username':
           'type': 'string'
         'password':
           'type': 'string'

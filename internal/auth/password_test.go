@@ -43,6 +43,27 @@ func TestPasswordPolicyUsesCharactersAndBoundedInput(t *testing.T) {
 	}
 }
 
+func TestOperatorPasswordUsesSameHashWithSeparateMinimum(t *testing.T) {
+	password := "246813579"
+	if _, err := HashPassword(password); err == nil {
+		t.Fatal("short operator password accepted by normal account policy")
+	}
+	encoded, err := HashOperatorPassword(password)
+	if err != nil || !strings.HasPrefix(encoded, "$argon2id$v=19$m=65536,t=3,p=4$") || !checkPassword(encoded, password) {
+		t.Fatal("operator password did not use the standard Argon2id hash")
+	}
+	for _, password := range []string{strings.Repeat("x", 7), strings.Repeat("x", 129), "abcdefgh\x00", string([]byte{0xff})} {
+		if _, err := HashOperatorPassword(password); err == nil {
+			t.Fatal("invalid operator password accepted")
+		}
+	}
+	for _, password := range []string{strings.Repeat("ş", 8), strings.Repeat("x", 128)} {
+		if !validPasswordLength(password, 8) {
+			t.Fatal("valid operator password rejected")
+		}
+	}
+}
+
 func TestTokensHave256BitsAndOnlyHashCanBePersisted(t *testing.T) {
 	first, hash, err := newToken()
 	if err != nil {

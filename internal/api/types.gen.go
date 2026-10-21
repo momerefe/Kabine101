@@ -123,12 +123,17 @@ func (e RoleRequestRole) Valid() bool {
 // Account defines model for Account.
 type Account struct {
 	EligibilityStatus AccountEligibilityStatus `json:"eligibility_status"`
-	Email             string                   `json:"email"`
-	EmailVerified     bool                     `json:"email_verified"`
-	Id                string                   `json:"id"`
-	Name              string                   `json:"name"`
-	Role              AccountRole              `json:"role"`
-	Status            AccountStatus            `json:"status"`
+
+	// Email Empty for an operator account; no fabricated email.
+	Email         string        `json:"email"`
+	EmailVerified bool          `json:"email_verified"`
+	Id            string        `json:"id"`
+	Name          string        `json:"name"`
+	Role          AccountRole   `json:"role"`
+	Status        AccountStatus `json:"status"`
+
+	// Username Operator login name; empty for school email accounts.
+	Username string `json:"username"`
 }
 
 // AccountEligibilityStatus defines model for Account.EligibilityStatus.
@@ -143,6 +148,12 @@ type AccountStatus string
 // AccountsResponse defines model for AccountsResponse.
 type AccountsResponse struct {
 	Accounts []Account `json:"accounts"`
+}
+
+// AdminLoginRequest defines model for AdminLoginRequest.
+type AdminLoginRequest struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 // EmailRequest defines model for EmailRequest.
@@ -238,6 +249,11 @@ type ChangeRoleParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
 }
 
+// AdminLoginParams defines parameters for AdminLogin.
+type AdminLoginParams struct {
+	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
 // ForgotPasswordParams defines parameters for ForgotPassword.
 type ForgotPasswordParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
@@ -278,6 +294,9 @@ type ReviewAccountJSONRequestBody = ReviewRequest
 
 // ChangeRoleJSONRequestBody defines body for ChangeRole for application/json ContentType.
 type ChangeRoleJSONRequestBody = RoleRequest
+
+// AdminLoginJSONRequestBody defines body for AdminLogin for application/json ContentType.
+type AdminLoginJSONRequestBody = AdminLoginRequest
 
 // ForgotPasswordJSONRequestBody defines body for ForgotPassword for application/json ContentType.
 type ForgotPasswordJSONRequestBody = EmailRequest

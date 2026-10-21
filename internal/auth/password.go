@@ -16,8 +16,12 @@ import (
 const passwordMemory uint32 = 64 * 1024
 
 func validPassword(password string) bool {
+	return validPasswordLength(password, 15)
+}
+
+func validPasswordLength(password string, minimum int) bool {
 	n := utf8.RuneCountInString(password)
-	return utf8.ValidString(password) && n >= 15 && n <= 128 && !strings.ContainsRune(password, 0)
+	return utf8.ValidString(password) && n >= minimum && n <= 128 && !strings.ContainsRune(password, 0)
 }
 
 // HashPassword uses the RFC 9106 memory-constrained Argon2id parameters.
@@ -25,6 +29,19 @@ func HashPassword(password string) (string, error) {
 	if !validPassword(password) {
 		return "", errors.New("password must contain 15 to 128 characters")
 	}
+	return hashPassword(password)
+}
+
+// HashOperatorPassword is restricted to privately provisioned operator accounts.
+// Student and school-email administrator passwords retain the normal policy.
+func HashOperatorPassword(password string) (string, error) {
+	if !validPasswordLength(password, 8) {
+		return "", errors.New("operator password must contain 8 to 128 characters")
+	}
+	return hashPassword(password)
+}
+
+func hashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return "", errors.New("cannot create password salt")

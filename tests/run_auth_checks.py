@@ -26,6 +26,8 @@ PASSWORD = "Local browser test password 2026!"
 NEW_PASSWORD = "Changed browser test password 2026!"
 ADMIN = "admin@ogrenci.example"
 STUDENT = "student@ogrenci.example"
+OPERATOR = "TestOperator"
+OPERATOR_PASSWORD = "496271835"  # Synthetic operator-only policy fixture.
 
 
 def wait_for(check, label, seconds=20):
@@ -124,6 +126,7 @@ def main():
         start([str(mailpit), "--listen", "127.0.0.1:8025", "--smtp", "127.0.0.1:1025", "--database", str(folder / "mail.db"), "--disable-version-check", "--smtp-disable-rdns", "--quiet"], "mail")
         wait_for(lambda: get_json("http://127.0.0.1:8025/api/v1/messages"), "Mailpit unavailable")
         command([str(folder / "admin.exe"), "-name", "Test Yöneticisi", "-email", ADMIN], input=PASSWORD + "\n")
+        command([str(folder / "admin.exe"), "-name", "Test Operatörü", "-username", OPERATOR], input=OPERATOR_PASSWORD + "\n")
         start([str(folder / "api.exe")], "api")
         start([node, str(ROOT / "node_modules/vite/bin/vite.js"), "--host", "127.0.0.1"], "web")
         wait_for(lambda: get_json(BASE + "api/ready")["status"] == "ok", "API/Vite unavailable", 40)
@@ -156,7 +159,7 @@ def main():
         def click_text(text, scope="document"):
             assert dev.evaluate(f"(() => {{const b=Array.from({scope}.querySelectorAll('button')).find(b=>b.textContent.trim()==={json.dumps(text)});if(!b)return false;b.click();return true}})()"), "missing button " + text
         def login(email, password=PASSWORD, role="student"):
-            navigate("login/" + role); fill("email", email); fill("password", password); submit()
+            navigate("login/" + role); fill("username" if role == "admin" else "email", email); fill("password", password); submit()
         def logout():
             click_text("Çıkış yap"); present("#password")
         ARTIFACTS.mkdir(exist_ok=True)
@@ -198,8 +201,13 @@ def main():
         dev.call("Emulation.setEmulatedMedia",{"features":[{"name":"prefers-reduced-motion","value":"reduce"}]})
         navigate("register"); present("#name")
         assert dev.evaluate("document.documentElement.scrollWidth<=innerWidth"), "register overflow320"
+        login(OPERATOR, OPERATOR_PASSWORD, role="admin"); present(".admin-account")
+        navigate("account"); present(".account-details"); text_present(OPERATOR)
+        assert not dev.evaluate("document.querySelector('.account-details').textContent.includes('E-posta doğrulaması')"), "operator incorrectly shown as email verified"
+        assert dev.evaluate("document.documentElement.scrollWidth<=innerWidth"), "operator account overflow320"
+        logout()
         assert not dev.errors, "browser runtime exceptions"
-        print("Auth browser checks passed: real SMTP capture, CLI admin verification, student registration/verification/approval/login, RBAC UI, HttpOnly cookie, password reset, token replay rejection, error/retry, reduced motion, 1440/390/320 widths.")
+        print("Auth browser checks passed: SMTP capture, email admin verification, email-free operator login, student registration/verification/approval/login, RBAC UI, HttpOnly cookie, password reset, token replay rejection, error/retry, reduced motion, 1440/390/320 widths.")
     finally:
         for proc in reversed(processes):
             if proc.poll() is None:

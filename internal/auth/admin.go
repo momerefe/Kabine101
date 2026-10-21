@@ -66,7 +66,7 @@ func (s *Service) adminChange(w http.ResponseWriter, r *http.Request, password, 
 		fail(w, 400, "invalid_request", "Geçersiz hesap kimliği.")
 		return
 	}
-	if s.limited(w, r, "admin_reauth", actor.Email) {
+	if s.limited(w, r, "admin_reauth", accountIdentity(actor)) {
 		return
 	}
 	if len(password) > 512 {
@@ -82,7 +82,7 @@ func (s *Service) adminChange(w http.ResponseWriter, r *http.Request, password, 
 		fail(w, 401, "invalid_credentials", "Mevcut parola doğrulanamadı.")
 		return
 	}
-	s.limiter.resetEmail("admin_reauth", actor.Email)
+	s.limiter.resetEmail("admin_reauth", accountIdentity(actor))
 	err := s.changeAccount(r, actor, sessionHash, targetID, kind, value)
 	switch {
 	case err == nil:
@@ -151,6 +151,9 @@ func (s *Service) changeAccount(r *http.Request, priorActor database.Account, se
 			}
 		}
 	} else {
+		if target.Username.Valid && value != "admin" {
+			return errConflict
+		}
 		if target.Role == value {
 			return errConflict
 		}

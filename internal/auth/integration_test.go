@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -37,6 +38,7 @@ const changedPassword = "Changed long password 2026!"
 type testAccount struct {
 	ID                string `json:"id"`
 	Email             string `json:"email"`
+	Username          string `json:"username"`
 	Role              string `json:"role"`
 	Status            string `json:"status"`
 	EmailVerified     bool   `json:"email_verified"`
@@ -317,14 +319,14 @@ func TestRegistrationValidationAndGenericResponses(t *testing.T) {
 	for _, email := range []string{"student@example.net", "student@sub.ogrenci.example", "student@ogrenci.example.attacker.test", "student@evilogrenci.example", "student@@ogrenci.example", "Student <student@ogrenci.example>"} {
 		b.post("/api/auth/register", map[string]any{"name": "Test", "email": email, "password": testPassword}).denied(t)
 	}
-	for _, extra := range []map[string]any{{"role": "admin"}, {"status": "active"}, {"email_verified": true}, {"eligibility_status": "approved"}, {"unexpected": "field"}} {
+	for _, extra := range []map[string]any{{"role": "admin"}, {"status": "active"}, {"email_verified": true}, {"eligibility_status": "approved"}, {"username": "InjectedOperator"}, {"unexpected": "field"}} {
 		payload := map[string]any{"name": "Test", "email": "injection@ogrenci.example", "password": testPassword}
 		for k, v := range extra {
 			payload[k] = v
 		}
 		b.post("/api/auth/register", payload).denied(t)
 	}
-	for _, password := range []string{"short", strings.Repeat("a", 129)} {
+	for _, password := range []string{"short", "246813579", strings.Repeat("a", 14), strings.Repeat("a", 129)} {
 		b.post("/api/auth/register", map[string]string{"name": "Test", "email": "length@ogrenci.example", "password": password}).denied(t)
 	}
 	for _, name := range []string{"", "   ", strings.Repeat("a", 121), "Test\nInjected", "Test\x00Injected"} {
@@ -697,5 +699,246 @@ func TestDeliveryFailuresDoNotRevealExistingAccounts(t *testing.T) {
 	var count int
 	if err := h.pool.QueryRow(context.Background(), "SELECT count(*) FROM account_tokens WHERE account_id=$1 AND consumed_at IS NULL", id).Scan(&count); err != nil || count != 2 {
 		t.Fatal("delivery failure did not preserve replaceable verification and reset tokens")
+	}
+}
+
+const operatorUsername = "SyntheticOperator"
+const operatorPassword = "246813579"
+
+func (b *browser) operatorLogin(username, password string) testResponse {
+	r := b.post("/api/auth/admin-login", map[string]string{"username": username, "password": password})
+	if r.Status == http.StatusOK {
+		b.session()
+	}
+	return r
+}
+
+func (h *authHarness) operator() (*browser, string) {
+	h.t.Helper()
+	if err := h.service.BootstrapOperator(context.Background(), "Synthetic operator", operatorUsername, operatorPassword); err != nil {
+		h.t.Fatal(err)
+	}
+	var id string
+	if err := h.pool.QueryRow(context.Background(), "SELECT id::text FROM accounts WHERE username=$1", operatorUsername).Scan(&id); err != nil {
+		h.t.Fatal(err)
+	}
+	b := h.browser()
+	b.operatorLogin(operatorUsername, operatorPassword).want(h.t, http.StatusOK)
+	return b, id
+}
+
+func TestOperatorBootstrapLoginAndSessionLifecycle(t *testing.T) {
+	h := newHarness(t)
+	b, id := h.operator()
+	u := b.session()
+	if u == nil || u.ID != id || u.Username != operatorUsername || u.Email != "" || u.EmailVerified || u.Role != "admin" || u.Status != "active" || u.EligibilityStatus != "approved" {
+		t.Fatal("operator session did not expose its canonical email-free administrator identity")
+	}
+	var emailAbsent, verifiedAbsent bool
+	var passwordHash string
+	if err := h.pool.QueryRow(context.Background(), "SELECT email IS NULL,email_verified_at IS NULL,password_hash FROM accounts WHERE id=$1", id).Scan(&emailAbsent, &verifiedAbsent, &passwordHash); err != nil {
+		t.Fatal(err)
+	}
+	if !emailAbsent || !verifiedAbsent || !strings.HasPrefix(passwordHash, "$argon2id$") || passwordHash == operatorPassword {
+		t.Fatal("operator bootstrap must store no mailbox and an Argon2id password hash")
+	}
+	var tokenCount int
+	if err := h.pool.QueryRow(context.Background(), "SELECT count(*) FROM account_tokens WHERE account_id=$1", id).Scan(&tokenCount); err != nil || tokenCount != 0 || h.mailer.count() != 0 {
+		t.Fatal("operator bootstrap must not issue mailbox tokens or send mail")
+	}
+	listed := b.request(http.MethodGet, "/api/admin/accounts", nil, "", "").want(t, http.StatusOK)
+	if !bytes.Contains(listed.Body, []byte(operatorUsername)) || bytes.Contains(listed.Body, []byte("password_hash")) || bytes.Contains(listed.Body, []byte(operatorPassword)) {
+		t.Fatal("operator account list must expose its username without authentication secrets")
+	}
+	b.post("/api/auth/logout", map[string]any{}).want(t, http.StatusOK)
+	if b.session() != nil {
+		t.Fatal("operator logout retained authentication")
+	}
+	b.operatorLogin(strings.ToUpper(operatorUsername), operatorPassword).want(t, http.StatusOK)
+	if _, err := h.pool.Exec(context.Background(), "UPDATE sessions SET created_at=now()-interval '2 days',expires_at=now()-interval '1 day' WHERE account_id=$1", id); err != nil {
+		t.Fatal(err)
+	}
+	if b.session() != nil {
+		t.Fatal("expired operator session remained authenticated")
+	}
+	b.operatorLogin(operatorUsername, operatorPassword).want(t, http.StatusOK)
+	if _, err := h.pool.Exec(context.Background(), "UPDATE accounts SET status='disabled' WHERE id=$1", id); err != nil {
+		t.Fatal(err)
+	}
+	if b.session() != nil {
+		t.Fatal("disabled operator retained its session")
+	}
+	b.operatorLogin(operatorUsername, operatorPassword).want(t, http.StatusUnauthorized)
+}
+
+func TestOperatorLoginIsolationCSRFAndGenericFailures(t *testing.T) {
+	h := newHarness(t)
+	_, _ = h.operator()
+	b := h.browser()
+	wrong := b.operatorLogin(operatorUsername, "Wrong operator password").want(t, http.StatusUnauthorized)
+	unknown := b.operatorLogin("UnknownSyntheticOperator", operatorPassword).want(t, http.StatusUnauthorized)
+	if !bytes.Equal(wrong.Body, unknown.Body) {
+		t.Fatal("operator login reveals username existence")
+	}
+	b.login(operatorUsername, operatorPassword).denied(t)
+	b.post("/api/auth/login", map[string]string{"username": operatorUsername, "password": operatorPassword}).want(t, http.StatusBadRequest)
+	for _, tc := range []struct{ name, csrf, origin string }{
+		{"missing token", "", testOrigin},
+		{"wrong token", "wrong-token", testOrigin},
+		{"missing origin", b.csrf, ""},
+		{"untrusted origin", b.csrf, "https://attacker.example"},
+		{"null origin", b.csrf, "null"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			b.request(http.MethodPost, "/api/auth/admin-login", map[string]string{"username": operatorUsername, "password": operatorPassword}, tc.csrf, tc.origin).want(t, http.StatusForbidden)
+		})
+	}
+	if b.session() != nil {
+		t.Fatal("rejected operator login created an authenticated session")
+	}
+	b.register("operator-isolation@ogrenci.example")
+	b.operatorLogin("operator-isolation@ogrenci.example", testPassword).denied(t)
+	if b.session() != nil {
+		t.Fatal("email credentials authenticated through the operator endpoint")
+	}
+}
+
+func TestOperatorLoginRateLimitNormalizesUsername(t *testing.T) {
+	h := newHarness(t)
+	b := h.browser()
+	for i := 0; i < 12; i++ {
+		username := "UnknownSyntheticOperator"
+		if i%2 != 0 {
+			username = strings.ToLower(username)
+		}
+		b.operatorLogin(username, operatorPassword).want(t, http.StatusUnauthorized)
+	}
+	r := b.operatorLogin("UNKNOWNSYNTHETICOPERATOR", operatorPassword).want(t, http.StatusTooManyRequests)
+	if r.Header.Get("Retry-After") == "" {
+		t.Fatal("operator rate limit did not specify a retry delay")
+	}
+}
+
+func TestOperatorBootstrapCannotReplaceAccountsOrRelaxNormalPasswordPolicy(t *testing.T) {
+	h := newHarness(t)
+	_, id := h.operator()
+	var originalHash string
+	if err := h.pool.QueryRow(context.Background(), "SELECT password_hash FROM accounts WHERE id=$1", id).Scan(&originalHash); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.service.BootstrapOperator(context.Background(), "Replacement name", strings.ToLower(operatorUsername), changedPassword); err == nil {
+		t.Fatal("case-insensitive duplicate operator bootstrap succeeded")
+	}
+	var hash, name string
+	if err := h.pool.QueryRow(context.Background(), "SELECT name,password_hash FROM accounts WHERE id=$1", id).Scan(&name, &hash); err != nil || hash != originalHash || name != "Synthetic operator" {
+		t.Fatal("duplicate bootstrap mutated an existing operator")
+	}
+	for _, username := range []string{"ab", "3operator", "bad-user", "has space", "school@ogrenci.example", strings.Repeat("a", 33)} {
+		if err := h.service.BootstrapOperator(context.Background(), "Synthetic operator", username, operatorPassword); err == nil {
+			t.Fatalf("bootstrap accepted invalid username %q", username)
+		}
+	}
+	if err := h.service.BootstrapOperator(context.Background(), "Synthetic operator", "ShortPasswordOperator", "1234567"); err == nil {
+		t.Fatal("bootstrap accepted an operator password shorter than eight characters")
+	}
+	if _, err := auth.HashPassword(operatorPassword); err == nil {
+		t.Fatal("operator password exception weakened regular account password policy")
+	}
+	if err := h.service.BootstrapAdmin(context.Background(), "Synthetic email admin", "short-admin@ogrenci.example", operatorPassword); err == nil {
+		t.Fatal("operator password exception weakened email administrator bootstrap")
+	}
+	b := h.browser()
+	studentID := b.register("bootstrap-isolation@ogrenci.example")
+	if err := h.service.BootstrapOperator(context.Background(), "Replacement", "bootstrap-isolation@ogrenci.example", operatorPassword); err == nil {
+		t.Fatal("operator bootstrap accepted a student's email identity")
+	}
+	var role string
+	if err := h.pool.QueryRow(context.Background(), "SELECT role FROM accounts WHERE id=$1", studentID).Scan(&role); err != nil || role != "student" {
+		t.Fatal("operator bootstrap promoted an existing student")
+	}
+}
+
+func TestOperatorIdentityConstraintsAndEmailTokenIsolation(t *testing.T) {
+	h := newHarness(t)
+	b, id := h.operator()
+	for _, statement := range []string{
+		"UPDATE accounts SET role='student' WHERE id=$1",
+		"UPDATE accounts SET email='injected@ogrenci.example' WHERE id=$1",
+		"UPDATE accounts SET email_verified_at=now() WHERE id=$1",
+		"UPDATE accounts SET eligibility_status='pending' WHERE id=$1",
+		"UPDATE accounts SET status='pending' WHERE id=$1",
+	} {
+		if _, err := h.pool.Exec(context.Background(), statement, id); err == nil {
+			t.Fatalf("database allowed invalid operator identity: %s", statement)
+		}
+	}
+	before := h.mailer.count()
+	for _, path := range []string{"/api/auth/forgot-password", "/api/auth/resend-verification"} {
+		known := b.post(path, map[string]string{"email": operatorUsername})
+		unknown := b.post(path, map[string]string{"email": "UnknownSyntheticOperator"})
+		if known.Status != unknown.Status || !bytes.Equal(known.Body, unknown.Body) {
+			t.Fatal("email recovery reveals operator existence")
+		}
+		known.want(t, http.StatusAccepted)
+	}
+	if h.mailer.count() != before {
+		t.Fatal("email recovery sent a message for an email-free operator")
+	}
+	var originalHash string
+	if err := h.pool.QueryRow(context.Background(), "SELECT password_hash FROM accounts WHERE id=$1", id).Scan(&originalHash); err != nil {
+		t.Fatal(err)
+	}
+	for i, purpose := range []string{"verify_email", "reset_password"} {
+		raw := bytes.Repeat([]byte{byte(i + 1)}, 32)
+		token := base64.RawURLEncoding.EncodeToString(raw)
+		hash := sha256.Sum256([]byte(token))
+		if _, err := h.pool.Exec(context.Background(), "INSERT INTO account_tokens(token_hash,account_id,purpose,expires_at) VALUES($1,$2,$3,now()+interval '1 hour')", hash[:], id, purpose); err != nil {
+			t.Fatal(err)
+		}
+		if purpose == "verify_email" {
+			b.post("/api/auth/verify-email", map[string]string{"token": token}).want(t, http.StatusBadRequest)
+		} else {
+			b.post("/api/auth/reset-password", map[string]string{"token": token, "password": changedPassword}).want(t, http.StatusBadRequest)
+		}
+	}
+	var hash string
+	var verified bool
+	if err := h.pool.QueryRow(context.Background(), "SELECT password_hash,email_verified_at IS NOT NULL FROM accounts WHERE id=$1", id).Scan(&hash, &verified); err != nil || hash != originalHash || verified {
+		t.Fatal("injected email-purpose token changed an operator identity")
+	}
+	if b.session() == nil {
+		t.Fatal("rejected operator recovery token revoked a valid session")
+	}
+}
+
+func TestOperatorRemainsAdminAndCountsTowardLastAdminProtection(t *testing.T) {
+	h := newHarness(t)
+	emailAdmin, emailID := h.admin()
+	operator, operatorID := h.operator()
+	operator.post("/api/admin/accounts/"+operatorID+"/role", map[string]string{"role": "student", "current_password": operatorPassword}).want(t, http.StatusConflict)
+	emailAdmin.post("/api/admin/accounts/"+operatorID+"/role", map[string]string{"role": "student", "current_password": testPassword}).want(t, http.StatusConflict)
+	if user := operator.session(); user == nil || user.Role != "admin" {
+		t.Fatal("rejected operator demotion changed its authority")
+	}
+	student := h.browser()
+	studentID := student.register("operator-reviewed@ogrenci.example")
+	student.verify("operator-reviewed@ogrenci.example")
+	operator.post("/api/admin/accounts/"+studentID+"/review", map[string]string{"decision": "approved", "current_password": operatorPassword}).want(t, http.StatusOK)
+	student.login("operator-reviewed@ogrenci.example", testPassword).want(t, http.StatusOK)
+	if user := student.session(); user == nil || user.Username != "" {
+		t.Fatal("ordinary student session gained an operator username")
+	}
+	emailAdmin.post("/api/admin/accounts/"+emailID+"/role", map[string]string{"role": "student", "current_password": testPassword}).want(t, http.StatusOK)
+	if emailAdmin.session() != nil {
+		t.Fatal("email administrator demotion did not revoke its session")
+	}
+	operator.post("/api/admin/accounts/"+emailID+"/role", map[string]string{"role": "admin", "current_password": operatorPassword}).want(t, http.StatusOK)
+	emailAdmin.login("bootstrap@ogrenci.example", testPassword).want(t, http.StatusOK)
+	if _, err := h.pool.Exec(context.Background(), "UPDATE accounts SET status='disabled' WHERE id=$1", operatorID); err != nil {
+		t.Fatal(err)
+	}
+	emailAdmin.post("/api/admin/accounts/"+emailID+"/role", map[string]string{"role": "student", "current_password": testPassword}).want(t, http.StatusConflict)
+	if user := emailAdmin.session(); user == nil || user.Role != "admin" {
+		t.Fatal("disabled operator incorrectly counted as an accessible administrator")
 	}
 }

@@ -102,6 +102,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/auth/admin-login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Requires trusted Origin, application/json and CSRF token from GET /api/auth/session. */
+    post: operations['adminLogin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/auth/logout': {
     parameters: {
       query?: never;
@@ -232,7 +249,10 @@ export interface components {
     Account: {
       id: string;
       name: string;
+      /** @description Empty for an operator account; no fabricated email. */
       email: string;
+      /** @description Operator login name; empty for school email accounts. */
+      username: string;
       /** @enum {string} */
       role: 'student' | 'admin';
       /** @enum {string} */
@@ -268,6 +288,10 @@ export interface components {
     };
     LoginRequest: {
       email: string;
+      password: string;
+    };
+    AdminLoginRequest: {
+      username: string;
       password: string;
     };
     EmailRequest: {
@@ -526,6 +550,86 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['LoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LoginResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Invalid credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Access or CSRF denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description State conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited; Retry-After seconds */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  adminLogin: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminLoginRequest'];
       };
     };
     responses: {

@@ -28,9 +28,11 @@ func main() {
 func run() error {
 	name := flag.String("name", "", "new administrator name")
 	email := flag.String("email", "", "new administrator school email")
+	username := flag.String("username", "", "new email-free operator username")
 	flag.Parse()
-	if *name == "" || *email == "" || flag.NArg() != 0 {
-		return errors.New("usage: admin -name NAME -email SCHOOL_EMAIL; password is read privately or from stdin")
+	*email, *username = strings.TrimSpace(*email), strings.TrimSpace(*username)
+	if strings.TrimSpace(*name) == "" || (*email == "") == (*username == "") || flag.NArg() != 0 {
+		return errors.New("usage: admin -name NAME (-email SCHOOL_EMAIL | -username USERNAME); password is read privately or from stdin")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -40,7 +42,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	password, err := readPassword()
+	minimum := 15
+	if *username != "" {
+		minimum = 8
+	}
+	password, err := readPassword(minimum)
 	if err != nil {
 		return err
 	}
@@ -56,6 +62,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if *username != "" {
+		if err = s.BootstrapOperator(ctx, *name, *username, string(password)); err != nil {
+			return errors.New("operator could not be created; check username, password policy and database availability; existing accounts are never modified")
+		}
+		fmt.Fprintln(os.Stdout, "Operator created. Sign in with the administrator username form.")
+		return nil
+	}
 	if err = s.BootstrapAdmin(ctx, *name, *email, string(password)); err != nil {
 		return errors.New("administrator could not be created or verification mail could not be sent; existing accounts are never promoted; if created, request a new verification mail")
 	}
@@ -63,10 +76,10 @@ func run() error {
 	return nil
 }
 
-func readPassword() ([]byte, error) {
+func readPassword(minimum int) ([]byte, error) {
 	fd := int(os.Stdin.Fd())
 	if term.IsTerminal(fd) {
-		fmt.Fprint(os.Stderr, "New password (15–128 characters): ")
+		fmt.Fprintf(os.Stderr, "New password (%d–128 characters): ", minimum)
 		value, err := term.ReadPassword(fd)
 		fmt.Fprintln(os.Stderr)
 		if err != nil {

@@ -63,11 +63,13 @@ func (q *Queries) ConsumeAccountToken(ctx context.Context, arg ConsumeAccountTok
 }
 
 const countActiveAdmins = `-- name: CountActiveAdmins :one
-SELECT count(*) FROM accounts WHERE role='admin' AND status='active' AND eligibility_status='approved' AND email_verified_at IS NOT NULL AND split_part(email,'@',2) = $1
+SELECT count(*) FROM accounts WHERE role='admin' AND status='active' AND eligibility_status='approved'
+AND ((username IS NOT NULL AND email IS NULL AND email_verified_at IS NULL)
+     OR (username IS NULL AND email_verified_at IS NOT NULL AND split_part(email,'@',2) = $1::text))
 `
 
-func (q *Queries) CountActiveAdmins(ctx context.Context, email string) (int64, error) {
-	row := q.db.QueryRow(ctx, countActiveAdmins, email)
+func (q *Queries) CountActiveAdmins(ctx context.Context, schoolDomain string) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveAdmins, schoolDomain)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -75,16 +77,16 @@ func (q *Queries) CountActiveAdmins(ctx context.Context, email string) (int64, e
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (name,email,password_hash,role,status,eligibility_status)
-VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at
+VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username
 `
 
 type CreateAccountParams struct {
-	Name              string `json:"name"`
-	Email             string `json:"email"`
-	PasswordHash      string `json:"password_hash"`
-	Role              string `json:"role"`
-	Status            string `json:"status"`
-	EligibilityStatus string `json:"eligibility_status"`
+	Name              string      `json:"name"`
+	Email             pgtype.Text `json:"email"`
+	PasswordHash      string      `json:"password_hash"`
+	Role              string      `json:"role"`
+	Status            string      `json:"status"`
+	EligibilityStatus string      `json:"eligibility_status"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
@@ -108,6 +110,7 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		&i.EligibilityStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
 	)
 	return i, err
 }
@@ -131,6 +134,36 @@ func (q *Queries) CreateAccountToken(ctx context.Context, arg CreateAccountToken
 		arg.ExpiresAt,
 	)
 	return err
+}
+
+const createOperator = `-- name: CreateOperator :one
+INSERT INTO accounts (name,username,password_hash,role,status,eligibility_status)
+VALUES ($1,$2,$3,'admin','active','approved') RETURNING id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username
+`
+
+type CreateOperatorParams struct {
+	Name         string      `json:"name"`
+	Username     pgtype.Text `json:"username"`
+	PasswordHash string      `json:"password_hash"`
+}
+
+func (q *Queries) CreateOperator(ctx context.Context, arg CreateOperatorParams) (Account, error) {
+	row := q.db.QueryRow(ctx, createOperator, arg.Name, arg.Username, arg.PasswordHash)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Status,
+		&i.EmailVerifiedAt,
+		&i.EligibilityStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
+	)
+	return i, err
 }
 
 const createSession = `-- name: CreateSession :exec
@@ -158,10 +191,10 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 }
 
 const findAccountByEmail = `-- name: FindAccountByEmail :one
-SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at FROM accounts WHERE email = $1
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts WHERE email = $1
 `
 
-func (q *Queries) FindAccountByEmail(ctx context.Context, email string) (Account, error) {
+func (q *Queries) FindAccountByEmail(ctx context.Context, email pgtype.Text) (Account, error) {
 	row := q.db.QueryRow(ctx, findAccountByEmail, email)
 	var i Account
 	err := row.Scan(
@@ -175,12 +208,13 @@ func (q *Queries) FindAccountByEmail(ctx context.Context, email string) (Account
 		&i.EligibilityStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
 	)
 	return i, err
 }
 
 const findAccountByID = `-- name: FindAccountByID :one
-SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at FROM accounts WHERE id = $1
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts WHERE id = $1
 `
 
 func (q *Queries) FindAccountByID(ctx context.Context, id pgtype.UUID) (Account, error) {
@@ -197,6 +231,30 @@ func (q *Queries) FindAccountByID(ctx context.Context, id pgtype.UUID) (Account,
 		&i.EligibilityStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+	)
+	return i, err
+}
+
+const findAccountByUsername = `-- name: FindAccountByUsername :one
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts WHERE lower(username) = lower($1::text)
+`
+
+func (q *Queries) FindAccountByUsername(ctx context.Context, username string) (Account, error) {
+	row := q.db.QueryRow(ctx, findAccountByUsername, username)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Status,
+		&i.EmailVerifiedAt,
+		&i.EligibilityStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Username,
 	)
 	return i, err
 }
@@ -270,7 +328,7 @@ func (q *Queries) InvalidateAccountTokens(ctx context.Context, arg InvalidateAcc
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at FROM accounts ORDER BY created_at DESC
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts ORDER BY created_at DESC
 `
 
 func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
@@ -293,6 +351,7 @@ func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
 			&i.EligibilityStatus,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Username,
 		); err != nil {
 			return nil, err
 		}
@@ -305,7 +364,7 @@ func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
 }
 
 const lockAccount = `-- name: LockAccount :one
-SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at FROM accounts WHERE id = $1 FOR UPDATE
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockAccount(ctx context.Context, id pgtype.UUID) (Account, error) {
@@ -322,6 +381,7 @@ func (q *Queries) LockAccount(ctx context.Context, id pgtype.UUID) (Account, err
 		&i.EligibilityStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
 	)
 	return i, err
 }
@@ -351,7 +411,7 @@ func (q *Queries) RevokeAccountSessions(ctx context.Context, accountID pgtype.UU
 }
 
 const sessionAccount = `-- name: SessionAccount :one
-SELECT a.id, a.name, a.email, a.password_hash, a.role, a.status, a.email_verified_at, a.eligibility_status, a.created_at, a.updated_at FROM accounts a JOIN sessions s ON s.account_id=a.id
+SELECT a.id, a.name, a.email, a.password_hash, a.role, a.status, a.email_verified_at, a.eligibility_status, a.created_at, a.updated_at, a.username FROM accounts a JOIN sessions s ON s.account_id=a.id
 WHERE s.token_hash=$1 AND s.expires_at>now()
 `
 
@@ -369,6 +429,7 @@ func (q *Queries) SessionAccount(ctx context.Context, tokenHash []byte) (Account
 		&i.EligibilityStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
 	)
 	return i, err
 }

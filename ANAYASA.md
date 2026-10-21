@@ -121,6 +121,7 @@ Yalnızca avantajın seçili yöntemi gösterilir: **indirim kodu, bağlantı, Q
 - Oturumlar ve yetkiler sunucuda denetlenir. İstemcinin gönderdiği rol veya kullanıcı kimliği güvenilir kabul edilmez. Paylaşılan detay adresleri ve doğrudan API istekleri de aynı kontrole tabidir.
 - Parola saklama, doğrulama/sıfırlama bağlantıları, oturum süresi ve iptali, CSRF koruması ve giriş sınırlaması gerçek kimlik doğrulama tesliminin parçasıdır. Bağlantılar süreli ve tek kullanımlı olur. Okulun ortak internetini gereksiz yere engelleyen sınırlar kurulmaz.
 - İlk yöneticinin oluşturulması, rol verme ve son yetkili yöneticiyi kaybetmeme akışı tanımlanır. Açık kayıtla yönetici olunamaz.
+- Proje sahibinin açık talebiyle özel yönetici hesabı e-postasız, kullanıcı adıyla oluşturulabilir. Bu hesap yalnızca operatör CLI'sından açılır; öğrenci olamaz, e-posta doğrulanmış gibi gösterilmez ve parola kaynak koduna yazılmaz. Normal okul hesaplarının alan adı, e-posta doğrulaması, yönetici onayı ve parola kuralları bu istisnadan etkilenmez.
 - Gerekli kişisel bilgilerle sınırlı kalınır. Parolalar, oturum anahtarları ve doğrulama bağlantıları loglara yazılmaz. İş ortaklığı iletişim bilgileri öğrenciye gereksiz yere açılmaz.
 - Yükleme varsa izin verilen dosya türü, boyut ve erişim kuralları uygulanır. Dosyalar çalıştırılabilir içerik olarak sunulmaz. Genel dosya paylaşım sistemi kurulmaz.
 - Yönetim günlüğü normal kullanıcılarca değiştirilemez; uygulamada düzenleme/silme sunulmaz. Saklama süresi ve işletim erişimi yayından önce belirlenir; mutlak değiştirilemezlik iddiasında bulunulmaz.
@@ -160,7 +161,7 @@ Bir teslim ancak ilgili kullanıcı akışı uçtan uca çalıştığında, kabu
 ## 11 Açık kararlar
 
 1. Prototip tasarımının kabulü ve varsa son düzeltmeler.
-2. Okul alan adı `stu.koc.k12.tr` ve e-posta doğrulaması + yönetici onayı proje sahibi tarafından kesinleştirildi. Gerçek e-posta hizmeti ve ilk yönetici hesabı yayına hazırlıkta tanımlanacak.
+2. Okul alan adı `stu.koc.k12.tr` ve e-posta doğrulaması + yönetici onayı normal hesaplar için kesinleştirildi. Ayrı özel yönetici yerelde kullanıcı adıyla oluşturuldu. Gerçek e-posta hizmeti ve üretim hesabının kurulumu yayına hazırlıkta tanımlanacak.
 3. Teknik temel, dosya depolama seçimi, sunucu/e-posta hizmeti ve bütçe.
 4. Gerçek sponsor koşulları ve her avantajın işletmede kabul edilen kullanım yöntemi.
 5. Destek ve işletim sorumluları, veri saklama süreleri ve pilot kullanıcı grubu.

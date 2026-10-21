@@ -72,6 +72,8 @@ Alt teslimler sırayla yapılır. Her teslim sonunda çalışan sonuç, test kan
 
 **Teslim durumu:** Yerel akışlar ve 11 kimlik/güvenlik entegrasyon senaryosu geçti. Windows'un engellediği migration testinin Linux GitHub CI çalıştırması da geçti. Gerçek okul SMTP teslimatı üretim hizmeti seçildikten sonra pilot öncesinde doğrulanacak. Uygulama henüz genel yayına açılmadı.
 
+**Hesap düzenlemesi:** Proje sahibinin sonraki talebiyle e-postasız özel yönetici kimliği ve ayrı kullanıcı adı girişi eklendi (şema 4). Öğrenci kayıt/doğrulama kuralları korunur. Özel hesap açık kayıttan oluşturulamaz veya öğrenciye dönüştürülemez; gerçek parola kaynak koduna yazılmaz. Yedi ek yönetici kimliği güvenlik senaryosu önceki testlerle birlikte geçti.
+
 **İşler:**
 
 - Prototipteki sade kayıt/giriş ekranlarıyla gerçek kayıt, e-posta doğrulama, giriş, çıkış ve parola sıfırlama.

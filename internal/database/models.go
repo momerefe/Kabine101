@@ -11,7 +11,7 @@ import (
 type Account struct {
 	ID                pgtype.UUID        `json:"id"`
 	Name              string             `json:"name"`
-	Email             string             `json:"email"`
+	Email             pgtype.Text        `json:"email"`
 	PasswordHash      string             `json:"password_hash"`
 	Role              string             `json:"role"`
 	Status            string             `json:"status"`
@@ -19,6 +19,7 @@ type Account struct {
 	EligibilityStatus string             `json:"eligibility_status"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	Username          pgtype.Text        `json:"username"`
 }
 
 type AccountToken struct {

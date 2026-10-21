@@ -2,7 +2,7 @@
 
 Koç Okulu öğrencileri için avantaj platformu. Mevcut HTML prototipi tasarım referansı olarak korunur. **3B kimlik ve erişim teslimi** gerçek PostgreSQL hesaplarıyla çalışır: kayıt, e-posta doğrulaması, yönetici onayı, giriş/çıkış, parola sıfırlama ve temel rol yönetimi.
 
-İzin verilen okul alan adı **`stu.koc.k12.tr`**. Giriş için **hem e-posta doğrulaması hem yönetici onayı** gerekir. Yerel ortamda e-postalar Mailpit'te yakalanır; gerçek okul adreslerine gönderilmez. Avantaj ve işletme API'leri henüz bu hesaplara bağlı değildir.
+Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenci girişinde **hem e-posta doğrulaması hem yönetici onayı** gerekir. Proje sahibinin istediği özel yönetici hesabı ise e-postasız, kullanıcı adıyla giriş yapar; bu istisna normal hesaplara uygulanmaz. Yerel ortamda e-postalar Mailpit'te yakalanır; gerçek okul adreslerine gönderilmez. Avantaj ve işletme API'leri henüz bu hesaplara bağlı değildir.
 
 ## Prototip ve gerçek uygulama
 
@@ -45,6 +45,18 @@ powershell -ExecutionPolicy Bypass -File tools/dev.ps1 web
 Adreslerde `127.0.0.1` kullan; `APP_ORIGIN` kaynak kontrolü nedeniyle `localhost` farklı bir kaynak sayılır. Terminalde `Ctrl+C` ilgili süreci kapatır. Execution policy seçimi yalnızca o PowerShell sürecine uygulanır.
 
 ### İlk yönetici
+
+**Özel yönetici:** Yönetici girişindeki **Kullanıcı adı veya okul e-postası** alanından giriş yapar. Hesabın e-postası ve e-posta doğrulama kaydı yoktur; uygulamada sahte bir adres üretilmez. Proje sahibinin seçtiği bilgiler yalnızca yerel veritabanındaki hesapta kullanılır; parola kaynak koduna veya README'ye eklenmez. Bu hesap açık kayıtla oluşturulamaz veya öğrenci rolüne dönüştürülemez.
+
+Başka bir kurulumda özel yönetici oluşturmak için, örnek değerleri değiştirerek:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/dev.ps1 admin-create -Name "Yönetici" -Username "yonetici"
+```
+
+Parola komut satırı argümanıyla değil, gizli girişle alınır. Özel yönetici için 8–128, normal hesaplar için 15–128 karakter kuralı uygulanır; iki türde de aynı Argon2id koruması kullanılır. E-postasız hesaba e-posta üzerinden parola yenileme uygulanmaz. CLI mevcut hesabı veya parolasını değiştirmez.
+
+**Okul e-postalı yönetici oluşturma** da desteklenir:
 
 Kayıt ekranı yönetici oluşturmaz. Mailpit ve veritabanı hazırken yeni bir terminalde aşağıdaki örneği **kendi adın ve okul adresinle değiştirerek** çalıştır:
 
@@ -111,7 +123,7 @@ API ve Vite zaten açıkken `python tests/run_foundation_checks.py`, `#system` h
 
 ## Şema ve örnek veri
 
-Migration sürümü **3**. Mevcut migration değiştirilmez; yeni sürüm eklenir. API otomatik migration veya seed çalıştırmaz. `tools/dev.ps1 seed-demo` yalnızca geliştirme ortamında kurgusal işletme ve yayımlanmamış avantaj taslağı ekler; hesap veya gerçek sponsor oluşturmaz. Mailpit'in kendi yerel dosyası uygulamanın veritabanı değildir; uygulama yalnızca PostgreSQL kullanır.
+Migration sürümü **4**. Mevcut migration değiştirilmez; yeni sürüm eklenir. API otomatik migration veya seed çalıştırmaz. `tools/dev.ps1 seed-demo` yalnızca geliştirme ortamında kurgusal işletme ve yayımlanmamış avantaj taslağı ekler; hesap veya gerçek sponsor oluşturmaz. Mailpit'in kendi yerel dosyası uygulamanın veritabanı değildir; uygulama yalnızca PostgreSQL kullanır.
 
 ## Plan ve lisans
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/momerefe/Kabine101/internal/database"
 )
 
@@ -27,6 +28,7 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 		r.Use(s.csrf)
 		r.Post("/api/auth/register", s.register)
 		r.Post("/api/auth/login", s.login)
+		r.Post("/api/auth/admin-login", s.adminLogin)
 		r.Post("/api/auth/logout", s.logout)
 		r.Post("/api/auth/verify-email", s.verify)
 		r.Post("/api/auth/resend-verification", s.resend)
@@ -267,7 +269,34 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		fail(w, 401, "invalid_credentials", "E-posta veya parola hatalı.")
 		return
 	}
-	a, err := s.q.FindAccountByEmail(r.Context(), email)
+	a, err := s.q.FindAccountByEmail(r.Context(), pgtype.Text{String: email, Valid: true})
+	s.loginAccount(w, r, a, err, in.Password, "login", email, school && !a.Username.Valid)
+}
+
+func (s *Service) adminLogin(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	username := strings.TrimSpace(in.Username)
+	identity := "username:" + strings.ToLower(username)
+	if s.limited(w, r, "admin_login", identity) {
+		return
+	}
+	if len(in.Password) > 512 {
+		fail(w, 401, "invalid_credentials", "Kullanıcı adı veya parola hatalı.")
+		return
+	}
+	a, err := s.q.FindAccountByUsername(r.Context(), username)
+	s.loginAccount(w, r, a, err, in.Password, "admin_login", identity, validUsername(username) && a.Username.Valid && !a.Email.Valid && a.Role == "admin")
+}
+
+// Both login identities share password work, state checks, account locking,
+// audit events and session issuance.
+func (s *Service) loginAccount(w http.ResponseWriter, r *http.Request, a database.Account, err error, password, scope, identity string, allowedIdentity bool) {
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		unavailable(w)
 		return
@@ -277,20 +306,20 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		encoded = a.PasswordHash
 	}
 	matched := false
-	if err = s.passwordWork(r.Context(), func() error { matched = checkPassword(encoded, in.Password); return nil }); err != nil {
+	if err = s.passwordWork(r.Context(), func() error { matched = checkPassword(encoded, password); return nil }); err != nil {
 		s.busy(w)
 		return
 	}
-	if !matched || !school || !a.ID.Valid || a.Status == "disabled" || a.Status == "rejected" {
-		fail(w, 401, "invalid_credentials", "E-posta veya parola hatalı.")
+	if !matched || !allowedIdentity || !a.ID.Valid || a.Status == "disabled" || a.Status == "rejected" {
+		fail(w, 401, "invalid_credentials", "Giriş bilgileri hatalı.")
 		return
 	}
-	s.limiter.resetEmail("login", email)
+	s.limiter.resetEmail(scope, identity)
 	if a.Status != "active" || a.EligibilityStatus != "approved" {
 		fail(w, 403, "pending_approval", "Hesabınız yönetici onayı bekliyor.")
 		return
 	}
-	if !a.EmailVerifiedAt.Valid {
+	if !a.Username.Valid && !a.EmailVerifiedAt.Valid {
 		fail(w, 403, "email_unverified", "Önce e-posta adresinizi doğrulayın.")
 		return
 	}
@@ -416,7 +445,7 @@ func (s *Service) requestToken(w http.ResponseWriter, r *http.Request, purpose s
 		return
 	}
 	if ok {
-		a, err := s.q.FindAccountByEmail(r.Context(), email)
+		a, err := s.q.FindAccountByEmail(r.Context(), pgtype.Text{String: email, Valid: true})
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			unavailable(w)
 			return
