@@ -2,6 +2,18 @@
 
 Tarih: 21 Ekim 2026
 
+## 3D devam kararı
+
+Proje sahibi Yönetici Genel Bakış'ı kabul etti ve planlanan öğrenci deneyimi/avantaj detaylarının geliştirilmesini açıkça onayladı.
+
+- Mevcut altı bölüm, HTML tasarım dili ve masaüstü/mobil navigasyonu korunur. React/Query ve mevcut hash yönlendirmesi yeterlidir; yeni router, durum veya form paketi eklenmez.
+- Kalıcı detay adresi `#benefit/<UUID>` biçimindedir. Giriş hedefi yalnızca uygulama içindeki izinli yolları kabul eder; dış hedeflere yönlendirme yapılmaz.
+- Liste, detay ve favori yanıtları açık bir alan listesi kullanır. İş ortaklığı notları/iletişim kişisi ve kod/bağlantı/QR/kart içeriği bu yanıtlarda bulunmaz. Kullanım bilgisi ayrı uç noktadan, o andaki tarih, yayın ve iş ortaklığı yeniden denetlenerek alınır.
+- Favori sahibi oturumdan türetilir. Ekleme/çıkarma CSRF korumalı ve tekrarlanabilir; hesap/yayın değişiklikleriyle aynı kayıt kilidi sırasını izler. Görünürlük kalkınca favori silinmez; özel alanları olmayan erişilemez kayıt olarak çıkarılabilir.
+- QR, işletmenin sağladığı içeriğin gerçek kodlamasıdır. Tarayıcıda çalışan, MIT lisanslı [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) **2.0.4** sabit sürümü bu ihtiyaç için eklendi; ek runtime bağımlılığı veya harici QR hizmeti yoktur. UTF-8 ve dört modüllük boş kenar kullanılır. Bu, tek kullanımlık hak veya işletmede doğrulama sistemi değildir.
+- Kullanım içeriği kalıcı tarayıcı deposuna veya Query veri önbelleğine yazılmaz. Detaydan ayrılma, odak kaybı ve durum yenilenmesi içeriği kapatır. HTTP LAN'da otomatik kopyalama yoksa görünür metin üzerinden elle kopyalama sunulur.
+- Şema sürümü 5 ve mevcut `favorites` tablosu yeterlidir; migration eklenmedi. Gerçek sponsor/öğrenci kayıtları test için değiştirilmez. Yerel backend/frontend süreçleri proje sahibinin talebiyle yalnızca kendisi tarafından başlatılır.
+
 ## 3C devam kararı
 
 Proje sahibi 3B ve özel yönetici hesabını kabul ederek plana uygun devam edilmesini istedi. Bu teslim iş ortaklığı, işletme ve avantaj yönetimini kapsar; öğrenci kataloğu/favoriler 3D'de, diğer yönetim modüllerinin tamamlanması 3E'de kalır.

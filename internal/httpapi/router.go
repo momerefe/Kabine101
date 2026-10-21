@@ -25,15 +25,15 @@ func Router(ready Readiness, routes ...Routes) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	})
-	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) { respond(w, http.StatusOK, api.Ok) })
+	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) { respond(w, http.StatusOK, api.HealthStatusOk) })
 	r.Get("/api/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		if err := ready(ctx); err != nil {
-			respond(w, http.StatusServiceUnavailable, api.Unavailable)
+			respond(w, http.StatusServiceUnavailable, api.HealthStatusUnavailable)
 			return
 		}
-		respond(w, http.StatusOK, api.Ok)
+		respond(w, http.StatusOK, api.HealthStatusOk)
 	})
 	for _, route := range routes {
 		route.RegisterRoutes(r)

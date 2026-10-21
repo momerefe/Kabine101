@@ -312,16 +312,16 @@ func (e BusinessWritePartnershipStatus) Valid() bool {
 
 // Defines values for HealthStatus.
 const (
-	Ok          HealthStatus = "ok"
-	Unavailable HealthStatus = "unavailable"
+	HealthStatusOk          HealthStatus = "ok"
+	HealthStatusUnavailable HealthStatus = "unavailable"
 )
 
 // Valid indicates whether the value is a known member of the HealthStatus enum.
 func (e HealthStatus) Valid() bool {
 	switch e {
-	case Ok:
+	case HealthStatusOk:
 		return true
-	case Unavailable:
+	case HealthStatusUnavailable:
 		return true
 	default:
 		return false
@@ -430,6 +430,57 @@ func (e RoleRequestRole) Valid() bool {
 	case RoleRequestRoleAdmin:
 		return true
 	case RoleRequestRoleStudent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StudentBenefitStatus.
+const (
+	StudentBenefitStatusActive      StudentBenefitStatus = "active"
+	StudentBenefitStatusExpired     StudentBenefitStatus = "expired"
+	StudentBenefitStatusScheduled   StudentBenefitStatus = "scheduled"
+	StudentBenefitStatusSuspended   StudentBenefitStatus = "suspended"
+	StudentBenefitStatusUnavailable StudentBenefitStatus = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the StudentBenefitStatus enum.
+func (e StudentBenefitStatus) Valid() bool {
+	switch e {
+	case StudentBenefitStatusActive:
+		return true
+	case StudentBenefitStatusExpired:
+		return true
+	case StudentBenefitStatusScheduled:
+		return true
+	case StudentBenefitStatusSuspended:
+		return true
+	case StudentBenefitStatusUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StudentRedemptionMethod.
+const (
+	StudentRedemptionMethodCode       StudentRedemptionMethod = "code"
+	StudentRedemptionMethodLink       StudentRedemptionMethod = "link"
+	StudentRedemptionMethodMembership StudentRedemptionMethod = "membership"
+	StudentRedemptionMethodQr         StudentRedemptionMethod = "qr"
+)
+
+// Valid indicates whether the value is a known member of the StudentRedemptionMethod enum.
+func (e StudentRedemptionMethod) Valid() bool {
+	switch e {
+	case StudentRedemptionMethodCode:
+		return true
+	case StudentRedemptionMethodLink:
+		return true
+	case StudentRedemptionMethodMembership:
+		return true
+	case StudentRedemptionMethodQr:
 		return true
 	default:
 		return false
@@ -838,6 +889,71 @@ type SessionResponse struct {
 	User             *Account `json:"user"`
 }
 
+// StudentBenefit Public allowlist. Unavailable favorite tombstones retain only id and is_favorite with status unavailable; every other field is empty. Redemption payload and private business fields are never exposed.
+type StudentBenefit struct {
+	Branches                string               `json:"branches"`
+	BusinessId              string               `json:"business_id"`
+	BusinessName            string               `json:"business_name"`
+	Category                string               `json:"category"`
+	Conditions              []string             `json:"conditions"`
+	Currency                string               `json:"currency"`
+	Description             string               `json:"description"`
+	Exceptions              string               `json:"exceptions"`
+	Featured                bool                 `json:"featured"`
+	Id                      string               `json:"id"`
+	ImagePath               string               `json:"image_path"`
+	Instructions            []string             `json:"instructions"`
+	IsFavorite              bool                 `json:"is_favorite"`
+	Method                  string               `json:"method"`
+	MinimumSpend            string               `json:"minimum_spend"`
+	Perk                    string               `json:"perk"`
+	Products                string               `json:"products"`
+	Status                  StudentBenefitStatus `json:"status"`
+	SupportContact          string               `json:"support_contact"`
+	Title                   string               `json:"title"`
+	ValidFrom               string               `json:"valid_from"`
+	ValidUntil              string               `json:"valid_until"`
+	VerificationRequirement string               `json:"verification_requirement"`
+}
+
+// StudentBenefitStatus defines model for StudentBenefit.Status.
+type StudentBenefitStatus string
+
+// StudentBenefitList defines model for StudentBenefitList.
+type StudentBenefitList struct {
+	Benefits  []StudentBenefit `json:"benefits"`
+	Truncated bool             `json:"truncated"`
+}
+
+// StudentBenefitResponse defines model for StudentBenefitResponse.
+type StudentBenefitResponse struct {
+	// Benefit Public allowlist. Unavailable favorite tombstones retain only id and is_favorite with status unavailable; every other field is empty. Redemption payload and private business fields are never exposed.
+	Benefit StudentBenefit `json:"benefit"`
+}
+
+// StudentFavoriteResponse defines model for StudentFavoriteResponse.
+type StudentFavoriteResponse struct {
+	IsFavorite bool `json:"is_favorite"`
+}
+
+// StudentRedemption Exactly one method-applicable payload is returned.
+type StudentRedemption struct {
+	Code            *string                 `json:"code,omitempty"`
+	MembershipLabel *string                 `json:"membership_label,omitempty"`
+	Method          StudentRedemptionMethod `json:"method"`
+	QrContent       *string                 `json:"qr_content,omitempty"`
+	TargetUrl       *string                 `json:"target_url,omitempty"`
+}
+
+// StudentRedemptionMethod defines model for StudentRedemption.Method.
+type StudentRedemptionMethod string
+
+// StudentSettings defines model for StudentSettings.
+type StudentSettings struct {
+	PlatformName   string `json:"platform_name"`
+	SupportContact string `json:"support_contact"`
+}
+
 // SuspendBenefitRequest defines model for SuspendBenefitRequest.
 type SuspendBenefitRequest struct {
 	Reason   string `json:"reason"`
@@ -935,6 +1051,12 @@ type ResetPasswordParams struct {
 // VerifyEmailParams defines parameters for VerifyEmail.
 type VerifyEmailParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
+// GetStudentCatalogParams defines parameters for GetStudentCatalog.
+type GetStudentCatalogParams struct {
+	Q        *string `form:"q,omitempty" json:"q,omitempty"`
+	Category *string `form:"category,omitempty" json:"category,omitempty"`
 }
 
 // ReviewAccountJSONRequestBody defines body for ReviewAccount for application/json ContentType.

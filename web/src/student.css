@@ -1,0 +1,339 @@
+.student-panel .sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+.student-panel .sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.student-panel .sidebar nav a.active {
+  background: var(--pink);
+  color: var(--red);
+}
+.student-panel .sidebar-bottom {
+  display: grid;
+  gap: 16px;
+}
+.student-panel .school-note {
+  display: block;
+}
+.student-panel .school-note small {
+  display: block;
+}
+.student-panel #student-main {
+  width: 100%;
+  flex: 1;
+  max-width: 1500px;
+  margin: auto;
+  padding: 36px 40px 50px;
+  outline: none;
+}
+.student-panel .brand > span:last-child {
+  overflow-wrap: anywhere;
+}
+.student-panel .brand small {
+  display: block;
+}
+.student-panel .benefit-grid {
+  margin-top: 20px;
+}
+.student-panel .card-image-link {
+  position: relative;
+}
+.student-panel .offer-badge {
+  max-width: 75%;
+  overflow-wrap: anywhere;
+}
+.student-panel .benefit-card h3,
+.student-panel .card-content p {
+  overflow-wrap: anywhere;
+}
+.student-status {
+  display: inline-flex;
+  width: fit-content;
+  background: #f1eee7;
+  color: #615644;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.card-image-link .student-status {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+}
+.student-active {
+  color: #246345;
+  background: #e7f3ea;
+}
+.student-expired {
+  color: #8f343e;
+  background: #fae6e7;
+}
+.student-panel .favorite-toggle[aria-pressed='true'] {
+  color: var(--red);
+}
+.student-panel .favorite-toggle[aria-pressed='true'] svg,
+.student-panel .detail-save[aria-pressed='true'] svg {
+  fill: var(--pink);
+}
+.student-panel .empty-state p {
+  display: grid;
+  justify-items: center;
+  gap: 15px;
+}
+.student-profile {
+  padding: 30px;
+}
+.student-profile > .avatar {
+  margin-bottom: 16px;
+}
+.student-panel dl {
+  margin: 20px 0;
+}
+.student-panel dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.student-panel dd {
+  margin: 3px 0 16px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.student-unavailable {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 24px;
+}
+.student-unavailable p {
+  margin: 12px 0;
+}
+.student-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas: 'summary redeem' 'content redeem';
+  grid-template-rows: auto 1fr;
+  gap: 28px;
+  align-items: start;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.student-detail-summary {
+  grid-area: summary;
+}
+.student-detail-summary .page-heading {
+  margin-bottom: 0;
+}
+.student-detail-content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.student-detail-content > * {
+  min-width: 0;
+}
+.student-detail-content .student-detail-image {
+  order: -1;
+}
+.student-quick-instructions h3 {
+  font-size: 15px;
+}
+.student-quick-instructions ol {
+  padding-left: 22px;
+  margin: 10px 0 0;
+}
+.student-quick-instructions li {
+  margin: 7px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.student-detail > *,
+.student-detail .page-heading,
+.student-detail .page-heading > *,
+.student-redemption > *,
+.student-payload > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.student-detail .page-heading h1,
+.student-detail .page-heading p,
+.student-conditions li,
+.student-redemption p,
+.student-redemption a,
+.student-redemption button {
+  overflow-wrap: anywhere;
+}
+.student-back {
+  margin-bottom: 22px;
+}
+.student-detail-image {
+  width: 100%;
+  max-height: 350px;
+  object-fit: cover;
+  border-radius: 17px;
+  margin-bottom: 28px;
+}
+.student-description {
+  white-space: pre-wrap;
+  margin-bottom: 22px;
+  overflow-wrap: anywhere;
+}
+.student-conditions {
+  padding: 25px;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.student-conditions h2 {
+  font-size: 19px;
+  margin-bottom: 15px;
+}
+.student-conditions li {
+  margin: 9px 0;
+  white-space: pre-wrap;
+}
+.student-metadata {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.student-redemption {
+  grid-area: redeem;
+  padding: 25px;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.student-redemption h2 {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.student-redemption .detail-save {
+  justify-content: center;
+}
+.student-payload {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.student-payload input {
+  width: 100%;
+  background: var(--paper);
+  border: 1px dashed var(--red);
+  padding: 16px;
+  border-radius: 9px;
+  font-size: 20px;
+  color: var(--red);
+}
+.student-membership {
+  padding: 25px 16px;
+  background: var(--pink);
+  border: 1px solid #e7c0bf;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.student-qr svg {
+  display: block;
+  width: 100%;
+  max-width: 330px;
+  height: auto;
+  margin: auto;
+}
+.student-panel .notice {
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+}
+.student-panel .header-search button {
+  display: flex;
+}
+.student-panel .catalog-search {
+  gap: 12px;
+}
+.student-panel .catalog-search button {
+  margin-left: auto;
+}
+.student-panel .support-card {
+  overflow-wrap: anywhere;
+}
+.student-panel .account-button {
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .student-panel #student-main {
+    padding: 28px 24px 45px;
+  }
+  .student-detail {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
+  }
+}
+@media (max-width: 760px) {
+  .student-panel .app-body {
+    padding-bottom: 85px;
+  }
+  .student-panel #student-main {
+    padding: 25px 18px 40px;
+  }
+  .student-detail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'summary' 'redeem' 'content';
+    grid-template-rows: auto;
+  }
+  .student-detail-content .student-detail-image {
+    order: 0;
+    margin-top: 8px;
+  }
+  .student-panel .mobile-nav {
+    display: flex;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .student-panel .mobile-nav a {
+    flex: 1;
+    min-width: 0;
+    font-size: 9px;
+    padding: 10px 1px;
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+  }
+  .student-panel .mobile-nav a.active {
+    color: var(--red);
+  }
+  .student-panel .topbar {
+    gap: 12px;
+  }
+  .student-panel .breadcrumb {
+    min-width: 0;
+    font-size: 11px;
+  }
+  .student-panel .student-conditions {
+    padding: 20px;
+  }
+}
+@media (max-width: 390px) {
+  .student-panel #student-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .student-panel .breadcrumb {
+    display: none;
+  }
+  .student-panel .account-button {
+    margin-left: auto;
+  }
+  .student-panel .category-grid {
+    gap: 8px;
+  }
+  .student-panel .category-tile {
+    padding: 16px 8px;
+  }
+}

@@ -143,7 +143,8 @@ def main():
         route('account','.account-details'); matrix('admin-account')
         button('Çıkış yap'); present('#password')
         route('login/student','#email'); fill('#email',os.environ['KOC_BROWSER_STUDENT']); fill('#password',os.environ['KOC_BROWSER_PASSWORD'])
-        dev.evaluate("document.querySelector('form.auth-form').requestSubmit()"); present('.account-details'); matrix('student-account')
+        dev.evaluate("document.querySelector('form.auth-form').requestSubmit()"); present('.student-panel')
+        route('profile','.student-profile'); matrix('student-account')
         button('Çıkış yap'); present('#password')
         if dev.errors: issues.append('JavaScript runtime exceptions')
         report={'checks':checks,'issues':issues,'runtimeErrors':dev.errors,'engine':'Chrome desktop + touch/device emulation; no physical device claim'}

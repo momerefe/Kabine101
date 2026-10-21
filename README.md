@@ -1,8 +1,8 @@
 # KoçBenefits
 
-Koç Okulu öğrencileri için avantaj platformu. Mevcut HTML prototipi tasarım referansı olarak korunur. **3C iş ortaklığı ve avantaj yönetimi teslimi** gerçek PostgreSQL kayıtlarıyla çalışır: işletme ekleme/düzenleme, iş ortaklığı takibi, avantaj taslağı, koşul incelemesi, yayın ve askıya alma. Önceki gerçek hesap, e-posta doğrulaması, yönetici onayı ve oturum akışları korunur.
+Koç Okulu öğrencileri için avantaj platformu. Mevcut HTML prototipi tasarım referansı olarak korunur. **3D öğrenci deneyimi ve avantaj detayları** gerçek PostgreSQL kayıtlarıyla çalışır: öğrenci kataloğu, arama/kategori filtresi, hesap bazlı favoriler ve kalıcı avantaj detayları. İş ortaklığı ve avantaj yönetimi, gerçek hesap, e-posta doğrulaması, yönetici onayı ve oturum akışları korunur. [3D teslim bilgileri](docs/TESLIM_3D.md).
 
-Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenci girişinde **hem e-posta doğrulaması hem yönetici onayı** gerekir. Proje sahibinin istediği özel yönetici hesabı ise e-postasız, kullanıcı adıyla giriş yapar; bu istisna normal hesaplara uygulanmaz. Yerel ortamda e-postalar Mailpit'te yakalanır; gerçek okul adreslerine gönderilmez. İşletme ve avantaj yönetimi yalnızca yönetici oturumuna açıktır; öğrenci kataloğu sonraki teslimdedir.
+Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenci girişinde **hem e-posta doğrulaması hem yönetici onayı** gerekir. Proje sahibinin istediği özel yönetici hesabı ise e-postasız, kullanıcı adıyla giriş yapar; bu istisna normal hesaplara uygulanmaz. Yerel ortamda e-postalar Mailpit'te yakalanır; gerçek okul adreslerine gönderilmez. İşletme ve avantaj yönetimi yalnızca yönetici oturumuna açıktır. Öğrenci API'si yalnızca oturumu ve hesap uygunluğu doğrulanmış hesaplara açıktır.
 
 ## Prototip ve gerçek uygulama
 
@@ -11,9 +11,9 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 | Bölüm | Çalıştırma | Durum |
 | --- | --- | --- |
 | HTML prototipi | Kök dizindeki `index.html` dosyasını aç | Altı öğrenci ve 12 yönetici bölümü, demo veriler |
-| Gerçek uygulama | Go API + Vite + yerel Mailpit | Gerçek hesap/oturum ve işletme/avantaj yönetimi |
+| Gerçek uygulama | Go API + Vite + yerel Mailpit | Gerçek hesap/oturum, yönetim, öğrenci kataloğu, favoriler ve avantaj detayları |
 
-Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur; henüz geliştirilmeyen bölümler açıkça sonraki teslim olarak belirtilir. Öğrenci kataloğu tamamlanmış gibi gösterilmez.
+Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur; henüz geliştirilmeyen bölümler açıkça sonraki teslim olarak belirtilir. Doğrulanmış kullanım sistemi bulunmadığından kullanım geçmişi kayıt üretmez.
 
 ## Bu bilgisayarda çalıştırma
 
@@ -99,7 +99,9 @@ Parola gizli olarak iki kez istenir; 15–128 karakter olmalıdır. Komut yeni b
 1. Okul adresiyle kayıt ol.
 2. Yerel posta kutusundaki bağlantıyı aç ve e-posta doğrulama düğmesine bas.
 3. Yönetici hesabında başvuruyu inceleyip onayla. İşlem mevcut yönetici parolası ve onay ister.
-4. Öğrenci hesabıyla giriş yap. Hesap sayfası gerçek sunucu oturumunu gösterir.
+4. Öğrenci hesabıyla giriş yap. Genel Bakış ve Keşfet üzerinden yayımlanmış avantajlara ulaş; karttaki kalple favori ekle/çıkar.
+5. Avantajın detayında koşulları ve tarihleri oku. Aktif avantajın ilgili kullanım düğmesine bas; sunucu o anda yayın, tarih ve iş ortaklığı durumunu yeniden denetler.
+6. Paylaşım bağlantısını kopyala. Bağlantıyı oturumsuz açan öğrenci girişten sonra aynı avantaja döner. Favoriler çıkış/giriş sonrasında aynı hesapta kalır.
 
 E-posta doğrulaması ve yönetici kararı farklı sırada tamamlanabilir; ikisi de tamamlanmadan giriş açılamaz. Rol değişikliği ilgili hesabın oturumlarını kapatır. Son erişilebilir yönetici öğrenci rolüne geçirilemez. Parola sıfırlama tüm eski oturumları kapatır ve yeniden giriş ister.
 
@@ -184,6 +186,6 @@ Migration sürümü **5**. Mevcut migration değiştirilmez; yeni sürüm ekleni
 - [ROADMAP.md](ROADMAP.md): Teslimler ve kabul koşulları.
 - [Teknik kararlar](docs/TEKNIK_KARARLAR.md): Seçimler ve gerekçeleri.
 
-Sıradaki teslim **3D öğrenci deneyimi ve avantaj detayları**: gerçek katalog ve hesap bazlı favoriler. Diğer yönetim bölümlerinin tamamlanması 3E'dedir. Doğrulanmış kullanım, native mobil ve genel yayına alma bu teslimde yoktur. CelikPanel kaynak kodu kopyalanmamıştır.
+Sıradaki teslim, proje sahibinin incelemesinden sonra **3E yönetim bütünlüğü ve ölçümler**. Genel Bakış önceden öne alınmıştı; tam işlem günlüğü, platform ayarları ve tanımlanmış ölçümler kendi kapsamında kalır. Doğrulanmış kullanım, native mobil ve genel yayına alma bu teslimde yoktur. CelikPanel kaynak kodu kopyalanmamıştır.
 
 Kaynak kodu [MIT](LICENSE) lisanslıdır. Okul/işletme marka hakları ve gerçek sponsorluk veya kişisel veriler bu lisansla paylaşılmış sayılmaz.

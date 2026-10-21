@@ -8,6 +8,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { Management } from './Management';
+import { StudentPanel } from '../student/StudentPanel';
 import type { components } from '../api/schema.gen';
 
 type Session = components['schemas']['SessionResponse'];
@@ -22,6 +23,13 @@ type Mode =
   | 'reset-password'
   | 'account'
   | 'admin'
+  | 'overview'
+  | 'discover'
+  | 'favorites'
+  | 'history'
+  | 'profile'
+  | 'help'
+  | 'benefit'
   | 'system';
 type Route = { mode: Mode; token: string; next: string };
 type AuthAction =
@@ -47,11 +55,35 @@ const titles: Record<Mode, string> = {
   account: 'Hesabın',
   admin: 'Hesap yönetimi',
   system: 'Sistem durumu',
+  overview: 'Genel Bakış',
+  discover: 'Avantajları Keşfet',
+  favorites: 'Favorilerim',
+  history: 'Kullanım Geçmişi',
+  profile: 'Profil ve Hesap',
+  help: 'Yardım ve Destek',
+  benefit: 'Avantaj detayı',
 };
+
+const studentModes: Mode[] = [
+  'overview',
+  'discover',
+  'favorites',
+  'history',
+  'profile',
+  'help',
+  'benefit',
+];
+const studentQueryKeys = [
+  'student-catalog',
+  'student-favorites',
+  'student-benefit',
+  'student-redemption',
+  'student-settings',
+];
 
 function safeNext(value: string | null): string {
   return value &&
-    /^(\/account|\/admin(?:\/(overview|partners|businesses|benefits|students|published|archived|usage|analytics|users|audit|settings))?)$/.test(
+    /^(\/account|\/(overview|discover|favorites|history|profile|help)|\/benefit\/[0-9a-f-]{36}|\/admin(?:\/(overview|partners|businesses|benefits|students|published|archived|usage|analytics|users|audit|settings))?)$/i.test(
       value,
     )
     ? value
@@ -61,11 +93,13 @@ function safeNext(value: string | null): string {
 function readRoute(): Route {
   const [raw, query = ''] = location.hash.slice(1).split('?');
   const name = raw.replace(/^\//, '');
-  const mode: Mode = name.startsWith('admin/')
-    ? 'admin'
-    : Object.hasOwn(titles, name)
-      ? (name as Mode)
-      : 'login/student';
+  const mode: Mode = name.startsWith('benefit/')
+    ? 'benefit'
+    : name.startsWith('admin/')
+      ? 'admin'
+      : Object.hasOwn(titles, name)
+        ? (name as Mode)
+        : 'login/student';
   const params = new URLSearchParams(query);
   return {
     mode,
@@ -77,7 +111,11 @@ function readRoute(): Route {
   };
 }
 
-function navigate(mode: Mode | `admin/${string}`, next = '', replace = false) {
+function navigate(
+  mode: Mode | `admin/${string}` | `benefit/${string}`,
+  next = '',
+  replace = false,
+) {
   const hash = `#${mode}${safeNext(next) ? `?next=${encodeURIComponent(next)}` : ''}`;
   if (replace || readRoute().token) {
     history.replaceState(
@@ -348,26 +386,19 @@ function AuthForm({
         navigate('login/student', '', true);
       }
       const updated = await refresh();
-      if (
-        (action.kind === 'login' || action.kind === 'admin-login') &&
-        updated.user?.role === 'admin' &&
-        safeNext(route.next).startsWith('/admin/')
-      ) {
-        navigate(route.next.slice(1) as `admin/${string}`, '', true);
-        return;
-      }
-      if (action.kind === 'login' || action.kind === 'admin-login')
+      if (action.kind === 'login' || action.kind === 'admin-login') {
+        const target = safeNext(route.next);
         navigate(
-          route.next === '/admin' || route.mode === 'login/admin'
-            ? 'admin'
-            : route.next === '/account'
-              ? 'account'
-              : updated.user?.role === 'admin'
-                ? 'admin'
-                : 'account',
+          target
+            ? (target.slice(1) as
+                Mode | `admin/${string}` | `benefit/${string}`)
+            : updated.user?.role === 'admin'
+              ? 'admin'
+              : 'overview',
           '',
           true,
         );
+      }
     },
   });
   const mode = route.mode;
@@ -485,7 +516,7 @@ function AuthForm({
                 : verify
                   ? 'E-posta adresini doğrulamak için aşağıdaki düğmeye bas. Ardından yönetici onayı gerekir.'
                   : 'Okul e-posta adresini yaz. Uygun bir hesap varsa bağlantı göndereceğiz.'}
-        {route.next && ' Girişten sonra istediğin hesap sayfasına döneceksin.'}
+        {route.next && ' Girişten sonra açmak istediğin sayfaya döneceksin.'}
       </p>
       {!admin && (isLogin || register) && (
         <div className="auth-tabs" aria-label="Giriş veya kayıt seçimi">
@@ -632,10 +663,40 @@ function AccountPage({
       client.removeQueries({ queryKey: ['management-businesses'] });
       client.removeQueries({ queryKey: ['management-benefits'] });
       client.removeQueries({ queryKey: ['management-overview'] });
+      client.removeQueries({
+        predicate: (query) =>
+          studentQueryKeys.includes(String(query.queryKey[0])),
+      });
       await refresh();
       navigate('login/student', '', true);
     },
   });
+  if (
+    studentModes.includes(readRoute().mode) ||
+    (user.role === 'student' && !adminPage)
+  )
+    return (
+      <StudentPanel
+        key={user.id}
+        session={session}
+        logout={
+          <>
+            <button
+              className="btn btn-secondary"
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
+            >
+              {logout.isPending ? 'Çıkılıyor…' : 'Çıkış yap'}
+            </button>
+            {logout.isError && (
+              <Notice error>
+                Çıkış yapılamadı. Bağlantını kontrol edip yeniden dene.
+              </Notice>
+            )}
+          </>
+        }
+      />
+    );
   if (adminPage && user.role === 'admin')
     return (
       <Management
@@ -716,12 +777,14 @@ function AccountPage({
             </div>
           </dl>
           <div className="auth-notice">
-            <strong>3B · Hesap ve güvenli giriş hazır.</strong>
+            <strong>Hesabınla KoçBenefits'e bağlısın.</strong>
             <p>
-              Avantaj kataloğu ve diğer öğrenci hizmetleri sonraki teslimatta bu
-              hesaba bağlanacak. Bu ekranda henüz kullanılabilir bir avantaj
-              bulunmuyor.
+              Yayımlanmış avantajlara öğrenci panelinden ulaşabilir, koşullarını
+              inceleyebilir ve favorilerine ekleyebilirsin.
             </p>
+            <a className="text-link" href="#overview">
+              Öğrenci paneline git →
+            </a>
           </div>
           {adminPage && user.role !== 'admin' && (
             <Notice error>Hesap yönetimi için yönetici yetkisi gerekir.</Notice>
@@ -1081,6 +1144,24 @@ export function AuthApp() {
     refetchOnReconnect: true,
   });
   useEffect(() => {
+    const user = session.data?.user;
+    if (!user) return;
+    if (['login/student', 'login/admin', 'register'].includes(route.mode)) {
+      const target = safeNext(route.next);
+      navigate(
+        target
+          ? (target.slice(1) as Mode | `admin/${string}` | `benefit/${string}`)
+          : user.role === 'admin'
+            ? 'admin'
+            : 'overview',
+        '',
+        true,
+      );
+    } else if (route.mode === 'account' && user.role === 'student') {
+      navigate('profile', '', true);
+    }
+  }, [session.data?.user, route.mode, route.next]);
+  useEffect(() => {
     client.removeQueries({
       predicate: (query) =>
         [
@@ -1091,6 +1172,11 @@ export function AuthApp() {
         ].includes(String(query.queryKey[0])) &&
         (session.data?.user?.role !== 'admin' ||
           query.queryKey[1] !== session.data?.user?.id),
+    });
+    client.removeQueries({
+      predicate: (query) =>
+        studentQueryKeys.includes(String(query.queryKey[0])) &&
+        (!session.data?.user || query.queryKey[1] !== session.data.user.id),
     });
   }, [client, session.data?.user?.id, session.data?.user?.role]);
   useEffect(() => {
@@ -1142,7 +1228,9 @@ export function AuthApp() {
     );
   const tokenPage =
     route.mode === 'verify-email' || route.mode === 'reset-password';
-  if (session.data.user && !tokenPage)
+  const emailRequestPage =
+    route.mode === 'forgot-password' || route.mode === 'resend-verification';
+  if (session.data.user && !tokenPage && !emailRequestPage)
     return (
       <AccountPage
         session={session.data}
@@ -1159,15 +1247,17 @@ export function AuthApp() {
       ? safeNext(
           '/' + location.hash.slice(1).split('?')[0].replace(/^\//, ''),
         ) || '/admin'
-      : route.mode === 'account'
-        ? '/account'
+      : route.mode === 'account' || studentModes.includes(route.mode)
+        ? safeNext(
+            '/' + location.hash.slice(1).split('?')[0].replace(/^\//, ''),
+          ) || '/overview'
         : route.next;
   const authRoute: Route = {
     ...route,
     mode:
       route.mode === 'admin'
         ? 'login/admin'
-        : route.mode === 'account'
+        : route.mode === 'account' || studentModes.includes(route.mode)
           ? 'login/student'
           : route.mode,
     next: protectedTarget,
@@ -1193,7 +1283,7 @@ export function AuthApp() {
           />
         </div>
         <footer className="auth-bottom">
-          KoçBenefits · 3B hesap ve güvenli giriş
+          KoçBenefits · Okuluna özel avantajlar
         </footer>
       </section>
     </main>

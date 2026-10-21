@@ -163,7 +163,7 @@ def main():
         dev.evaluate("location.hash='login/student'")
         fill('#email', os.environ['KOC_BROWSER_STUDENT']); fill('#password', os.environ['KOC_BROWSER_PASSWORD'])
         dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
-        present('.account-details')
+        present('.student-panel')
         dev.evaluate("location.hash='admin/businesses'"); text('yönetici yetkisi gerekir')
         assert not dev.evaluate("!!document.querySelector('#desktop-nav')"), 'student saw administration'
         click('Çıkış yap'); present('#password')

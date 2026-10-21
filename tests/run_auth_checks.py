@@ -184,14 +184,14 @@ def main():
         text_present("Hesap güncellendi")
         assert dev.evaluate("document.documentElement.scrollWidth<=innerWidth"), "admin overflow320"
         shot=dev.call("Page.captureScreenshot",{"format":"png"});(ARTIFACTS/"auth-admin-320.png").write_bytes(base64.b64decode(shot["data"]))
-        logout(); login(STUDENT); present(".account-details"); text_present("Test Öğrencisi")
+        logout(); login(STUDENT); present(".student-panel"); navigate("profile"); present(".student-profile"); text_present("Test Öğrencisi")
         assert not dev.evaluate("document.cookie.includes('kb_session')"), "session cookie readable by JS"
         navigate("admin"); text_present("yönetici yetkisi gerekir")
         logout(); navigate("forgot-password"); fill("email",STUDENT); submit()
         reset_token=mail_token(STUDENT,"reset-password")
         navigate("reset-password?token="+reset_token); fill("password",NEW_PASSWORD); submit(); present("#email")
         assert "token=" not in dev.evaluate("location.hash")
-        login(STUDENT,NEW_PASSWORD); present(".account-details"); logout()
+        login(STUDENT,NEW_PASSWORD); present(".student-panel"); logout()
         navigate("verify-email?token="+student_token); present("form.auth-form"); submit(); text_present("Bağlantı geçersiz")
         navigate("login/student"); present("#password")
         dev.call("Network.setBlockedURLs",{"urls":["*/api/auth/session"]})

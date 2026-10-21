@@ -1,9 +1,388 @@
 'openapi': '3.0.3'
 'info':
   'title': 'KoçBenefits API'
-  'version': '0.3.0'
-  'description': '3C administrator partnership and benefit management. Lists return at most 1000 matching rows with truncated=true when additional matching records exist. Dates use Europe/Istanbul, inclusive end day. Optional text and dates use empty strings. PUT revision 0 creates a client-selected UUID; all edits require the current revision, reset benefit publication to draft and clear approval. Existing benefit business_id is immutable. No student catalogue endpoints.'
+  'version': '0.4.0'
+  'description': '3C administrator partnership and benefit management. Lists return at most 1000 matching rows with truncated=true when additional matching records exist. Dates use Europe/Istanbul, inclusive end day. Optional text and dates use empty strings. PUT revision 0 creates a client-selected UUID; all edits require the current revision, reset benefit publication to draft and clear approval. Existing benefit business_id is immutable. Eligible accounts also have a published student catalogue, private favorites and active-only redemption. Student lists and details never include redemption payloads.'
 'paths':
+  /api/student/catalog:
+    get:
+      operationId: getStudentCatalog
+      description: Eligible authenticated student or administrator; no-store.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentBenefitList'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/student/benefits/{id}:
+    get:
+      operationId: getStudentBenefit
+      description: Eligible authenticated student or administrator; no-store.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentBenefitResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/student/benefits/{id}/redemption:
+    get:
+      operationId: getStudentRedemption
+      description: Returns only the selected method payload after locking and rechecking current eligibility, publication, business and Istanbul dates. Drafts return 404; suspended or inactive business returns 409 unavailable; scheduled or expired returns 409 not_active.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentRedemption'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/student/favorites:
+    get:
+      operationId: getStudentFavorites
+      description: Eligible authenticated student or administrator; no-store.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentBenefitList'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/student/favorites/{id}:
+    put:
+      operationId: putStudentFavorite
+      description: CSRF required. Idempotently add a currently published benefit with active business to the session account. Scheduled and expired benefits may be saved.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentFavoriteResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteStudentFavorite
+      description: CSRF required. Idempotently remove the session account favorite even when the benefit is unavailable.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentFavoriteResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/student/settings:
+    get:
+      operationId: getStudentSettings
+      description: Eligible authenticated student or administrator; no-store.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentSettings'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Unavailable or not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/admin/overview:
     get:
       operationId: getAdminOverview
@@ -1967,3 +2346,130 @@
         created_at:
           type: string
           format: date-time
+    StudentBenefit:
+      type: object
+      description: Public allowlist. Unavailable favorite tombstones retain only id and is_favorite with status unavailable; every other field is empty. Redemption payload and private business fields are never exposed.
+      required:
+        [
+          id,
+          business_id,
+          business_name,
+          image_path,
+          category,
+          title,
+          description,
+          perk,
+          products,
+          branches,
+          exceptions,
+          minimum_spend,
+          currency,
+          verification_requirement,
+          valid_from,
+          valid_until,
+          method,
+          support_contact,
+          conditions,
+          instructions,
+          featured,
+          status,
+          is_favorite,
+        ]
+      properties:
+        id:
+          type: string
+        business_id:
+          type: string
+        business_name:
+          type: string
+        image_path:
+          type: string
+        category:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        perk:
+          type: string
+        products:
+          type: string
+        branches:
+          type: string
+        exceptions:
+          type: string
+        minimum_spend:
+          type: string
+        currency:
+          type: string
+        verification_requirement:
+          type: string
+        valid_from:
+          type: string
+        valid_until:
+          type: string
+        method:
+          type: string
+        support_contact:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        is_favorite:
+          type: boolean
+        status:
+          type: string
+          enum: [active, scheduled, expired, suspended, unavailable]
+    StudentBenefitList:
+      type: object
+      required: [benefits, truncated]
+      properties:
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentBenefit'
+        truncated:
+          type: boolean
+    StudentBenefitResponse:
+      type: object
+      required: [benefit]
+      properties:
+        benefit:
+          $ref: '#/components/schemas/StudentBenefit'
+    StudentFavoriteResponse:
+      type: object
+      required: [is_favorite]
+      properties:
+        is_favorite:
+          type: boolean
+    StudentRedemption:
+      type: object
+      description: Exactly one method-applicable payload is returned.
+      required: [method]
+      properties:
+        method:
+          type: string
+          enum: [code, link, qr, membership]
+        code:
+          type: string
+        target_url:
+          type: string
+        qr_content:
+          type: string
+        membership_label:
+          type: string
+    StudentSettings:
+      type: object
+      required: [platform_name, support_contact]
+      properties:
+        platform_name:
+          type: string
+        support_contact:
+          type: string

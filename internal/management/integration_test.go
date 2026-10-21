@@ -27,6 +27,7 @@ import (
 	"github.com/momerefe/Kabine101/internal/httpapi"
 	"github.com/momerefe/Kabine101/internal/management"
 	"github.com/momerefe/Kabine101/internal/migrations"
+	"github.com/momerefe/Kabine101/internal/student"
 )
 
 const testOrigin = "http://127.0.0.1:5173"
@@ -99,7 +100,7 @@ func newHarness(t *testing.T, overrides ...func(*config.Config)) *managementHarn
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := httptest.NewServer(httpapi.Router(func(context.Context) error { return nil }, service, management.New(pool, service)))
+	server := httptest.NewServer(httpapi.Router(func(context.Context) error { return nil }, service, management.New(pool, service), student.New(pool, service)))
 	t.Cleanup(server.Close)
 	return &managementHarness{t, pool, server, cfg.AppOrigin, service}
 }
