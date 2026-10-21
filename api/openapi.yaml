@@ -4,6 +4,37 @@
   'version': '0.3.0'
   'description': '3C administrator partnership and benefit management. Lists return at most 1000 matching rows with truncated=true when additional matching records exist. Dates use Europe/Istanbul, inclusive end day. Optional text and dates use empty strings. PUT revision 0 creates a client-selected UUID; all edits require the current revision, reset benefit publication to draft and clear approval. Existing benefit business_id is immutable. No student catalogue endpoints.'
 'paths':
+  /api/admin/overview:
+    get:
+      operationId: getAdminOverview
+      description: Administrator-only live database aggregates from one read-only repeatable-read snapshot. Dates use Europe/Istanbul. Response is never cached.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current overview; empty lists are arrays.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverviewResponse'
+        '401':
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Administrator session required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   '/api/health':
     'get':
       'operationId': 'getHealth'
@@ -1730,3 +1761,209 @@
           type: string
           minLength: 1
           maxLength: 2000
+
+    OverviewResponse:
+      type: object
+      required:
+        [
+          generated_at,
+          businesses,
+          benefits,
+          students,
+          expiring_benefits,
+          recent_activity,
+        ]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+          description: Database transaction timestamp shared by the entire snapshot.
+        businesses:
+          $ref: '#/components/schemas/OverviewBusinesses'
+        benefits:
+          $ref: '#/components/schemas/OverviewBenefits'
+        students:
+          $ref: '#/components/schemas/OverviewStudents'
+        expiring_benefits:
+          type: array
+          maxItems: 5
+          description: Active benefits ending today through six days after today inclusive, ordered by end date then UUID.
+          items:
+            $ref: '#/components/schemas/OverviewExpiringBenefit'
+        recent_activity:
+          type: array
+          maxItems: 6
+          description: Business saves, benefit saves/publications/suspensions and account reviews/role changes. Historical events remain visible if an actor changes role or is removed. Excludes authentication, passwords, tokens and private payloads. Ordered by creation time then numeric audit ID descending.
+          items:
+            $ref: '#/components/schemas/OverviewActivity'
+    OverviewBusinesses:
+      type: object
+      description: Full database business counts without list limits.
+      required: [total, active, in_progress, ended]
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+          description: All businesses.
+        active:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Active partnerships.
+        in_progress:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Contacted, discussing or awaiting partnerships.
+        ended:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Ended partnerships.
+    OverviewBenefits:
+      type: object
+      description: Full database counts; derived states match benefit status using the same Europe/Istanbul day.
+      required:
+        [
+          total,
+          published,
+          active,
+          scheduled,
+          expired,
+          suspended,
+          draft,
+          ending_soon,
+        ]
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+          description: All benefits.
+        published:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Published benefits including active, scheduled and expired.
+        active:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Published benefits whose end date has not passed and whose start date is not in the future; absent dates are unbounded.
+        scheduled:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Published benefits starting after today whose end date has not passed.
+        expired:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Published benefits with end date before today; expiration takes precedence over scheduling.
+        suspended:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Benefits with suspended publication status.
+        draft:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Benefits with draft publication status.
+        ending_soon:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Active benefits ending between today and today plus six days inclusive.
+    OverviewStudents:
+      type: object
+      description: Student-only counts; administrators are excluded.
+      required: [total, active, pending_review, pending_email, review_ready]
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+          description: All accounts with student role.
+        active:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Students with active status, approved eligibility and verified email.
+        pending_review:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Students with pending status and pending eligibility.
+        pending_email:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Unverified students excluding rejected eligibility and rejected or disabled status; may overlap pending_review.
+        review_ready:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Pending review students with verified email.
+    OverviewExpiringBenefit:
+      type: object
+      required: [id, title, business_name, valid_until]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        title:
+          type: string
+        business_name:
+          type: string
+        valid_until:
+          type: string
+          format: date
+          x-go-type: string
+    OverviewActivity:
+      type: object
+      required:
+        [
+          id,
+          action,
+          actor_name,
+          entity_type,
+          entity_id,
+          entity_label,
+          created_at,
+        ]
+      properties:
+        id:
+          type: string
+          description: Decimal audit identity; stable unique identifier.
+        action:
+          type: string
+          enum:
+            [
+              business.save,
+              benefit.save,
+              benefit.publish,
+              benefit.suspend,
+              account.review.approved,
+              account.review.rejected,
+              account.role.admin,
+              account.role.student,
+            ]
+        actor_name:
+          type: string
+          description: Current actor name, or Sistem if the actor no longer exists.
+        entity_type:
+          type: string
+          enum: [business, benefit, account]
+        entity_id:
+          type: string
+          format: uuid
+          x-go-type: string
+        entity_label:
+          type: string
+          description: Current business name, benefit title or account name; empty if the entity no longer exists.
+        created_at:
+          type: string
+          format: date-time

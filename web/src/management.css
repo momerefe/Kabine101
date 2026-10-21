@@ -120,6 +120,10 @@
 .is-admin .admin-menu-button {
   flex-shrink: 0;
 }
+.is-admin .admin-menu-button {
+  white-space: nowrap;
+  min-width: 68px;
+}
 .is-admin .sidebar {
   overflow-x: hidden;
   overflow-y: auto;

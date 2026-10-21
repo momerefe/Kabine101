@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+  '/api/admin/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Administrator-only live database aggregates from one read-only repeatable-read snapshot. Dates use Europe/Istanbul. Response is never cached. */
+    get: operations['getAdminOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/health': {
     parameters: {
       query?: never;
@@ -551,6 +568,146 @@ export interface components {
       revision: number;
       reason: string;
     };
+    OverviewResponse: {
+      /**
+       * Format: date-time
+       * @description Database transaction timestamp shared by the entire snapshot.
+       */
+      generated_at: string;
+      businesses: components['schemas']['OverviewBusinesses'];
+      benefits: components['schemas']['OverviewBenefits'];
+      students: components['schemas']['OverviewStudents'];
+      /** @description Active benefits ending today through six days after today inclusive, ordered by end date then UUID. */
+      expiring_benefits: components['schemas']['OverviewExpiringBenefit'][];
+      /** @description Business saves, benefit saves/publications/suspensions and account reviews/role changes. Historical events remain visible if an actor changes role or is removed. Excludes authentication, passwords, tokens and private payloads. Ordered by creation time then numeric audit ID descending. */
+      recent_activity: components['schemas']['OverviewActivity'][];
+    };
+    /** @description Full database business counts without list limits. */
+    OverviewBusinesses: {
+      /**
+       * Format: int64
+       * @description All businesses.
+       */
+      total: number;
+      /**
+       * Format: int64
+       * @description Active partnerships.
+       */
+      active: number;
+      /**
+       * Format: int64
+       * @description Contacted, discussing or awaiting partnerships.
+       */
+      in_progress: number;
+      /**
+       * Format: int64
+       * @description Ended partnerships.
+       */
+      ended: number;
+    };
+    /** @description Full database counts; derived states match benefit status using the same Europe/Istanbul day. */
+    OverviewBenefits: {
+      /**
+       * Format: int64
+       * @description All benefits.
+       */
+      total: number;
+      /**
+       * Format: int64
+       * @description Published benefits including active, scheduled and expired.
+       */
+      published: number;
+      /**
+       * Format: int64
+       * @description Published benefits whose end date has not passed and whose start date is not in the future; absent dates are unbounded.
+       */
+      active: number;
+      /**
+       * Format: int64
+       * @description Published benefits starting after today whose end date has not passed.
+       */
+      scheduled: number;
+      /**
+       * Format: int64
+       * @description Published benefits with end date before today; expiration takes precedence over scheduling.
+       */
+      expired: number;
+      /**
+       * Format: int64
+       * @description Benefits with suspended publication status.
+       */
+      suspended: number;
+      /**
+       * Format: int64
+       * @description Benefits with draft publication status.
+       */
+      draft: number;
+      /**
+       * Format: int64
+       * @description Active benefits ending between today and today plus six days inclusive.
+       */
+      ending_soon: number;
+    };
+    /** @description Student-only counts; administrators are excluded. */
+    OverviewStudents: {
+      /**
+       * Format: int64
+       * @description All accounts with student role.
+       */
+      total: number;
+      /**
+       * Format: int64
+       * @description Students with active status, approved eligibility and verified email.
+       */
+      active: number;
+      /**
+       * Format: int64
+       * @description Students with pending status and pending eligibility.
+       */
+      pending_review: number;
+      /**
+       * Format: int64
+       * @description Unverified students excluding rejected eligibility and rejected or disabled status; may overlap pending_review.
+       */
+      pending_email: number;
+      /**
+       * Format: int64
+       * @description Pending review students with verified email.
+       */
+      review_ready: number;
+    };
+    OverviewExpiringBenefit: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      business_name: string;
+      /** Format: date */
+      valid_until: string;
+    };
+    OverviewActivity: {
+      /** @description Decimal audit identity; stable unique identifier. */
+      id: string;
+      /** @enum {string} */
+      action:
+        | 'business.save'
+        | 'benefit.save'
+        | 'benefit.publish'
+        | 'benefit.suspend'
+        | 'account.review.approved'
+        | 'account.review.rejected'
+        | 'account.role.admin'
+        | 'account.role.student';
+      /** @description Current actor name, or Sistem if the actor no longer exists. */
+      actor_name: string;
+      /** @enum {string} */
+      entity_type: 'business' | 'benefit' | 'account';
+      /** Format: uuid */
+      entity_id: string;
+      /** @description Current business name, benefit title or account name; empty if the entity no longer exists. */
+      entity_label: string;
+      /** Format: date-time */
+      created_at: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -560,6 +717,53 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  getAdminOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current overview; empty lists are arrays. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OverviewResponse'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Administrator session required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
   getHealth: {
     parameters: {
       query?: never;

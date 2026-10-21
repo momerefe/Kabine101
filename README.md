@@ -6,6 +6,8 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 
 ## Prototip ve gerçek uygulama
 
+**Yönetici Genel Bakış:** Gerçek işletme, avantaj ve öğrenci özetleri; bekleyen işler, durum dağılımı, bugün dahil yedi gün içinde bitecek aktif avantajlar ve son yönetim işlemleri hazırdır. Sayfa açıkken dakikada bir yenilenir, elle de yenilenebilir. [Teslim ve test bilgileri](docs/TESLIM_GENEL_BAKIS.md).
+
 | Bölüm | Çalıştırma | Durum |
 | --- | --- | --- |
 | HTML prototipi | Kök dizindeki `index.html` dosyasını aç | Altı öğrenci ve 12 yönetici bölümü, demo veriler |

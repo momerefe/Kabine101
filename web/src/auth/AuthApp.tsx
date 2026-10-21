@@ -631,6 +631,7 @@ function AccountPage({
       client.removeQueries({ queryKey: ['accounts'] });
       client.removeQueries({ queryKey: ['management-businesses'] });
       client.removeQueries({ queryKey: ['management-benefits'] });
+      client.removeQueries({ queryKey: ['management-overview'] });
       await refresh();
       navigate('login/student', '', true);
     },
@@ -899,6 +900,9 @@ function AdminAccounts({
             setNotice(message);
             setAction(null);
             await client.invalidateQueries({ queryKey: ['accounts'] });
+            await client.invalidateQueries({
+              queryKey: ['management-overview', session.user?.id],
+            });
             await refresh();
           }}
         />
@@ -1079,9 +1083,12 @@ export function AuthApp() {
   useEffect(() => {
     client.removeQueries({
       predicate: (query) =>
-        ['accounts', 'management-businesses', 'management-benefits'].includes(
-          String(query.queryKey[0]),
-        ) &&
+        [
+          'accounts',
+          'management-businesses',
+          'management-benefits',
+          'management-overview',
+        ].includes(String(query.queryKey[0])) &&
         (session.data?.user?.role !== 'admin' ||
           query.queryKey[1] !== session.data?.user?.id),
     });

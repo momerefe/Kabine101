@@ -328,6 +328,63 @@ func (e HealthStatus) Valid() bool {
 	}
 }
 
+// Defines values for OverviewActivityAction.
+const (
+	OverviewActivityActionAccountReviewApproved OverviewActivityAction = "account.review.approved"
+	OverviewActivityActionAccountReviewRejected OverviewActivityAction = "account.review.rejected"
+	OverviewActivityActionAccountRoleAdmin      OverviewActivityAction = "account.role.admin"
+	OverviewActivityActionAccountRoleStudent    OverviewActivityAction = "account.role.student"
+	OverviewActivityActionBenefitPublish        OverviewActivityAction = "benefit.publish"
+	OverviewActivityActionBenefitSave           OverviewActivityAction = "benefit.save"
+	OverviewActivityActionBenefitSuspend        OverviewActivityAction = "benefit.suspend"
+	OverviewActivityActionBusinessSave          OverviewActivityAction = "business.save"
+)
+
+// Valid indicates whether the value is a known member of the OverviewActivityAction enum.
+func (e OverviewActivityAction) Valid() bool {
+	switch e {
+	case OverviewActivityActionAccountReviewApproved:
+		return true
+	case OverviewActivityActionAccountReviewRejected:
+		return true
+	case OverviewActivityActionAccountRoleAdmin:
+		return true
+	case OverviewActivityActionAccountRoleStudent:
+		return true
+	case OverviewActivityActionBenefitPublish:
+		return true
+	case OverviewActivityActionBenefitSave:
+		return true
+	case OverviewActivityActionBenefitSuspend:
+		return true
+	case OverviewActivityActionBusinessSave:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OverviewActivityEntityType.
+const (
+	OverviewActivityEntityTypeAccount  OverviewActivityEntityType = "account"
+	OverviewActivityEntityTypeBenefit  OverviewActivityEntityType = "benefit"
+	OverviewActivityEntityTypeBusiness OverviewActivityEntityType = "business"
+)
+
+// Valid indicates whether the value is a known member of the OverviewActivityEntityType enum.
+func (e OverviewActivityEntityType) Valid() bool {
+	switch e {
+	case OverviewActivityEntityTypeAccount:
+		return true
+	case OverviewActivityEntityTypeBenefit:
+		return true
+	case OverviewActivityEntityTypeBusiness:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PublishBenefitRequestConditionsReviewed.
 const (
 	True PublishBenefitRequestConditionsReviewed = true
@@ -618,6 +675,118 @@ type LoginResponse struct {
 // Message defines model for Message.
 type Message struct {
 	Message string `json:"message"`
+}
+
+// OverviewActivity defines model for OverviewActivity.
+type OverviewActivity struct {
+	Action OverviewActivityAction `json:"action"`
+
+	// ActorName Current actor name, or Sistem if the actor no longer exists.
+	ActorName string    `json:"actor_name"`
+	CreatedAt time.Time `json:"created_at"`
+	EntityId  string    `json:"entity_id"`
+
+	// EntityLabel Current business name, benefit title or account name; empty if the entity no longer exists.
+	EntityLabel string                     `json:"entity_label"`
+	EntityType  OverviewActivityEntityType `json:"entity_type"`
+
+	// Id Decimal audit identity; stable unique identifier.
+	Id string `json:"id"`
+}
+
+// OverviewActivityAction defines model for OverviewActivity.Action.
+type OverviewActivityAction string
+
+// OverviewActivityEntityType defines model for OverviewActivity.EntityType.
+type OverviewActivityEntityType string
+
+// OverviewBenefits Full database counts; derived states match benefit status using the same Europe/Istanbul day.
+type OverviewBenefits struct {
+	// Active Published benefits whose end date has not passed and whose start date is not in the future; absent dates are unbounded.
+	Active int64 `json:"active"`
+
+	// Draft Benefits with draft publication status.
+	Draft int64 `json:"draft"`
+
+	// EndingSoon Active benefits ending between today and today plus six days inclusive.
+	EndingSoon int64 `json:"ending_soon"`
+
+	// Expired Published benefits with end date before today; expiration takes precedence over scheduling.
+	Expired int64 `json:"expired"`
+
+	// Published Published benefits including active, scheduled and expired.
+	Published int64 `json:"published"`
+
+	// Scheduled Published benefits starting after today whose end date has not passed.
+	Scheduled int64 `json:"scheduled"`
+
+	// Suspended Benefits with suspended publication status.
+	Suspended int64 `json:"suspended"`
+
+	// Total All benefits.
+	Total int64 `json:"total"`
+}
+
+// OverviewBusinesses Full database business counts without list limits.
+type OverviewBusinesses struct {
+	// Active Active partnerships.
+	Active int64 `json:"active"`
+
+	// Ended Ended partnerships.
+	Ended int64 `json:"ended"`
+
+	// InProgress Contacted, discussing or awaiting partnerships.
+	InProgress int64 `json:"in_progress"`
+
+	// Total All businesses.
+	Total int64 `json:"total"`
+}
+
+// OverviewExpiringBenefit defines model for OverviewExpiringBenefit.
+type OverviewExpiringBenefit struct {
+	BusinessName string `json:"business_name"`
+	Id           string `json:"id"`
+	Title        string `json:"title"`
+	ValidUntil   string `json:"valid_until"`
+}
+
+// OverviewResponse defines model for OverviewResponse.
+type OverviewResponse struct {
+	// Benefits Full database counts; derived states match benefit status using the same Europe/Istanbul day.
+	Benefits OverviewBenefits `json:"benefits"`
+
+	// Businesses Full database business counts without list limits.
+	Businesses OverviewBusinesses `json:"businesses"`
+
+	// ExpiringBenefits Active benefits ending today through six days after today inclusive, ordered by end date then UUID.
+	ExpiringBenefits []OverviewExpiringBenefit `json:"expiring_benefits"`
+
+	// GeneratedAt Database transaction timestamp shared by the entire snapshot.
+	GeneratedAt time.Time `json:"generated_at"`
+
+	// RecentActivity Business saves, benefit saves/publications/suspensions and account reviews/role changes. Historical events remain visible if an actor changes role or is removed. Excludes authentication, passwords, tokens and private payloads. Ordered by creation time then numeric audit ID descending.
+	RecentActivity []OverviewActivity `json:"recent_activity"`
+
+	// Students Student-only counts; administrators are excluded.
+	Students OverviewStudents `json:"students"`
+}
+
+// OverviewStudents Student-only counts; administrators are excluded.
+type OverviewStudents struct {
+	// Active Students with active status, approved eligibility and verified email.
+	Active int64 `json:"active"`
+
+	// PendingEmail Unverified students excluding rejected eligibility and rejected or disabled status; may overlap pending_review.
+	PendingEmail int64 `json:"pending_email"`
+
+	// PendingReview Students with pending status and pending eligibility.
+	PendingReview int64 `json:"pending_review"`
+
+	// ReviewReady Pending review students with verified email.
+	ReviewReady int64 `json:"review_ready"`
+
+	// Total All accounts with student role.
+	Total int64 `json:"total"`
 }
 
 // PublishBenefitRequest defines model for PublishBenefitRequest.

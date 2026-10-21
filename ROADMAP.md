@@ -122,6 +122,8 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 ### 3E Yönetim bütünlüğü ve ölçümler
 
+**Öne alınan teslim — Yönetici Genel Bakış (21 Ekim 2026):** Proje sahibinin masaüstü ve mobil genel bakış isteğiyle bu bölüm 3D tamamlanmadan öne alındı. İşletme/avantaj/öğrenci özetleri, yaklaşan bitişler ve son yönetim işlemleri mevcut gerçek kayıtlara bağlandı. Bu değişiklik 3D'yi veya 3E'nin diğer modüllerini tamamlanmış saymaz. Kapsam ve kontroller [Genel Bakış tesliminde](docs/TESLIM_GENEL_BAKIS.md).
+
 **Bağımlılık:** 3D.
 
 **İşler:** Yönetici Genel Bakış, Kullanıcı ve Rol Yönetimi, İşlem Günlüğü ve Platform Ayarlarının tamamlanması; 12 bölümün tümüne erişim; tanımı belli gerçek görüntüleme/favori ölçümleri; kullanım kayıtlarında açıklayıcı boş durum; alan adı gibi ayarlarda mevcut hesaplara etkinin kontrollü yönetimi.

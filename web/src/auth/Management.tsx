@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { newRecordId } from '../api/record-id';
+import { Overview } from './Overview';
 import type { components } from '../api/schema.gen';
 type Business = components['schemas']['Business'];
 type Benefit = components['schemas']['Benefit'];
@@ -102,7 +103,9 @@ export function Management({
   );
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLElement>(null);
-  const section = hash.split('/')[1] || 'overview';
+  const [hashPath, hashSearch = ''] = hash.split('?');
+  const section = hashPath.split('/')[1] || 'overview';
+  const initialStatus = new URLSearchParams(hashSearch).get('status') || '';
   function close() {
     setOpen(false);
     requestAnimationFrame(() => trigger.current?.focus());
@@ -263,36 +266,14 @@ export function Management({
               'archived',
             ].includes(section) ? (
             <Records
-              key={section}
+              key={`${section}:${initialStatus}`}
               section={section}
+              initialStatus={initialStatus}
               csrf={session.csrf_token}
               accountId={session.user!.id}
             />
           ) : section === 'overview' ? (
-            <section className="surface management-intro">
-              <h2>İş ortaklıklarından yayına.</h2>
-              <p>
-                İşletmeyi ekle, avantaj taslağını hazırla ve koşulları
-                inceleyerek yayımla.
-              </p>
-              <div className="account-actions">
-                {nav
-                  .filter((n) =>
-                    ['partners', 'businesses', 'benefits', 'students'].includes(
-                      n[0],
-                    ),
-                  )
-                  .map(([id, label]) => (
-                    <a
-                      key={id}
-                      className="btn btn-secondary"
-                      href={`#admin/${id}`}
-                    >
-                      {label} →
-                    </a>
-                  ))}
-              </div>
-            </section>
+            <Overview accountId={session.user!.id} />
           ) : (
             <section className="surface management-intro">
               <h2>
@@ -367,10 +348,12 @@ const blankBenefit = (): Benefit => ({
 });
 function Records({
   section,
+  initialStatus,
   csrf,
   accountId,
 }: {
   section: string;
+  initialStatus: string;
   csrf: string;
   accountId: string;
 }) {
@@ -378,7 +361,11 @@ function Records({
   const client = useQueryClient();
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(() =>
+    Object.hasOwn(businessMode ? partnership : states, initialStatus)
+      ? initialStatus
+      : '',
+  );
   const [editing, setEditing] = useState<Business | Benefit | null>(null);
   const [detail, setDetail] = useState<Business | Benefit | null>(null);
   const [notice, setNotice] = useState('');
@@ -684,6 +671,9 @@ function Records({
             });
             await client.invalidateQueries({
               queryKey: ['management-benefits'],
+            });
+            await client.invalidateQueries({
+              queryKey: ['management-overview', accountId],
             });
           }}
         />
