@@ -19,7 +19,7 @@ SELECT * FROM accounts WHERE email=sqlc.arg(email)::text AND role='student' FOR 
 SELECT * FROM accounts WHERE id=$1 AND role='student' FOR UPDATE;
 
 -- name: ManagementSerializePurchaseID :exec
-SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(id)::text,0));
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(id)::text::uuid::text,0));
 
 -- name: ManagementCreatePurchase :one
 INSERT INTO purchases(id,student_id,business_id,benefit_id,business_name,benefit_title,purchase_date,original_amount,paid_amount,reference,reference_normalized,created_by)

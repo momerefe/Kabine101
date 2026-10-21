@@ -316,7 +316,7 @@ func (q *Queries) ManagementReviewPurchase(ctx context.Context, arg ManagementRe
 }
 
 const managementSerializePurchaseID = `-- name: ManagementSerializePurchaseID :exec
-SELECT pg_advisory_xact_lock(hashtextextended($1::text,0))
+SELECT pg_advisory_xact_lock(hashtextextended($1::text::uuid::text,0))
 `
 
 func (q *Queries) ManagementSerializePurchaseID(ctx context.Context, id string) error {

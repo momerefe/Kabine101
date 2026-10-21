@@ -107,6 +107,55 @@ def main():
             image = dev.call('Page.captureScreenshot', {'format': 'png', 'captureBeyondViewport': False})
             (OUT / name).write_bytes(base64.b64decode(image['data']))
 
+        def viewport(width):
+            dev.call('Emulation.setDeviceMetricsOverride', {'width': width, 'height': 1000 if width == 1440 else 950, 'deviceScaleFactor': 1, 'mobile': width < 500})
+            dev.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))')
+            assert dev.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'page overflow ' + str(width)
+
+        def within_viewport(selector):
+            assert dev.evaluate(f'''(()=>{{const e=document.querySelector({json.dumps(selector)});
+                if(!e)return false;const r=e.getBoundingClientRect();
+                return r.width>0&&r.left>=-1&&r.right<=innerWidth+1;}})()'''), 'horizontal clipping ' + selector
+
+        def check_admin_form():
+            fields = ['student_email', 'benefit_id', 'purchase_date', 'reference', 'original_amount', 'paid_amount']
+            values = dev.evaluate("Object.fromEntries(Array.from(document.querySelectorAll('.purchase-create input,.purchase-create select')).map(e=>[e.name,e.value]))")
+            for width in (320, 390, 1440):
+                viewport(width)
+                within_viewport('.purchase-create')
+                for name in fields:
+                    selector = '.purchase-create [name=' + name + ']'
+                    within_viewport(selector)
+                    assert dev.evaluate('document.querySelector(' + json.dumps(selector) + ').value') == values[name], 'form value lost after resize: ' + name
+                dev.evaluate("document.querySelector('.purchase-create').scrollIntoView({block:'start'})")
+                shot(f'admin-purchase-form-{width}.png')
+
+        def check_admin_table(state):
+            present('.purchase-table')
+            for width in (320, 390, 1440):
+                viewport(width)
+                within_viewport('.table-scroll')
+                # The table may scroll inside its labelled region on mobile;
+                # its action column must remain reachable without page overflow.
+                assert dev.evaluate("document.querySelector('.table-scroll').tabIndex===0"), 'table scroll region not keyboard reachable'
+                assert dev.evaluate("""(()=>{const e=document.querySelector('.table-scroll');e.scrollLeft=e.scrollWidth;
+                    const region=e.getBoundingClientRect(),cell=e.querySelector('tbody tr td:last-child').getBoundingClientRect();
+                    return cell.right<=region.right+1&&cell.right>region.left;})()"""), 'purchase actions clipped at ' + str(width)
+                dev.evaluate("document.querySelector('.table-scroll').scrollLeft=0;document.querySelector('.table-scroll').scrollIntoView({block:'start'})")
+                shot(f'admin-purchase-table-{state}-{width}.png')
+
+        def check_admin_review(kind):
+            for width in (320, 390, 1440):
+                viewport(width)
+                within_viewport('dialog[open]')
+                for selector in ['dialog input[type=checkbox]', 'dialog button[type=submit]'] + (['dialog textarea[name=reason]'] if kind == 'revoke' else []):
+                    dev.evaluate('document.querySelector(' + json.dumps(selector) + ").scrollIntoView({block:'nearest'})")
+                    within_viewport(selector)
+                    assert dev.evaluate(f'''(()=>{{const r=document.querySelector({json.dumps(selector)}).getBoundingClientRect();
+                        return r.height>0&&r.top>=-1&&r.bottom<=innerHeight+1;}})()'''), 'review control unreachable ' + selector
+                dev.evaluate("document.querySelector('dialog[open]').scrollTop=0")
+                shot(f'admin-purchase-review-{kind}-{width}.png')
+
         def check_student(total, count):
             login(False)
             text('Bu ayki tasarrufun')
@@ -154,6 +203,7 @@ def main():
             assert dev.evaluate("document.querySelector('dialog button[type=submit]').disabled"), 'review confirmation bypassed'
             if reason:
                 fill('dialog textarea[name=reason]', reason)
+            check_admin_review('revoke' if reason else 'approval')
             dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
             click(label, "document.querySelector('dialog[open]')")
             wait(lambda: not dev.evaluate("!!document.querySelector('dialog[open]')"), 'review dialog did not close')
@@ -174,6 +224,7 @@ def main():
         # Comma entry exercises the Turkish form conversion before the API call.
         fill('[name=original_amount]', '100,00')
         fill('[name=paid_amount]', '80,00')
+        check_admin_form()
         click('Onay bekleyen kayıt oluştur')
         wait(lambda: not dev.evaluate("!!document.querySelector('.purchase-create')"), 'purchase form did not close')
         present('.purchase-table')
@@ -182,6 +233,7 @@ def main():
         assert len(purchases) == 1 and purchases[0]['status'] == 'pending', purchases
         purchase_id = purchases[0]['id']
         assert purchases[0]['original_amount'] == '100.00' and purchases[0]['paid_amount'] == '80.00'
+        check_admin_table('pending')
         logout()
         check_student('0.00', 0)
 
@@ -190,6 +242,7 @@ def main():
         text('Onaylandı')
         purchases = api('/api/admin/purchases')['purchases']
         assert len(purchases) == 1 and purchases[0]['id'] == purchase_id and purchases[0]['status'] == 'approved'
+        check_admin_table('approved')
         shot('admin-approved.png')
         logout()
         check_student('20.00', 1)
@@ -202,7 +255,7 @@ def main():
         logout()
         check_student('0.00', 0)
         assert not dev.errors, dev.errors
-        print('Savings browser acceptance passed: real purchase creation, pending exclusion, reviewed approval, persisted student totals/history, responsive history, revocation removal and access isolation.')
+        print('Savings browser acceptance passed: real purchase creation, pending exclusion, reviewed approval, persisted student totals/history, admin form/table/review at 320/390/1440 px, responsive history, revocation removal and access isolation.')
     except Exception:
         if dev:
             (OUT / 'failure.txt').write_text(dev.evaluate('document.body.innerText'), encoding='utf-8')
