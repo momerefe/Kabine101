@@ -15,7 +15,7 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 
 Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur; henüz geliştirilmeyen bölümler açıkça sonraki teslim olarak belirtilir. Kullanım geçmişi yalnızca yönetici onaylı alışverişlerden oluşur; kod/QR açmak kayıt üretmez.
 
-Öğrenci ana sayfasındaki **bu ayki tasarruf** tablosu, yönetici onaylı alışverişleri işletmelere göre toplar. Ay, Türkiye saatine ve alışveriş tarihine göre belirlenir. Yönetici **Kullanım Kayıtları** bölümünde öğrenci e-postası, avantaj, tarih, indirim öncesi/ödenen tutar ve fiş/referans bilgisiyle kayıt oluşturur; ayrı onay işlemi ardından tutar öğrenciye yansır. Bekleyen/reddedilen kayıtlar hesaba katılmaz; iade veya hatada onay gerekçeyle geri alınabilir. Bu işleyiş yönetici kontrolüne dayanır, kasa entegrasyonu değildir. [Tasarruf teslimi ve kurulum](docs/TESLIM_TASARRUF.md).
+Öğrenci ana sayfasındaki **bu ayki tasarruf** tablosu, yönetici onaylı alışverişleri işletmelere göre toplar. Ay, Türkiye saatine ve alışveriş tarihine göre belirlenir. Yönetici **Alışveriş Yönetimi** bölümünde öğrenci e-postası, avantaj, tarih, indirim öncesi/ödenen tutar ve fiş/referans bilgisiyle kayıt oluşturur; ayrı onay işlemi ardından tutar öğrenciye yansır. Bekleyen/reddedilen kayıtlar hesaba katılmaz; iade veya hatada onay gerekçeyle geri alınabilir. Bu işleyiş yönetici kontrolüne dayanır, kasa entegrasyonu değildir. [Tasarruf teslimi ve kurulum](docs/TESLIM_TASARRUF.md).
 
 ## Bu bilgisayarda çalıştırma
 

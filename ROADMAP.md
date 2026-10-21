@@ -124,7 +124,7 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 ### 3E Yönetim bütünlüğü ve ölçümler
 
-**Onaylanan ek teslim — Aylık tasarruf:** Proje sahibi öğrenci ana sayfasında aylık tasarruf tablosunu istedi ve kaynağını yönetici onaylı alışveriş kayıtları olarak belirledi. Mevcut Kullanım Kayıtları bölümünde kayıt → onay/ret → gerekçeli onay geri alma akışı; öğrenci ana sayfasında işletme bazlı aylık toplam ve Kullanım Geçmişi bölümünde yalnızca kişisel onaylı kayıtlar uygulanır. Bu kapsam diğer 3E modüllerini otomatik olarak tamamlanmış saymaz. Ayrıntılar [tasarruf tesliminde](docs/TESLIM_TASARRUF.md).
+**Onaylanan ek teslim — Aylık tasarruf:** Proje sahibi öğrenci ana sayfasında aylık tasarruf tablosunu istedi ve kaynağını yönetici onaylı alışveriş kayıtları olarak belirledi. Mevcut menüde Alışveriş Yönetimi adıyla kayıt → onay/ret → gerekçeli onay geri alma akışı; öğrenci ana sayfasında işletme bazlı aylık toplam ve Alışveriş Geçmişi bölümünde yalnızca kişisel onaylı kayıtlar uygulanır. Bu kapsam diğer 3E modüllerini otomatik olarak tamamlanmış saymaz. Ayrıntılar [tasarruf tesliminde](docs/TESLIM_TASARRUF.md).
 
 **Öne alınan teslim — Yönetici Genel Bakış (21 Ekim 2026):** Proje sahibinin masaüstü ve mobil genel bakış isteğiyle bu bölüm 3D tamamlanmadan öne alındı. İşletme/avantaj/öğrenci özetleri, yaklaşan bitişler ve son yönetim işlemleri mevcut gerçek kayıtlara bağlandı. Bu değişiklik 3D'yi veya 3E'nin diğer modüllerini tamamlanmış saymaz. Kapsam ve kontroller [Genel Bakış tesliminde](docs/TESLIM_GENEL_BAKIS.md).
 

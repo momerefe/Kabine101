@@ -44,7 +44,7 @@ Altı ana bölüm korunur:
 | Genel Bakış | Gerçek yayımlanmış avantajlar, kategori erişimi ve yalnızca yönetici onaylı alışverişlerden aylık tasarruf |
 | Avantajları Keşfet | Arama, kategori filtresi, açık durum etiketleri ve detay sayfasına erişim |
 | Favorilerim | Öğrenci hesabına bağlı ekleme/çıkarma; boş ve artık erişilemeyen avantaj durumları |
-| Kullanım Geçmişi | Yalnızca oturum sahibinin yönetici onaylı alışverişleri; sahte kayıt yok |
+| Alışveriş Geçmişi | Yalnızca oturum sahibinin yönetici onaylı alışverişleri; sahte kayıt yok |
 | Profil ve Hesap | Ad, e-posta, temel hesap işlemleri ve anlaşılır çıkış |
 | Yardım ve Destek | Kullanım açıklamaları ve yalnızca tanımlanmış gerçek iletişim bilgileri |
 
@@ -63,7 +63,7 @@ Mevcut 12 bölüm korunur. Bir bölümün bulunması, arkasında doğrulanmamı�
 | Öğrenci Doğrulama | Hesap, e-posta doğrulaması ve varsa öğrenci uygunluk incelemesinin ayrı durumları |
 | Yayımlanmış Avantajlar | O anda aktif avantajlar, arama, düzenleme ve askıya alma |
 | Süresi Dolan ve Askıdaki | Nedenin görünmesi ve kontrollü yeniden yayımlama |
-| Kullanım Kayıtları | Yönetici tarafından girilen alışverişler; ayrı onay/ret ve gerekçeli onay geri alma |
+| Alışveriş Yönetimi | Yönetici tarafından girilen alışverişler; ayrı onay/ret ve gerekçeli onay geri alma |
 | Analitik | Tanımı belli, gerçekten toplanan görüntüleme/favori ölçümleri; bunları kullanım diye sunmama |
 | Kullanıcı ve Rol Yönetimi | Öğrenci/yönetici rolleri ve hesap durumu; sunucuda yetki kontrolü |
 | İşlem Günlüğü | Önemli yönetim değişiklikleri, yapan kişi ve sunucu zamanı |
