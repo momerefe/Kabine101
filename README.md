@@ -190,6 +190,6 @@ Migration sürümü **5**. Mevcut migration değiştirilmez; yeni sürüm ekleni
 - [ROADMAP.md](ROADMAP.md): Teslimler ve kabul koşulları.
 - [Teknik kararlar](docs/TEKNIK_KARARLAR.md): Seçimler ve gerekçeleri.
 
-Sıradaki teslim, proje sahibinin incelemesinden sonra **3E yönetim bütünlüğü ve ölçümler**. Genel Bakış önceden öne alınmıştı; tam işlem günlüğü, platform ayarları ve tanımlanmış ölçümler kendi kapsamında kalır. Doğrulanmış kullanım, native mobil ve genel yayına alma bu teslimde yoktur. CelikPanel kaynak kodu kopyalanmamıştır.
+**3E yönetim bütünlüğü ve ölçümler** incelemeye sunulmuştur. Proje sahibinin kabulünden sonraki adım **3F pilot ve yayına hazırlık** olacaktır. Doğrulanmış kullanım, native mobil ve genel yayına alma bu teslimde yoktur. CelikPanel kaynak kodu kopyalanmamıştır.
 
 Kaynak kodu [MIT](LICENSE) lisanslıdır. Okul/işletme marka hakları ve gerçek sponsorluk veya kişisel veriler bu lisansla paylaşılmış sayılmaz.

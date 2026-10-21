@@ -89,7 +89,14 @@ def main():
               e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{{bubbles:true}}));}})()''')
 
         def click(label, scope='document'):
-            wait(lambda: dev.evaluate(f'''(()=>{{const e=[...{scope}.querySelectorAll('button')].find(e=>e.textContent.trim()==={json.dumps(label)}&&!e.disabled);if(!e)return false;e.click();return true}})()'''), 'button ' + label)
+            wait(lambda: dev.evaluate(f'''(()=>{{const root={scope};if(!root)return false;const e=[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==={json.dumps(label)}&&!e.disabled);if(!e)return false;e.click();return true}})()'''), 'button ' + label)
+
+        def session_route(route, phase, selector):
+            # A new query forces document navigation. Changing only the hash
+            # retains React's cached session after an out-of-band API login.
+            navigation = dev.call('Page.navigate', {'url': base + '/?management3e_session=' + phase + '#' + route})
+            assert navigation.get('loaderId'), 'session transition must load a new document'
+            present(selector)
 
         def nav(section, selector):
             dev.evaluate('location.hash=' + json.dumps('admin/' + section))
@@ -176,7 +183,7 @@ def main():
 
         # Student opens actual detail and favorites through rendered controls.
         assert api('/api/auth/logout', 'POST', {})['status'] == 200
-        dev.call('Page.navigate', {'url': base + '/#benefit/' + benefit})
+        session_route('benefit/' + benefit, 'student', 'form.auth-form #email')
         fill('#email', student.split('@', 1)[0])
         fill('#password', password)
         dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
@@ -211,8 +218,7 @@ def main():
         assert student_request('/api/auth/login', 'POST', {'email': student, 'password': password}, session['csrf_token'])[0] == 200
         assert api('/api/auth/logout', 'POST', {})['status'] == 200
         assert api('/api/auth/admin-login', 'POST', {'username': username, 'password': password})['status'] == 200
-        dev.call('Page.navigate', {'url': base + '/#admin/analytics'})
-        present('.analytics-totals')
+        session_route('admin/analytics', 'admin', '.management-analytics .analytics-totals')
         stats = api('/api/admin/analytics')['body']
         assert stats['totals']['views'] == 1 and stats['totals']['favorites'] == 1, stats
         assert dev.evaluate("[...document.querySelectorAll('.analytics-totals dd')].map(e=>e.textContent)") == ['1', '1', '1']
@@ -220,8 +226,7 @@ def main():
         layout('analytics')
         nav('users', '.admin-toolbar input[type=search]')
         fill('.admin-toolbar input[type=search]', student)
-        present('.admin-account')
-        assert dev.evaluate("document.querySelectorAll('.admin-account').length") == 1
+        wait(lambda: dev.evaluate(f'''document.querySelectorAll('.admin-account').length===1&&document.querySelector('.admin-account .account-email')?.textContent.trim()==={json.dumps(student)}'''), 'student account search results')
         click('Devre dışı bırak', "document.querySelector('.admin-account')")
         present('dialog[open]')
         fill('dialog input[name=current_password]', 'incorrect synthetic password')
