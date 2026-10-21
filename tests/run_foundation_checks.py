@@ -12,10 +12,14 @@ profile=tempfile.TemporaryDirectory(prefix='koc-foundation-',ignore_cleanup_erro
 process=subprocess.Popen(['C:/Program Files/Google/Chrome/Application/chrome.exe','--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+profile.name,'about:blank'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW)
 try:
  portfile=Path(profile.name)/'DevToolsActivePort'
- for _ in range(100):
-  if portfile.exists(): break
+ port=None
+ for _ in range(150):
+  try:
+   lines=portfile.read_text().splitlines()
+   if lines: port=lines[0];break
+  except OSError: pass
   time.sleep(.1)
- port=portfile.read_text().splitlines()[0]
+ assert port,'Chrome debug port was not ready'
  targets=json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/json/list'))
  dev=DevTools(next(t['webSocketDebuggerUrl'] for t in targets if t['type']=='page'))
  dev.call('Runtime.enable');dev.call('Page.enable');dev.call('Network.enable')

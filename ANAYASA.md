@@ -2,7 +2,7 @@
 
 Sürüm: 1.2
 Tarih: 21 Ekim 2026
-Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi geliştiriliyor. Kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Temel teknik kararlar [teknik karar kaydında](docs/TEKNIK_KARARLAR.md); sonraki teslimlerin kabul noktaları korunur.
+Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi tamamlandı ve test edildi. Kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. [Teslim raporu](docs/TESLIM_3B.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) günceldir; sonraki teslimlerin kabul noktaları korunur.
 
 KoçBenefits, Koç Okulu öğrencilerinin anlaşmalı işletmelerin avantajlarını bulmasını ve kullanım koşullarını kolayca anlamasını sağlar. Kabine, işletmeleri ve avantajları sade bir yönetim panelinden yönetir. Başarı ölçütü; öğrencinin geçerli bir avantaja ulaşabilmesi, yöneticinin doğru bilgiyi güvenilir biçimde yayımlayabilmesi ve sistemin sonraki kabineye devredilebilmesidir.
 

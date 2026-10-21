@@ -130,8 +130,15 @@ def main():
         profile = folder / "chrome"
         start([str(chrome), "--headless=new", "--disable-gpu", "--no-first-run", "--remote-debugging-port=0", "--user-data-dir=" + str(profile), "about:blank"], "chrome")
         portfile = profile / "DevToolsActivePort"
-        wait_for(portfile.exists, "Chrome unavailable")
-        debug_port = portfile.read_text().splitlines()[0]
+        debug_port = None
+        def read_debug_port():
+            nonlocal debug_port
+            lines = portfile.read_text().splitlines()
+            if lines:
+                debug_port = lines[0]
+                return True
+            return False
+        wait_for(read_debug_port, "Chrome unavailable")
         targets = get_json(f"http://127.0.0.1:{debug_port}/json/list")
         dev = DevTools(next(t["webSocketDebuggerUrl"] for t in targets if t["type"] == "page"))
         dev.call("Runtime.enable"); dev.call("Page.enable"); dev.call("Network.enable")

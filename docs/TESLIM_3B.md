@@ -27,13 +27,18 @@ Ortam: Windows, Chrome, PostgreSQL 18; gerçek hesaplar yerine `_test` veritaban
 | Kontrol | Sonuç |
 | --- | --- |
 | Go birim testleri, `go vet`, Go derlemesi | Geçti |
-| PostgreSQL kimlik/erişim entegrasyonu | 11 ana test paketi geçti; yarış koşulları dahil |
+| PostgreSQL kimlik/erişim entegrasyonu | 11 ana test senaryosu geçti; yarış koşulları dahil |
 | Argon2/token, kesin alan adı, JSON/CSRF/çerez ve yapılandırma testleri | Geçti |
 | SMTP testleri | UTF-8 ileti/token aktarımı, header enjeksiyonu reddi, TLS gerekliliği, iptal ve loopback sınırı geçti |
 | TypeScript, ESLint, Prettier, Vite derlemesi | Geçti |
 | Gerçek SMTP + Chrome hesap akışı | CLI yönetici doğrulaması, öğrenci kayıt/doğrulama/onay/giriş, rol erişimi, sıfırlama, token tekrar reddi ve hata/yeniden deneme geçti |
 | Mobil ve masaüstü | 1440/390/320 px giriş ekranları; 320 px yönetim; taşma yok; azaltılmış hareket ve çalışma zamanı hata kontrolü geçti |
-| Migration testi, Windows | Test yürütülebilir dosyası Windows Application Control tarafından engellendi; güvenlik ayarı değiştirilmedi. Linux CI sonucu aşağıda kaydedilecek. Yeni şema kurulumu ve uygulamanın şema 3 kontrolü tarayıcı testinde geçti. |
+| HTML prototipi | Önceki 93 kontrol geçti; çalışma zamanı hatası yok |
+| Sistem durumu | Gerçek yerel API/şema 3, 1440/390/320 px, ağ hatası ve yeniden deneme geçti |
+| Migration testi, Windows | Test yürütülebilir dosyası Windows Application Control tarafından engellendi; güvenlik ayarı değiştirilmedi. Yeni şema kurulumu ve uygulamanın şema 3 kontrolü tarayıcı testinde geçti. |
+| Migration testi, Linux CI | Temiz şema, sürüm yükseltme/veri koruma, kısıtlar ve tekrar çalıştırma geçti. Kimlik entegrasyonu, Go test/vet/build ve web kontrolleri de geçti. [GitHub çalıştırması](https://github.com/momerefe/Kabine101/actions/runs/39636546882). |
+
+Windows engeli yerel `tools/dev.ps1 check` komutunun migration adımında tekrar görülebilir. Tam otomatik kontrol Linux CI'da yürütüldü; işletim sisteminin güvenlik ayarı kapatılmadı. Chrome test yardımcılarında da DevTools port dosyasının yazım sırasındaki kısa dosya kilidine karşı bekleme düzeltildi.
 
 Kimlik entegrasyonu: yanlış alan adı ve istemci rol enjeksiyonu, onay/doğrulama sıraları, ret, öğrenci → yönetici erişim reddi, CSRF/Origin, süresi dolan/iptal edilen oturum, token amacı/tek kullanım, veritabanında token/parola özeti, tüm oturumları kapatan sıfırlama, paralel token tüketimi, iki yöneticinin aynı anda yetki bırakması ve SMTP arızasında hesap varlığını açıklamayan yanıtlar.
 
