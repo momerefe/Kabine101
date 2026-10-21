@@ -33,4 +33,8 @@ Komutlar [README](../README.md) içindedir. Tarayıcı ekran görüntüleri ve r
 
 3B öncesinde gerçek okul e-posta alan adı ve öğrenci uygunluk/onay kuralı gereklidir. Üretim e-posta ve barındırma hizmetleri ayrıca belirlenecektir.
 
-GitHub'a gönderim, CI'nin uzakta çalışması ve depo yönetim ayarları mevcut hesabın erişimine bağlıdır. Yerelde geçen kontroller uzaktaki CI çalışmış gibi sunulmaz.
+## GitHub durumu
+
+Yerel `main` dalında ilk commit oluşturuldu ve `origin` adresi `https://github.com/momerefe/Kabine101.git` olarak ayarlandı. `.env`, yerel araçlar ve test çıktıları Git dışında bırakıldı; gönderilecek dosyalarda yerel bağlantı parolalarının bulunmadığı kontrol edildi.
+
+Gönderim denemesi Git kimlik doğrulaması bulunmadığı için başarısız oldu. Bağlı GitHub uygulamasının hesabı `celikbros`; depo için yalnızca okuma yetkisi var. `momerefe` hesabıyla GitHub bağlantısı veya uygun yazma erişimi gerektiğinden uzaktaki dosyalar, CI çalıştırması ve yönetim ayarları tamamlanmadı. Yerelde geçen kontroller uzaktaki CI çalışmış gibi sunulmaz.
