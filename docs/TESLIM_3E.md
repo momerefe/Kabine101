@@ -31,6 +31,15 @@ powershell -ExecutionPolicy Bypass -File tools/dev.ps1 web -LanAddress 192.168.1
 
 IP değiştiyse iki komutta güncel bilgisayar IP'sini kullan. Ajan bu geliştirme için yerel API/frontend başlatmaz ve gerçek veritabanına örnek veri eklemez. Yeni analitik geçmişe dönük sayı üretmez; ölçüm yeni API ve arayüz etkin olduktan sonra oluşur.
 
+## Doğrulama
+
+- Yerelde Go build/vet, TypeScript/ESLint, üretim derlemesi ve biçim kontrolü geçti.
+- Proje sahibinin açık Vite sunucusuna bağlanan, tüm API çağrılarını örnek yanıtlarla karşılayan kontrollerde öğrenci panelinin 87 ve yönetici genel bakışının 17 yerleşim/etkileşim senaryosu geçti. Yerel uygulama verisi değiştirilmedi.
+- GitHub Actions üzerinde Go birim testleri ve PostgreSQL 18 ile migration, kimlik doğrulama, yönetim ve öğrenci entegrasyon testleri geçti. Ayar sürüm çakışmaları, işlem günlüğünün filtreleri/veri sınırları, günlük görüntülenme tekilleştirmesi, analitik toplamları, hesap oturumlarının iptali ve eşzamanlı son-yönetici koruması sınandı.
+- Gerçek API'ye bağlı öğrenci tarayıcı kabul testi, 21 yerleşim ve giriş/favori/kullanım öğesi akışıyla geçti.
+
+Tarayıcı ölçüleri gerçek cihaz testinin yerine geçmez; proje sahibinin telefonunda son görsel kabul beklenir. Yerel veritabanı güncellemesi ve API yeniden başlatması yukarıdaki komutlarla proje sahibi tarafından yapılmalıdır.
+
 ## Kapsam sınırı ve sonraki adım
 
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.

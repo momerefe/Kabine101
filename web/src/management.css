@@ -87,6 +87,7 @@
   .management-account {
     font-size: 0;
     gap: 0;
+    flex-shrink: 0;
   }
   .management-account .btn {
     font-size: 11px;

@@ -117,7 +117,9 @@ def main():
                 dev.call('Emulation.setDeviceMetricsOverride', {'width': width, 'height': height, 'deviceScaleFactor': 1, 'mobile': width < 500})
                 dev.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))')
                 size = dev.evaluate('({viewport:innerWidth,page:document.documentElement.scrollWidth})')
-                assert size['page'] <= width + 1 and size['viewport'] <= width + 1, f'page overflow {name} {width}: {size}'
+                if size['page'] > width + 1 or size['viewport'] > width + 1:
+                    overflowing = dev.evaluate('''[...document.querySelectorAll('body *')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return {tag:e.tagName,classes:e.className,left:r.left,right:r.right,width:r.width}}).filter(e=>e.right>window.screen.width+1||e.left< -1)''')
+                    raise AssertionError(f'page overflow {name} {width}: {size}; elements={overflowing}')
                 controls = dev.evaluate('''[...document.querySelectorAll('main input,main select,dialog[open] input')].filter(e=>e.getClientRects().length).map(e=>{const r=e.getBoundingClientRect();return {name:e.name,type:e.type,left:r.left,right:r.right,width:r.width}})''')
                 assert all(c['left'] >= -1 and c['right'] <= width + 1 and c['width'] > 0 for c in controls), f'form controls clipped {name} {width}: {controls}'
                 for table in dev.evaluate('''[...document.querySelectorAll('.table-scroll')].map(e=>({width:e.clientWidth,scroll:e.scrollWidth,overflow:getComputedStyle(e).overflowX}))'''):
