@@ -1,6 +1,24 @@
-# Teknik kararlar ve ilk teslim
+# Teknik kararlar
 
 Tarih: 21 Ekim 2026
+
+## 3B devam kararı
+
+Proje sahibi CelikPanel değerlendirmesinin ardından planlandığı şekilde devam edilmesini ve alt işlerin GPT‑6.1 Sol'e verilmesini onayladı. Ardından **`stu.koc.k12.tr`** okul alan adını ve **e-posta doğrulaması + yönetici onayı** kuralını belirledi. Aşağıdaki 3A bölümleri önceki teslimin tarihsel kaydıdır; güncel işlevler 3B teslim raporundadır.
+
+- Go/Chi + PostgreSQL/sqlc/migrate korunur. CelikPanel kaynak kodu veya lisanslı parçaları kopyalanmaz.
+- Parolalar Go `x/crypto/argon2` Argon2id ile; 64 MiB, üç geçiş, dört paralellik, rastgele salt kullanılarak saklanır. En fazla iki eşzamanlı parola işi bellek tüketimini sınırlar. Parolalar 15–128 Unicode karakter olabilir; zorunlu sembol kuralı eklenmez.
+- Oturum tokenı 32 rastgele bayttan üretilir, veritabanında SHA256 özeti tutulur. JWT veya refresh-token zinciri bu web uygulamasının ihtiyacı değildir. 24 saatlik sunucu oturumu iptal edilebilir; rol/hesap uygunluğu her korunan istekte sunucudan okunur.
+- Doğrulama 24 saat, sıfırlama 30 dakika; ayrı amaçlarla, atomik tüketilen tek kullanımlık tokenlar. Sıfırlama bütün oturumları kapatır. Bağlantılardaki token URL fragment'ında taşınır; GET isteği hesabı değiştirmez, kullanıcı açıkça form gönderir.
+- `Origin`, JSON içerik türü ve CSRF çerezi/başlığı birlikte denetlenir. Üretim çerezleri `__Host-`, `Secure`, `HttpOnly`, `SameSite=Lax`; yerel HTTP ayrı davranır. Giriş ve hassas işlemler sınırlanır. Üretimde güvenilecek ters vekil ve ortak okul IP bütçesi ayrıca sınanır.
+- Yönetici onay/ret ve rol işlemleri parola teyidi ve işlem günlüğü kullanır. Son erişilebilir yönetici korunur. İlk yönetici yalnızca yerel/operatör CLI ile oluşturulur; e-posta doğrulamasını yine tamamlar.
+- Basit SMTP gönderimi aynı API sürecindedir; worker/outbox kurulmaz. Yerelde yalnızca loopback Mailpit; uzak sunucuda doğrulanan STARTTLS. İstek kabulü gerçek teslimat garantisi değildir; SMTP hatasında yeniden gönderme mümkündür. Gerçek SMTP hizmeti henüz seçilmedi.
+- React ve mevcut CSS ile sınırlı hesap ekranları taşındı. Bu teslimde yeni bir router/form/durum paketi eklemek gerekmedi. Daha kapsamlı katalog ve yönetim yönlendirmesi kendi tesliminde değerlendirilecek.
+- Güvenlik kontrolleri ayrı PostgreSQL test şemaları ve gerçek HTTP istekleriyle; kullanıcı akışı ayrı test şemasında Chrome + Mailpit ile doğrulanır. Hiçbir test gerçek öğrenci e-postasına ileti göndermez.
+
+Başvuru kaynakları: [OWASP kimlik doğrulama](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html), [OWASP oturum yönetimi](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [Go Argon2](https://pkg.go.dev/golang.org/x/crypto/argon2), [Mailpit kurulumu](https://mailpit.axllent.org/docs/install/). Bunlar tam güvenlik denetimi veya yayına hazır olma iddiası değildir.
+
+## 3A başlangıç kaydı
 
 Proje sahibi PostgreSQL kurulumunu ve `momerefe/Kabine101` deposunu bildirmiş, GitHub/README/lisans düzenlemelerine izin vermiş ve geliştirmeyi başlatmıştır. Bu talimat, daha önce görüşülen sade teknik temel üzerinden **3A teslimine başlama** yetkisi olarak uygulanmıştır. HTML prototipi görsel referans olarak aynen korunmuştur; sonraki ürün teslimlerinin kabul noktaları devam eder.
 
@@ -30,6 +48,6 @@ Kullanıcının verdiği lisans düzenleme yetkisi kapsamında kaynak kodu için
 
 CI dosyası test ve derlemeyi tanımlar; otomatik dağıtım yapmaz. Depo görünürlüğü değiştirilmez. Bağlı hesabın depo ayarlarını değiştirme veya gönderme yetkisi yoksa yerel hazırlık tamamlanır ve erişim eksikliği teslimde açıkça belirtilir.
 
-## Sonraki teslimden önce
+## 3A sonunda açık kalanlar
 
-3B için gerçek okul e-posta alan adı, öğrenci uygunluk kuralı ve yönetici onayının hangi durumda gerektiği belirlenmelidir. Üretim e-posta hizmeti, dosya deposu, barındırma ve yayın kararı bu teslim kapsamında kesinleştirilmemiştir. `ogrenci.example` gerçek giriş kuralı olarak üretime taşınamaz.
+3A sonunda okul alan adı ve uygunluk kuralı açıktı; yukarıdaki 3B kararıyla kesinleşti. Üretim e-posta hizmeti, dosya deposu, barındırma ve yayın kararı hâlâ kesinleşmedi. `ogrenci.example` yalnızca izole testlerde kullanılır ve üretime taşınamaz.

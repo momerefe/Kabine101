@@ -12,9 +12,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/momerefe/Kabine101/db"
+	"github.com/momerefe/Kabine101/internal/auth"
 	"github.com/momerefe/Kabine101/internal/config"
 	"github.com/momerefe/Kabine101/internal/database"
 	"github.com/momerefe/Kabine101/internal/httpapi"
+	"github.com/momerefe/Kabine101/internal/mailer"
 )
 
 func main() {
@@ -44,6 +46,14 @@ func run(log *slog.Logger) error {
 	}
 	defer pool.Close()
 	queries := database.New(pool)
+	sender, err := mailer.New(cfg)
+	if err != nil {
+		return err
+	}
+	authentication, err := auth.New(pool, cfg, sender)
+	if err != nil {
+		return err
+	}
 	ready := func(ctx context.Context) error {
 		var version int
 		var dirty bool
@@ -56,7 +66,7 @@ func run(log *slog.Logger) error {
 		_, err := queries.GetPlatformName(ctx)
 		return err
 	}
-	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: httpapi.Router(ready), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second}
+	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: httpapi.Router(ready, authentication), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second}
 	result := make(chan error, 1)
 	go func() { result <- srv.ListenAndServe() }()
 	log.Info("API started", "address", cfg.HTTPAddress, "environment", cfg.Environment)

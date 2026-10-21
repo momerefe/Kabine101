@@ -81,3 +81,245 @@
     margin-bottom: 24px;
   }
 }
+
+/* The React authentication screens share the prototype's visual language. */
+.brand-light {
+  font-weight: 350;
+}
+.audience-switch {
+  display: flex;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.audience-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 39px;
+  font-size: 12px;
+  border-radius: 7px;
+  color: var(--muted);
+}
+.audience-switch button.active {
+  background: white;
+  box-shadow: 0 2px 6px #252a3609;
+  color: var(--red);
+  font-weight: 600;
+}
+.auth-form fieldset,
+.account-dialog fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.auth-form .field input,
+.account-dialog .field input {
+  font-size: 16px;
+}
+.auth-help {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 14px;
+}
+.auth-help .text-link {
+  font-size: 12px;
+}
+.auth-notice {
+  padding: 15px 17px;
+  margin: 18px 0;
+  border: 1px solid #cfdfd3;
+  border-radius: 9px;
+  background: #f0f6f1;
+  color: #355a40;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.form-error {
+  overflow-wrap: anywhere;
+}
+.local-email {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: #726653;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.local-email p {
+  margin-top: 8px;
+}
+.local-email a {
+  color: var(--red);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.account-shell {
+  max-width: 1060px;
+}
+.account-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.account-details {
+  margin: 28px 0;
+}
+.account-details > div {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-details dt,
+.account-meta dt {
+  color: var(--muted);
+}
+.account-details dd,
+.account-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.account-count {
+  margin: 24px 0 14px;
+  color: var(--muted);
+  font-size: 13px !important;
+}
+.admin-account-list {
+  display: grid;
+  gap: 16px;
+}
+.admin-account {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.admin-account-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.admin-account-heading h2 {
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+.account-email {
+  font-size: 13px !important;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  margin-top: 6px;
+}
+.account-status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #faf0dc;
+  color: #765d2c;
+}
+.account-status.status-active {
+  background: #eef5ec;
+  color: #3c6339;
+}
+.account-status.status-rejected,
+.account-status.status-disabled {
+  background: #f9e9e5;
+  color: #9d343e;
+}
+.account-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  margin: 20px 0;
+  font-size: 12px;
+}
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.account-dialog {
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100dvh - 40px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px;
+  color: var(--ink);
+  background: var(--white);
+  box-shadow: 0 20px 80px #252a3630;
+}
+.account-dialog::backdrop {
+  background: #252a3670;
+}
+.account-dialog h2 {
+  font-size: 23px;
+}
+.account-dialog p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.account-dialog .field {
+  margin-top: 20px;
+}
+.confirmation-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 18px;
+}
+.confirmation-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--red);
+  flex-shrink: 0;
+}
+.account-shell .local-email p {
+  font-size: 12px;
+}
+.auth-content:focus {
+  outline: none;
+}
+@media (max-width: 480px) {
+  .account-details > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+  .foundation-header .brand {
+    font-size: 21px;
+  }
+  .admin-account {
+    padding: 17px;
+  }
+  .account-dialog {
+    padding: 22px;
+  }
+  .account-actions .btn {
+    flex: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}

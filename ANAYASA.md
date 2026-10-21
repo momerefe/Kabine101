@@ -1,8 +1,8 @@
 # KoçBenefits Proje Anayasası
 
-Sürüm: 1.1
+Sürüm: 1.2
 Tarih: 21 Ekim 2026
-Durum: Proje sahibinin 21 Ekim 2026 tarihli geliştirmeyi başlatma talimatıyla 3A teslimi yerelde tamamlanıp incelemeye sunulmuştur. Temel teknik kararlar [teknik karar kaydında](docs/TEKNIK_KARARLAR.md); sonraki teslimlerin kabul noktaları korunur.
+Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi geliştiriliyor. Kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Temel teknik kararlar [teknik karar kaydında](docs/TEKNIK_KARARLAR.md); sonraki teslimlerin kabul noktaları korunur.
 
 KoçBenefits, Koç Okulu öğrencilerinin anlaşmalı işletmelerin avantajlarını bulmasını ve kullanım koşullarını kolayca anlamasını sağlar. Kabine, işletmeleri ve avantajları sade bir yönetim panelinden yönetir. Başarı ölçütü; öğrencinin geçerli bir avantaja ulaşabilmesi, yöneticinin doğru bilgiyi güvenilir biçimde yayımlayabilmesi ve sistemin sonraki kabineye devredilebilmesidir.
 
@@ -160,7 +160,7 @@ Bir teslim ancak ilgili kullanıcı akışı uçtan uca çalıştığında, kabu
 ## 11 Açık kararlar
 
 1. Prototip tasarımının kabulü ve varsa son düzeltmeler.
-2. Gerçek okul alan adı, öğrenci uygunluğu ve yönetici onayının hangi durumda gerektiği.
+2. Okul alan adı `stu.koc.k12.tr` ve e-posta doğrulaması + yönetici onayı proje sahibi tarafından kesinleştirildi. Gerçek e-posta hizmeti ve ilk yönetici hesabı yayına hazırlıkta tanımlanacak.
 3. Teknik temel, dosya depolama seçimi, sunucu/e-posta hizmeti ve bütçe.
 4. Gerçek sponsor koşulları ve her avantajın işletmede kabul edilen kullanım yöntemi.
 5. Destek ve işletim sorumluları, veri saklama süreleri ve pilot kullanıcı grubu.

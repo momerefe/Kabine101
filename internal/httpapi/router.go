@@ -13,7 +13,9 @@ import (
 
 type Readiness func(context.Context) error
 
-func Router(ready Readiness) http.Handler {
+type Routes interface{ RegisterRoutes(chi.Router) }
+
+func Router(ready Readiness, routes ...Routes) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, middleware.Recoverer)
 	r.Use(func(next http.Handler) http.Handler {
@@ -33,6 +35,9 @@ func Router(ready Readiness) http.Handler {
 		}
 		respond(w, http.StatusOK, api.Ok)
 	})
+	for _, route := range routes {
+		route.RegisterRoutes(r)
+	}
 	return r
 }
 

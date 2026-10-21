@@ -1,0 +1,2 @@
+DROP INDEX accounts_pending_review_idx;
+DROP INDEX account_tokens_account_purpose_idx;

@@ -1,44 +1,830 @@
-openapi: 3.0.3
-info:
-  title: KoçBenefits API
-  version: 0.1.0
-  description: Foundation endpoints only. Student and admin APIs are not implemented yet.
-paths:
-  /api/health:
-    get:
-      operationId: getHealth
-      summary: Process health without database dependency
-      responses:
+'openapi': '3.0.3'
+'info':
+  'title': 'KoçBenefits API'
+  'version': '0.2.0'
+  'description': '3B identity and access. Email ownership and manual student approval are separate.'
+'paths':
+  '/api/health':
+    'get':
+      'operationId': 'getHealth'
+      'responses':
         '200':
-          description: Process is running
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Health'
-  /api/ready:
-    get:
-      operationId: getReady
-      summary: Database connection and schema readiness
-      responses:
-        '200':
-          description: Database is ready
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Health'
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Health'
         '503':
-          description: Database or schema unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Health'
-components:
-  schemas:
-    Health:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [ok, unavailable]
+          'description': 'Unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/ready':
+    'get':
+      'operationId': 'getReady'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Health'
+        '503':
+          'description': 'Unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Health'
+  '/api/auth/session':
+    'get':
+      'operationId': 'getSession'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/SessionResponse'
+        '503':
+          'description': 'Unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/admin/accounts':
+    'get':
+      'operationId': 'listAccounts'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/AccountsResponse'
+        '401':
+          'description': 'Login required'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Administrator required'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+      'security':
+        - 'sessionCookie': []
+  '/api/auth/register':
+    'post':
+      'operationId': 'register'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/RegisterRequest'
+      'responses':
+        '202':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/login':
+    'post':
+      'operationId': 'login'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/LoginRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/LoginResponse'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/logout':
+    'post':
+      'operationId': 'logout'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/EmptyRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/verify-email':
+    'post':
+      'operationId': 'verifyEmail'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/TokenRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/resend-verification':
+    'post':
+      'operationId': 'resendVerification'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/EmailRequest'
+      'responses':
+        '202':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/forgot-password':
+    'post':
+      'operationId': 'forgotPassword'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/EmailRequest'
+      'responses':
+        '202':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/auth/reset-password':
+    'post':
+      'operationId': 'resetPassword'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/ResetPasswordRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+  '/api/admin/accounts/{id}/review':
+    'post':
+      'operationId': 'reviewAccount'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+        - 'in': 'path'
+          'name': 'id'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/ReviewRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+      'security':
+        - 'sessionCookie': []
+  '/api/admin/accounts/{id}/role':
+    'post':
+      'operationId': 'changeRole'
+      'description': 'Requires trusted Origin, application/json and CSRF token from GET /api/auth/session.'
+      'parameters':
+        - 'in': 'header'
+          'name': 'X-CSRF-Token'
+          'required': true
+          'schema':
+            'type': 'string'
+        - 'in': 'path'
+          'name': 'id'
+          'required': true
+          'schema':
+            'type': 'string'
+      'requestBody':
+        'required': true
+        'content':
+          'application/json':
+            'schema':
+              '$ref': '#/components/schemas/RoleRequest'
+      'responses':
+        '200':
+          'description': 'Success'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Message'
+        '400':
+          'description': 'Invalid input'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '401':
+          'description': 'Invalid credentials'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '403':
+          'description': 'Access or CSRF denied'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '409':
+          'description': 'State conflict'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '429':
+          'description': 'Rate limited; Retry-After seconds'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+        '503':
+          'description': 'Service unavailable'
+          'content':
+            'application/json':
+              'schema':
+                '$ref': '#/components/schemas/Error'
+      'security':
+        - 'sessionCookie': []
+'components':
+  'securitySchemes':
+    'sessionCookie':
+      'type': 'apiKey'
+      'in': 'cookie'
+      'name': 'kb_session'
+      'description': 'Opaque session; production cookie __Host-kb_session.'
+  'schemas':
+    'Health':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'status'
+      'properties':
+        'status':
+          'type': 'string'
+          'enum':
+            - 'ok'
+            - 'unavailable'
+    'Account':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'id'
+        - 'name'
+        - 'email'
+        - 'role'
+        - 'status'
+        - 'email_verified'
+        - 'eligibility_status'
+      'properties':
+        'id':
+          'type': 'string'
+        'name':
+          'type': 'string'
+        'email':
+          'type': 'string'
+        'role':
+          'type': 'string'
+          'enum':
+            - 'student'
+            - 'admin'
+        'status':
+          'type': 'string'
+          'enum':
+            - 'pending'
+            - 'active'
+            - 'rejected'
+            - 'disabled'
+        'email_verified':
+          'type': 'boolean'
+        'eligibility_status':
+          'type': 'string'
+          'enum':
+            - 'pending'
+            - 'approved'
+            - 'rejected'
+    'SessionResponse':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'user'
+        - 'csrf_token'
+        - 'school_domain'
+        - 'registration_open'
+        - 'local_email'
+      'properties':
+        'user':
+          'allOf':
+            - '$ref': '#/components/schemas/Account'
+          'nullable': true
+        'csrf_token':
+          'type': 'string'
+        'school_domain':
+          'type': 'string'
+        'registration_open':
+          'type': 'boolean'
+        'local_email':
+          'type': 'boolean'
+    'LoginResponse':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'user'
+      'properties':
+        'user':
+          '$ref': '#/components/schemas/Account'
+    'AccountsResponse':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'accounts'
+      'properties':
+        'accounts':
+          'type': 'array'
+          'items':
+            '$ref': '#/components/schemas/Account'
+    'Message':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'message'
+      'properties':
+        'message':
+          'type': 'string'
+    'Error':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'code'
+        - 'message'
+      'properties':
+        'code':
+          'type': 'string'
+        'message':
+          'type': 'string'
+    'RegisterRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'name'
+        - 'email'
+        - 'password'
+      'properties':
+        'name':
+          'type': 'string'
+        'email':
+          'type': 'string'
+        'password':
+          'type': 'string'
+    'LoginRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'email'
+        - 'password'
+      'properties':
+        'email':
+          'type': 'string'
+        'password':
+          'type': 'string'
+    'EmailRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'email'
+      'properties':
+        'email':
+          'type': 'string'
+    'TokenRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'token'
+      'properties':
+        'token':
+          'type': 'string'
+    'ResetPasswordRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'token'
+        - 'password'
+      'properties':
+        'token':
+          'type': 'string'
+        'password':
+          'type': 'string'
+    'ReviewRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'decision'
+        - 'current_password'
+      'properties':
+        'decision':
+          'type': 'string'
+          'enum':
+            - 'approved'
+            - 'rejected'
+        'current_password':
+          'type': 'string'
+    'RoleRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required':
+        - 'role'
+        - 'current_password'
+      'properties':
+        'role':
+          'type': 'string'
+          'enum':
+            - 'student'
+            - 'admin'
+        'current_password':
+          'type': 'string'
+    'EmptyRequest':
+      'type': 'object'
+      'additionalProperties': false
+      'required': []
+      'properties': {}

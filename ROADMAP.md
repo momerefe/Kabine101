@@ -1,8 +1,8 @@
 # KoçBenefits Geliştirme Yol Haritası
 
-Sürüm: 1.1
+Sürüm: 1.2
 Tarih: 21 Ekim 2026
-Durum: Proje sahibinin 21 Ekim 2026 tarihli talimatıyla 3A proje ve veri temeli yerelde tamamlandı ve incelemeye sunuldu. [Teslim raporu](docs/TESLIM_3A.md). Sonraki teslimlerin kabul noktaları korunur.
+Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi geliştiriliyor. Okul alan adı `stu.koc.k12.tr`, e-posta doğrulaması ve ayrıca yönetici onayı kesinleştirildi. Sonraki teslimlerin kabul noktaları korunur.
 
 Yol haritası, mevcut HTML öğrenci ve yönetici prototipini çalışan ürüne dönüştürür. Kapsam ve geliştirme kuralları [ANAYASA.md](ANAYASA.md) ile birlikte uygulanır. Ekip kapasitesi, bütçe ve okul bilgileri kesinleşmediğinden takvim tarihi veya teslim süresi taahhüt edilmez; sıra, bağımlılıklar ve tamamlanma ölçütleri belirlenir.
 
@@ -12,9 +12,9 @@ Yol haritası, mevcut HTML öğrenci ve yönetici prototipini çalışan ürüne
 | --- | --- | --- |
 | Aşama 1 HTML prototipi | Çalışır tasarım referansı; geliştirmeye başlama talimatıyla korunarak ilerleniyor | Sonraki ekran teslimlerinde tasarım karşılaştırması |
 | Aşama 2 Teknik mimari | 3A için sade teknik temel uygulanıyor; üretim hizmetleri açık | [Teknik kararlar](docs/TEKNIK_KARARLAR.md) |
-| Aşama 3 Gerçek uygulama | 3A yerelde tamamlandı, incelemeye sunuldu; 3B başlamadı | Alt teslimin test sonucu ve proje sahibi kabulü |
+| Aşama 3 Gerçek uygulama | 3A tamamlandı; 3B kayıt, giriş ve erişim geliştiriliyor | Alt teslimin test sonucu ve proje sahibi kabulü |
 
-HTML ekranları tarayıcı demosu olarak korunur. Go API, PostgreSQL şeması ve React başlangıcı 3A'da eklenir. Gerçek hesap, e-posta doğrulaması ve doğrulanmış kullanım henüz yoktur. Başlangıç yetkisi ve alınan kararlar teknik karar kaydında belirtilmiştir.
+HTML ekranları tarayıcı demosu olarak korunur. 3A Go API, PostgreSQL şeması ve React temelini; 3B gerçek hesap, oturum, yerel e-posta doğrulaması ve yönetici onayını kapsar. Doğrulanmış avantaj kullanımı henüz yoktur. Başlangıç ve devam yetkileri teknik karar kaydında belirtilmiştir.
 
 ## 2 Aşama 1 prototipin kabulü
 
@@ -65,6 +65,10 @@ Alt teslimler sırayla yapılır. Her teslim sonunda çalışan sonuç, test kan
 ### 3B Kimlik doğrulama ve erişim
 
 **Bağımlılık:** 3A; gerçek alan adı ve öğrenci uygunluk kararı.
+
+**Kesinleşen karar:** `stu.koc.k12.tr` alan adı ve **e-posta doğrulaması + ayrı yönetici onayı**. Yerel e-posta Mailpit'te tutulur; okul sunucusuna ileti gönderilmez. Proje sahibinin devam talimatı bu teslimin geliştirme yetkisidir.
+
+**İş organizasyonu:** Backend/CLI, mevcut tasarımı kullanan React ekranları ve bağımsız PostgreSQL güvenlik testleri GPT‑6.1 Sol alt işlerine ayrıldı. Ana ajan API sözleşmesi, SMTP, birleştirme, tarayıcı testleri ve teslim incelemesini yürütür. İşletme ve avantaj API'leri 3C'de kalır.
 
 **İşler:**
 

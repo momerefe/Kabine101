@@ -41,7 +41,9 @@ def main():
         f.write('APP_ENV=development\nHTTP_ADDR=127.0.0.1:8080\n')
         for key, db in [('DATABASE_URL', 'kocbenefits_dev'), ('TEST_DATABASE_URL', 'kocbenefits_test')]:
             f.write(f'{key}=postgres://kocbenefits_local:{password}@127.0.0.1:5432/{db}?sslmode=disable\n')
-        f.write('SCHOOL_EMAIL_DOMAIN=ogrenci.example\n')
+        f.write('SCHOOL_EMAIL_DOMAIN=stu.koc.k12.tr\nELIGIBILITY_POLICY=manual\nREGISTRATION_OPEN=true\n')
+        f.write('APP_ORIGIN=http://127.0.0.1:5173\nLOCAL_EMAIL=true\n')
+        f.write('SMTP_HOST=127.0.0.1\nSMTP_PORT=1025\nSMTP_FROM=noreply@kocbenefits.example\nSMTP_USERNAME=\nSMTP_PASSWORD=\n')
     print('Created kocbenefits_dev and kocbenefits_test with a dedicated local role. Credentials saved only in ignored .env.')
 
 

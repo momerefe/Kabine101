@@ -19,11 +19,11 @@ try:
  targets=json.load(urllib.request.urlopen(f'http://127.0.0.1:{port}/json/list'))
  dev=DevTools(next(t['webSocketDebuggerUrl'] for t in targets if t['type']=='page'))
  dev.call('Runtime.enable');dev.call('Page.enable');dev.call('Network.enable')
- dev.call('Page.navigate',{'url':'http://127.0.0.1:5173/'})
+ dev.call('Page.navigate',{'url':'http://127.0.0.1:5173/#system'})
  for _ in range(150):
-  if dev.evaluate("Boolean(document.querySelector('.is-ready'))"): break
+  if dev.evaluate("document.querySelector('[role=status]')?.textContent.includes('şeması hazır')"): break
   time.sleep(.1)
- assert dev.evaluate("Boolean(document.querySelector('.is-ready'))"),'readiness never appeared'
+ assert dev.evaluate("document.querySelector('[role=status]')?.textContent.includes('şeması hazır')"),'readiness never appeared'
  for width in (1440,390,320):
   dev.call('Emulation.setDeviceMetricsOverride',{'width':width,'height':900,'deviceScaleFactor':1,'mobile':width<500})
   assert dev.evaluate('document.documentElement.scrollWidth <= innerWidth'),f'overflow {width}'
@@ -38,9 +38,9 @@ try:
  dev.call('Network.setBlockedURLs',{'urls':[]})
  dev.evaluate("document.querySelector('button').click()")
  for _ in range(100):
-  if dev.evaluate("Boolean(document.querySelector('.is-ready'))"): break
+  if dev.evaluate("document.querySelector('[role=status]')?.textContent.includes('şeması hazır')"): break
   time.sleep(.1)
- assert dev.evaluate("Boolean(document.querySelector('.is-ready'))"),'retry failed'
+ assert dev.evaluate("document.querySelector('[role=status]')?.textContent.includes('şeması hazır')"),'retry failed'
  assert not dev.errors,dev.errors
  print('Foundation browser checks passed: live API, database readiness, 1440/390/320 widths, network error and retry; no runtime errors.')
 finally:
