@@ -1045,16 +1045,18 @@ function SystemStatus() {
               ? 'API ve PostgreSQL şeması hazır'
               : 'Bağlantı kurulamadı.'}
         </p>
-        <button
-          className="btn btn-secondary"
-          disabled={readiness.isFetching}
-          onClick={() => void readiness.refetch()}
-        >
-          Bağlantıyı yeniden kontrol et
-        </button>
-        <a className="text-link" href="#login/student">
-          Girişe dön
-        </a>
+        <div className="account-actions">
+          <button
+            className="btn btn-secondary"
+            disabled={readiness.isFetching}
+            onClick={() => void readiness.refetch()}
+          >
+            Bağlantıyı yeniden kontrol et
+          </button>
+          <a className="text-link" href="#login/student">
+            Girişe dön
+          </a>
+        </div>
       </section>
     </main>
   );

@@ -116,6 +116,8 @@ Mailpit yardımcı yükleyicisi Windows x64 içindir; sabit sürümün SHA256 ö
 
 ## Kontroller
 
+Masaüstü, telefon ve dokunmatik tablet kontrollerinin kapsamı ve tekrar çalıştırma komutları: [Responsive kontrol raporu](docs/RESPONSIVE_KONTROL.md).
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/dev.ps1 generate
 powershell -ExecutionPolicy Bypass -File tools/dev.ps1 check

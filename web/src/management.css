@@ -100,3 +100,88 @@
   object-fit: cover;
   border-radius: 10px;
 }
+
+/* Keep long records contained and touch controls readable without browser zoom. */
+.management-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.management-breadcrumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.management-account {
+  min-width: 0;
+}
+.management-account .btn,
+.is-admin .admin-menu-button {
+  flex-shrink: 0;
+}
+.is-admin .sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.is-admin .sidebar > .brand,
+.is-admin .sidebar > .sidebar-label,
+.is-admin .sidebar > nav,
+.is-admin .sidebar > .mobile-menu-close {
+  flex-shrink: 0;
+}
+.management-content .field input,
+.management-content .field textarea,
+.management-content .field select {
+  font-size: 16px;
+}
+@media (max-width: 760px), (max-width: 1100px) and (hover: none) {
+  .is-admin .app-body {
+    margin-left: 0;
+  }
+  .is-admin .sidebar,
+  .is-admin .sidebar:is(:hover, :focus-within),
+  .is-admin.admin-nav-pinned .sidebar {
+    display: flex;
+    width: min(var(--admin-menu), calc(100vw - 48px));
+  }
+  .is-admin .sidebar {
+    transform: translateX(-105%);
+    z-index: 60;
+    visibility: hidden;
+  }
+  .is-admin.admin-menu-open .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+  .is-admin.admin-menu-open .sidebar .brand > span:last-child,
+  .is-admin.admin-menu-open .sidebar .nav-link > span,
+  .is-admin.admin-menu-open .sidebar-label > span {
+    opacity: 1;
+    visibility: visible;
+  }
+  .is-admin .sidebar-label {
+    width: calc(100% - 22px);
+  }
+  .is-admin .menu-pin {
+    display: none;
+  }
+  .is-admin .admin-menu-button {
+    display: inline-flex;
+    min-height: 44px;
+  }
+  .mobile-menu-close {
+    display: block;
+    min-height: 44px;
+  }
+  .is-admin.admin-menu-open {
+    overflow: hidden;
+  }
+  .is-admin.admin-menu-open .menu-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: #252a3666;
+  }
+}

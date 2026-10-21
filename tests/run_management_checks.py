@@ -50,6 +50,7 @@ def main():
             wait(lambda: dev.evaluate(f'document.body.innerText.includes({json.dumps(value)})'), 'missing text '+value)
         def fill(selector, value):
             present(selector)
+            wait(lambda:dev.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(selector)});return e.tagName!=='SELECT'||Array.from(e.options).some(o=>o.value==={json.dumps(value)})}})()"),'select option not loaded '+selector)
             dev.evaluate(f"""(()=>{{const e=document.querySelector({json.dumps(selector)});const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,{json.dumps(value)});e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{{bubbles:true}}));}})()""")
         def click(label, scope='document', prefix=False):
             # Keep the button lookup readable; disabled controls must never pass.
@@ -67,6 +68,8 @@ def main():
             return dev.evaluate(f"fetch({json.dumps(path)}).then(r=>r.json())")
         def viewport(width):
             dev.call('Emulation.setDeviceMetricsOverride', {'width':width,'height':950,'deviceScaleFactor':1,'mobile':width<500})
+            # Let resize/media listeners and React commit before interacting.
+            dev.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))')
             assert dev.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'overflow {width}'
         def shot(name):
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)
@@ -149,7 +152,7 @@ def main():
             viewport(width); click('☰ Menü')
             dev.call('Input.dispatchKeyEvent', {'type':'keyDown','key':'Escape','code':'Escape','windowsVirtualKeyCode':27})
             wait(lambda:not dev.evaluate("document.body.classList.contains('admin-menu-open')"),'Escape did not close menu')
-            assert dev.evaluate("document.activeElement.classList.contains('admin-menu-button')")
+            wait(lambda:dev.evaluate("document.activeElement.classList.contains('admin-menu-button')"),'focus not restored after menu closes')
         shot('management-benefits-320.png')
         dev.call('Emulation.setEmulatedMedia', {'features':[{'name':'prefers-reduced-motion','value':'reduce'}]})
         nav('businesses'); viewport(320)

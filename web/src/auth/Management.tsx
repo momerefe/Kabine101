@@ -2,6 +2,7 @@
   useEffect,
   useRef,
   useState,
+  useId,
   type ReactNode,
   type FormEvent,
 } from 'react';
@@ -25,6 +26,7 @@ const nav = [
   ['audit', 'İşlem Günlüğü', '≡'],
   ['settings', 'Platform Ayarları', '⚙'],
 ];
+const drawerQuery = '(max-width: 760px), (max-width: 1100px) and (hover: none)';
 const categories = {
   food: 'Restoranlar ve kafeler',
   fashion: 'Giyim ve moda',
@@ -94,13 +96,25 @@ export function Management({
   const [hash, setHash] = useState(location.hash);
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [drawer, setDrawer] = useState(
+    () => window.matchMedia(drawerQuery).matches,
+  );
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLElement>(null);
   const section = hash.split('/')[1] || 'overview';
   function close() {
     setOpen(false);
-    trigger.current?.focus();
+    requestAnimationFrame(() => trigger.current?.focus());
   }
+  useEffect(() => {
+    const media = window.matchMedia(drawerQuery);
+    const update = () => {
+      setDrawer(media.matches);
+      setOpen(false);
+    };
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
     const update = () => {
       setHash(location.hash);
@@ -131,6 +145,10 @@ export function Management({
       if (e.key === 'Tab') {
         const items = Array.from(
           menu.current?.querySelectorAll<HTMLElement>('a,button') || [],
+        ).filter(
+          (item) =>
+            item.getClientRects().length &&
+            getComputedStyle(item).visibility !== 'hidden',
         );
         if (e.shiftKey && document.activeElement === items[0]) {
           e.preventDefault();
@@ -146,7 +164,12 @@ export function Management({
   }, [open]);
   return (
     <>
-      <aside ref={menu} className="sidebar" aria-label="Yönetici ana menüsü">
+      <aside
+        ref={menu}
+        className="sidebar"
+        aria-label="Yönetici ana menüsü"
+        inert={drawer && !open}
+      >
         <a className="brand" href="#admin/overview">
           <span className="brand-mark">
             k<span>✦</span>
@@ -174,7 +197,7 @@ export function Management({
               title={label}
               aria-current={section === id ? 'page' : undefined}
               onClick={() => {
-                if (window.matchMedia('(max-width:760px)').matches) close();
+                if (drawer) close();
               }}
             >
               <MenuIcon section={id} />
@@ -198,7 +221,7 @@ export function Management({
         hidden={!open}
         onClick={close}
       />
-      <div className="app-body">
+      <div className="app-body" inert={drawer && open}>
         <header className="topbar">
           <button
             ref={trigger}
@@ -209,7 +232,7 @@ export function Management({
           >
             ☰ Menü
           </button>
-          <span>
+          <span className="management-breadcrumb">
             Yönetim /{' '}
             {nav.find((n) => n[0] === section)?.[1] || 'Sayfa bulunamadı'}
           </span>
@@ -1177,19 +1200,23 @@ function Confirmation({
   onConfirm: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     const el = ref.current;
+    const heading = el?.querySelector('h2');
+    if (heading) heading.id = titleId;
     el?.showModal();
     return () => {
       el?.close();
       previous?.focus();
     };
-  }, []);
+  }, [titleId]);
   return (
     <dialog
       ref={ref}
       className="account-dialog"
+      aria-labelledby={titleId}
       onCancel={(e) => {
         if (pending) e.preventDefault();
         else onClose();

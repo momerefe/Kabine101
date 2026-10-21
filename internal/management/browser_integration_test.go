@@ -55,9 +55,14 @@ func TestManagementBrowser(t *testing.T) {
 	}
 	const student = "browser-student@ogrenci.example"
 	h.account(student, "student")
+	script := "run_management_checks.py"
+	if os.Getenv("KOC_RESPONSIVE_TEST") == "1" {
+		script = "run_responsive_checks.py"
+		h.browser().send("POST", "/api/auth/register", map[string]any{"name": "Doğrulama bekleyen test öğrencisi", "email": "pending-layout@ogrenci.example", "password": testPassword}).want(t, 202)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "python", filepath.Join(root, "tests", "run_management_checks.py"))
+	cmd := exec.CommandContext(ctx, "python", filepath.Join(root, "tests", script))
 	cmd.Dir = root
 	cmd.Env = append(os.Environ(), "KOC_BROWSER_URL="+web.URL, "KOC_BROWSER_USERNAME="+username, "KOC_BROWSER_PASSWORD="+testPassword, "KOC_BROWSER_STUDENT="+student)
 	output, err := cmd.CombinedOutput()

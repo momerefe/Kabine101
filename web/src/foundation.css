@@ -323,3 +323,11 @@
     animation: none !important;
   }
 }
+
+.account-dialog {
+  overflow-wrap: anywhere;
+}
+.account-dialog .field textarea,
+.account-dialog .field select {
+  font-size: 16px;
+}
