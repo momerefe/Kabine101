@@ -1,4 +1,4 @@
-import {
+﻿import {
   useEffect,
   useRef,
   useState,
@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { Management } from './Management';
 import type { components } from '../api/schema.gen';
 
 type Session = components['schemas']['SessionResponse'];
@@ -49,15 +50,22 @@ const titles: Record<Mode, string> = {
 };
 
 function safeNext(value: string | null): string {
-  return value === '/admin' || value === '/account' ? value : '';
+  return value &&
+    /^(\/account|\/admin(?:\/(overview|partners|businesses|benefits|students|published|archived|usage|analytics|users|audit|settings))?)$/.test(
+      value,
+    )
+    ? value
+    : '';
 }
 
 function readRoute(): Route {
   const [raw, query = ''] = location.hash.slice(1).split('?');
   const name = raw.replace(/^\//, '');
-  const mode: Mode = Object.hasOwn(titles, name)
-    ? (name as Mode)
-    : 'login/student';
+  const mode: Mode = name.startsWith('admin/')
+    ? 'admin'
+    : Object.hasOwn(titles, name)
+      ? (name as Mode)
+      : 'login/student';
   const params = new URLSearchParams(query);
   return {
     mode,
@@ -69,7 +77,7 @@ function readRoute(): Route {
   };
 }
 
-function navigate(mode: Mode, next = '', replace = false) {
+function navigate(mode: Mode | `admin/${string}`, next = '', replace = false) {
   const hash = `#${mode}${safeNext(next) ? `?next=${encodeURIComponent(next)}` : ''}`;
   if (replace || readRoute().token) {
     history.replaceState(
@@ -336,6 +344,14 @@ function AuthForm({
         navigate('login/student', '', true);
       }
       const updated = await refresh();
+      if (
+        (action.kind === 'login' || action.kind === 'admin-login') &&
+        updated.user?.role === 'admin' &&
+        safeNext(route.next).startsWith('/admin/')
+      ) {
+        navigate(route.next.slice(1) as `admin/${string}`, '', true);
+        return;
+      }
       if (action.kind === 'login' || action.kind === 'admin-login')
         navigate(
           route.next === '/admin' || route.mode === 'login/admin'
@@ -609,10 +625,35 @@ function AccountPage({
     mutationFn: () => authRequest({ kind: 'logout' }, session.csrf_token),
     onSuccess: async () => {
       client.removeQueries({ queryKey: ['accounts'] });
+      client.removeQueries({ queryKey: ['management-businesses'] });
+      client.removeQueries({ queryKey: ['management-benefits'] });
       await refresh();
       navigate('login/student', '', true);
     },
   });
+  if (adminPage && user.role === 'admin')
+    return (
+      <Management
+        session={session}
+        accounts={<AdminAccounts session={session} refresh={refresh} />}
+        logout={
+          <>
+            <button
+              className="btn btn-secondary"
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
+            >
+              {logout.isPending ? 'Çıkılıyor…' : 'Çıkış yap'}
+            </button>
+            {logout.isError && (
+              <Notice error>
+                Çıkış yapılamadı. Bağlantını kontrol edip yeniden dene.
+              </Notice>
+            )}
+          </>
+        }
+      />
+    );
   return (
     <main className="foundation account-shell" id="account-content">
       <header className="foundation-header">
@@ -717,8 +758,7 @@ function AdminAccounts({
         doğrulanmadan verilen onay hesabı etkinleştirmez.
       </p>
       <div className="auth-notice">
-        İşletmeler, avantajlar ve diğer yönetim bölümleri sonraki teslimatta
-        eklenecek.
+        İşletme ve avantaj yönetimine soldaki menüden ulaşabilirsin.
       </div>
       {notice && <Notice>{notice}</Notice>}
       {accounts.isPending ? (
@@ -1032,10 +1072,12 @@ export function AuthApp() {
   });
   useEffect(() => {
     client.removeQueries({
-      queryKey: ['accounts'],
       predicate: (query) =>
-        session.data?.user?.role !== 'admin' ||
-        query.queryKey[1] !== session.data?.user?.id,
+        ['accounts', 'management-businesses', 'management-benefits'].includes(
+          String(query.queryKey[0]),
+        ) &&
+        (session.data?.user?.role !== 'admin' ||
+          query.queryKey[1] !== session.data?.user?.id),
     });
   }, [client, session.data?.user?.id, session.data?.user?.role]);
   useEffect(() => {
@@ -1100,9 +1142,13 @@ export function AuthApp() {
       />
     );
   const protectedTarget =
-    route.mode === 'admin' || route.mode === 'account'
-      ? `/${route.mode}`
-      : route.next;
+    route.mode === 'admin'
+      ? safeNext(
+          '/' + location.hash.slice(1).split('?')[0].replace(/^\//, ''),
+        ) || '/admin'
+      : route.mode === 'account'
+        ? '/account'
+        : route.next;
   const authRoute: Route = {
     ...route,
     mode:

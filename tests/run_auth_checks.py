@@ -176,7 +176,7 @@ def main():
         student_token=mail_token(STUDENT,"verify-email")
         navigate("verify-email?token="+student_token); present("form.auth-form"); submit(); present("#password")
         login(STUDENT); text_present("yönetici onayı bekliyor")
-        login(ADMIN, role="admin"); present(".admin-account")
+        login(ADMIN, role="admin"); present("#desktop-nav"); navigate("admin/students"); present(".admin-account")
         card=f"Array.from(document.querySelectorAll('.admin-account')).find(a=>a.textContent.includes({json.dumps(STUDENT)}))"
         click_text("Onayla",card); present("dialog[open]"); fill("current_password",PASSWORD)
         dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
@@ -201,7 +201,7 @@ def main():
         dev.call("Emulation.setEmulatedMedia",{"features":[{"name":"prefers-reduced-motion","value":"reduce"}]})
         navigate("register"); present("#name")
         assert dev.evaluate("document.documentElement.scrollWidth<=innerWidth"), "register overflow320"
-        login(OPERATOR, OPERATOR_PASSWORD, role="admin"); present(".admin-account")
+        login(OPERATOR, OPERATOR_PASSWORD, role="admin"); present("#desktop-nav")
         navigate("account"); present(".account-details"); text_present(OPERATOR)
         assert not dev.evaluate("document.querySelector('.account-details').textContent.includes('E-posta doğrulaması')"), "operator incorrectly shown as email verified"
         assert dev.evaluate("document.documentElement.scrollWidth<=innerWidth"), "operator account overflow320"

@@ -32,7 +32,7 @@ switch ($Task) {
     }
     'check' {
         Run 'go' @('test','./...')
-        Run 'go' @('test','-tags=integration','./internal/migrations','./internal/auth','-count=1')
+        Run 'go' @('test','-tags=integration','./internal/migrations','./internal/auth','./internal/management','-count=1')
         Run 'go' @('vet','./...')
         Run 'pnpm.cmd' @('check')
     }

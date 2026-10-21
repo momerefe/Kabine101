@@ -1,8 +1,8 @@
 # KoçBenefits Geliştirme Yol Haritası
 
-Sürüm: 1.2
+Sürüm: 1.3
 Tarih: 21 Ekim 2026
-Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi tamamlandı ve test edildi. [3B teslim raporu](docs/TESLIM_3B.md). Okul alan adı `stu.koc.k12.tr`, e-posta doğrulaması ve ayrıca yönetici onayı kesinleştirildi. Sıradaki teslim 3C; sonraki kabul noktaları korunur.
+Durum: Proje sahibinin 3B ve özel yönetici hesabını kabul edip devam etme talimatıyla **3C iş ortaklığı ve avantaj yönetimi** tamamlandı ve incelemeye hazırlandı. [3C teslim raporu](docs/TESLIM_3C.md). Okul alan adı `stu.koc.k12.tr`, e-posta doğrulaması ve ayrıca yönetici onayı korunur. Sıradaki teslim 3D; kabul noktaları korunur.
 
 Yol haritası, mevcut HTML öğrenci ve yönetici prototipini çalışan ürüne dönüştürür. Kapsam ve geliştirme kuralları [ANAYASA.md](ANAYASA.md) ile birlikte uygulanır. Ekip kapasitesi, bütçe ve okul bilgileri kesinleşmediğinden takvim tarihi veya teslim süresi taahhüt edilmez; sıra, bağımlılıklar ve tamamlanma ölçütleri belirlenir.
 
@@ -12,9 +12,9 @@ Yol haritası, mevcut HTML öğrenci ve yönetici prototipini çalışan ürüne
 | --- | --- | --- |
 | Aşama 1 HTML prototipi | Çalışır tasarım referansı; geliştirmeye başlama talimatıyla korunarak ilerleniyor | Sonraki ekran teslimlerinde tasarım karşılaştırması |
 | Aşama 2 Teknik mimari | 3A için sade teknik temel uygulanıyor; üretim hizmetleri açık | [Teknik kararlar](docs/TEKNIK_KARARLAR.md) |
-| Aşama 3 Gerçek uygulama | 3A ve 3B tamamlandı; 3C sıradaki teslim | Alt teslimin test sonucu ve proje sahibi kabulü |
+| Aşama 3 Gerçek uygulama | 3A–3C tamamlandı; 3C incelemeye hazır, 3D sıradaki teslim | Alt teslimin test sonucu ve proje sahibi kabulü |
 
-HTML ekranları tarayıcı demosu olarak korunur. 3A Go API, PostgreSQL şeması ve React temelini; 3B gerçek hesap, oturum, yerel e-posta doğrulaması ve yönetici onayını kapsar. Doğrulanmış avantaj kullanımı henüz yoktur. Başlangıç ve devam yetkileri teknik karar kaydında belirtilmiştir.
+HTML ekranları tarayıcı demosu olarak korunur. 3A teknik temeli; 3B gerçek hesap, oturum, yerel e-posta doğrulaması ve yönetici onayını; 3C gerçek işletme ve avantaj yönetimini kapsar. Öğrenci kataloğu, favoriler ve doğrulanmış avantaj kullanımı henüz yoktur. Başlangıç ve devam yetkileri teknik karar kaydında belirtilmiştir.
 
 ## 2 Aşama 1 prototipin kabulü
 
@@ -89,6 +89,10 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 ### 3C İş ortaklığı ve avantaj yönetimi
 
 **Bağımlılık:** 3B; avantajların alan ve yöntem ihtiyaçlarının netleşmesi.
+
+**Teslim durumu:** Yönetici formları gerçek API/şema 5 ile çalışır. Beş PostgreSQL yönetim kabul senaryosu; yetki/CSRF, yayın koşulları, eşzamanlı düzenleme, iş ortaklığı kapanışı ve işlem günlüğü hatasında geri alma kontrollerini kapsar. Gerçek API ile izole Chrome akışında taslak/yayın/askı, kayıt çakışması, 12 menü, mobil ekranlar ve öğrenci erişim sınırı doğrulandı. Önceki 18 kimlik senaryosu ve migration testi de geçti. [Ayrıntılar](docs/TESLIM_3C.md).
+
+**Sınırlar:** Görseller hazır yerel seçeneklerdir; dosya yükleme eklenmedi. Gerçek sponsor koşulları kullanıcı tarafından girilir; yayınlanan kayıtların öğrenci kataloğuna bağlanması 3D'dedir. İşlem günlüğü sunucuda kaydedilir; günlük ekranı 3E'de tamamlanır.
 
 **İşler:**
 

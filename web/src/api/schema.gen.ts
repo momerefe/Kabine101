@@ -238,6 +238,102 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/admin/businesses': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['listBusinesses'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/businesses/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['getBusiness'];
+    put: operations['putBusiness'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/benefits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['listBenefits'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/benefits/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['getBenefit'];
+    put: operations['putBenefit'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/benefits/{id}/publish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['publishBenefit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/benefits/{id}/suspend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['suspendBenefit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -315,6 +411,146 @@ export interface components {
       current_password: string;
     };
     EmptyRequest: Record<string, never>;
+    BusinessWrite: {
+      name: string;
+      /** @enum {string} */
+      category: 'food' | 'fashion' | 'tech' | 'sport' | 'culture' | 'other';
+      description?: string;
+      /** @description Empty or one of existing assets/*.svg allowlisted assets; no upload. */
+      image_path?: string;
+      contact_person?: string;
+      contact_info?: string;
+      branches?: string;
+      /** @enum {string} */
+      partnership_status:
+        'discussing' | 'contacted' | 'awaiting' | 'active' | 'ended';
+      /** @description YYYY-MM-DD or empty string when absent. */
+      last_contact?: string;
+      notes?: string;
+      revision: number;
+    };
+    BenefitWrite: {
+      /** Format: uuid */
+      business_id: string;
+      title: string;
+      description?: string;
+      perk?: string;
+      conditions?: string[];
+      instructions?: string[];
+      products?: string;
+      branches?: string;
+      exceptions?: string;
+      /** @description Nonnegative decimal with at most two fractional digits, or empty string. */
+      minimum_spend?: string;
+      /** @enum {string} */
+      currency: 'TRY';
+      verification_requirement?: string;
+      /** @description YYYY-MM-DD or empty string when absent. */
+      valid_from?: string;
+      /** @description YYYY-MM-DD or empty string when absent. */
+      valid_until?: string;
+      /** @enum {string} */
+      method: 'code' | 'link' | 'qr' | 'membership';
+      code?: string;
+      target_url?: string;
+      qr_content?: string;
+      membership_label?: string;
+      support_contact?: string;
+      featured?: boolean;
+      revision: number;
+    };
+    Business: {
+      name: string;
+      /** @enum {string} */
+      category: 'food' | 'fashion' | 'tech' | 'sport' | 'culture' | 'other';
+      description: string;
+      /** @description Empty or one of existing assets/*.svg allowlisted assets; no upload. */
+      image_path: string;
+      contact_person: string;
+      contact_info: string;
+      branches: string;
+      /** @enum {string} */
+      partnership_status:
+        'discussing' | 'contacted' | 'awaiting' | 'active' | 'ended';
+      /** @description YYYY-MM-DD or empty string when absent. */
+      last_contact: string;
+      notes: string;
+      revision: number;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
+    Benefit: {
+      /** Format: uuid */
+      business_id: string;
+      title: string;
+      description: string;
+      perk: string;
+      conditions: string[];
+      instructions: string[];
+      products: string;
+      branches: string;
+      exceptions: string;
+      /** @description Nonnegative decimal with at most two fractional digits, or empty string. */
+      minimum_spend: string;
+      /** @enum {string} */
+      currency: 'TRY';
+      verification_requirement: string;
+      /** @description YYYY-MM-DD or empty string when absent. */
+      valid_from: string;
+      /** @description YYYY-MM-DD or empty string when absent. */
+      valid_until: string;
+      /** @enum {string} */
+      method: 'code' | 'link' | 'qr' | 'membership';
+      code: string;
+      target_url: string;
+      qr_content: string;
+      membership_label: string;
+      support_contact: string;
+      featured: boolean;
+      revision: number;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at: string;
+      /** @enum {string} */
+      publication_status: 'draft' | 'published' | 'suspended';
+      /** @enum {string} */
+      status: 'draft' | 'active' | 'scheduled' | 'expired' | 'suspended';
+      suspension_reason: string;
+      reviewed_at: string;
+      published_at: string;
+      business_name: string;
+      category: string;
+    };
+    BusinessResponse: {
+      business: components['schemas']['Business'];
+    };
+    BenefitResponse: {
+      benefit: components['schemas']['Benefit'];
+    };
+    BusinessListResponse: {
+      businesses: components['schemas']['Business'][];
+      truncated: boolean;
+    };
+    BenefitListResponse: {
+      benefits: components['schemas']['Benefit'][];
+      truncated: boolean;
+    };
+    PublishBenefitRequest: {
+      revision: number;
+      /** @enum {boolean} */
+      conditions_reviewed: true;
+    };
+    SuspendBenefitRequest: {
+      revision: number;
+      reason: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -1252,6 +1488,646 @@ export interface operations {
         };
       };
       /** @description Service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  listBusinesses: {
+    parameters: {
+      query?: {
+        q?: string;
+        category?: string;
+        status?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BusinessListResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getBusiness: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BusinessResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  putBusiness: {
+    parameters: {
+      query?: never;
+      header: {
+        Origin: string;
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BusinessWrite'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BusinessResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  listBenefits: {
+    parameters: {
+      query?: {
+        q?: string;
+        category?: string;
+        status?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BenefitListResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getBenefit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BenefitResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  putBenefit: {
+    parameters: {
+      query?: never;
+      header: {
+        Origin: string;
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BenefitWrite'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BenefitResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  publishBenefit: {
+    parameters: {
+      query?: never;
+      header: {
+        Origin: string;
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PublishBenefitRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BenefitResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  suspendBenefit: {
+    parameters: {
+      query?: never;
+      header: {
+        Origin: string;
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuspendBenefitRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BenefitResponse'];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Error */
       503: {
         headers: {
           [name: string]: unknown;

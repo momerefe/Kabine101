@@ -1,8 +1,8 @@
 'openapi': '3.0.3'
 'info':
   'title': 'KoçBenefits API'
-  'version': '0.2.0'
-  'description': '3B identity and access. Email ownership and manual student approval are separate.'
+  'version': '0.3.0'
+  'description': '3C administrator partnership and benefit management. Lists return at most 1000 matching rows with truncated=true when additional matching records exist. Dates use Europe/Istanbul, inclusive end day. Optional text and dates use empty strings. PUT revision 0 creates a client-selected UUID; all edits require the current revision, reset benefit publication to draft and clear approval. Existing benefit business_id is immutable. No student catalogue endpoints.'
 'paths':
   '/api/health':
     'get':
@@ -686,6 +686,510 @@
                 '$ref': '#/components/schemas/Error'
       'security':
         - 'sessionCookie': []
+  /api/admin/businesses:
+    get:
+      operationId: listBusinesses
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessListResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+  /api/admin/businesses/{id}:
+    get:
+      operationId: getBusiness
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+    put:
+      operationId: putBusiness
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessWrite'
+  /api/admin/benefits:
+    get:
+      operationId: listBenefits
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitListResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+  /api/admin/benefits/{id}:
+    get:
+      operationId: getBenefit
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+    put:
+      operationId: putBenefit
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenefitWrite'
+  /api/admin/benefits/{id}/publish:
+    post:
+      operationId: publishBenefit
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishBenefitRequest'
+  /api/admin/benefits/{id}/suspend:
+    post:
+      operationId: suspendBenefit
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuspendBenefitRequest'
 'components':
   'securitySchemes':
     'sessionCookie':
@@ -903,3 +1407,326 @@
       'additionalProperties': false
       'required': []
       'properties': {}
+    BusinessWrite:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - name
+        - category
+        - partnership_status
+      properties:
+        name: &id001
+          type: string
+        category: &id002
+          type: string
+          enum:
+            - food
+            - fashion
+            - tech
+            - sport
+            - culture
+            - other
+        description: &id003
+          type: string
+        image_path: &id004
+          type: string
+          description: Empty or one of existing assets/*.svg allowlisted assets; no upload.
+        contact_person: &id005
+          type: string
+        contact_info: &id006
+          type: string
+        branches: &id007
+          type: string
+        partnership_status: &id008
+          type: string
+          enum:
+            - discussing
+            - contacted
+            - awaiting
+            - active
+            - ended
+        last_contact: &id009
+          type: string
+          description: YYYY-MM-DD or empty string when absent.
+        notes: &id010
+          type: string
+        revision: &id011
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+    BenefitWrite:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - business_id
+        - title
+        - method
+        - currency
+      properties:
+        business_id: &id012
+          type: string
+          format: uuid
+          x-go-type: string
+        title: &id013
+          type: string
+        description: &id014
+          type: string
+        perk: &id015
+          type: string
+        conditions: &id016
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        instructions: &id017
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        products: &id018
+          type: string
+        branches: &id019
+          type: string
+        exceptions: &id020
+          type: string
+        minimum_spend: &id021
+          type: string
+          description:
+            Nonnegative decimal with at most two fractional digits, or empty
+            string.
+        currency: &id022
+          type: string
+          enum:
+            - TRY
+        verification_requirement: &id023
+          type: string
+        valid_from: &id024
+          type: string
+          description: YYYY-MM-DD or empty string when absent.
+        valid_until: &id025
+          type: string
+          description: YYYY-MM-DD or empty string when absent.
+        method: &id026
+          type: string
+          enum:
+            - code
+            - link
+            - qr
+            - membership
+        code: &id027
+          type: string
+        target_url: &id028
+          type: string
+        qr_content: &id029
+          type: string
+        membership_label: &id030
+          type: string
+        support_contact: &id031
+          type: string
+        featured: &id032
+          type: boolean
+        revision: &id033
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+    Business:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - category
+        - description
+        - image_path
+        - contact_person
+        - contact_info
+        - branches
+        - partnership_status
+        - last_contact
+        - notes
+        - revision
+        - id
+        - created_at
+        - updated_at
+      properties:
+        name: *id001
+        category: *id002
+        description: *id003
+        image_path: *id004
+        contact_person: *id005
+        contact_info: *id006
+        branches: *id007
+        partnership_status: *id008
+        last_contact: *id009
+        notes: *id010
+        revision: *id011
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Benefit:
+      type: object
+      additionalProperties: false
+      required:
+        - business_id
+        - title
+        - description
+        - perk
+        - conditions
+        - instructions
+        - products
+        - branches
+        - exceptions
+        - minimum_spend
+        - currency
+        - verification_requirement
+        - valid_from
+        - valid_until
+        - method
+        - code
+        - target_url
+        - qr_content
+        - membership_label
+        - support_contact
+        - featured
+        - revision
+        - id
+        - created_at
+        - updated_at
+        - publication_status
+        - status
+        - suspension_reason
+        - reviewed_at
+        - published_at
+        - business_name
+        - category
+      properties:
+        business_id: *id012
+        title: *id013
+        description: *id014
+        perk: *id015
+        conditions: *id016
+        instructions: *id017
+        products: *id018
+        branches: *id019
+        exceptions: *id020
+        minimum_spend: *id021
+        currency: *id022
+        verification_requirement: *id023
+        valid_from: *id024
+        valid_until: *id025
+        method: *id026
+        code: *id027
+        target_url: *id028
+        qr_content: *id029
+        membership_label: *id030
+        support_contact: *id031
+        featured: *id032
+        revision: *id033
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        publication_status:
+          type: string
+          enum:
+            - draft
+            - published
+            - suspended
+        status:
+          type: string
+          enum:
+            - draft
+            - active
+            - scheduled
+            - expired
+            - suspended
+        suspension_reason:
+          type: string
+        reviewed_at:
+          type: string
+        published_at:
+          type: string
+        business_name:
+          type: string
+        category:
+          type: string
+    BusinessResponse:
+      type: object
+      required:
+        - business
+      properties:
+        business:
+          $ref: '#/components/schemas/Business'
+    BenefitResponse:
+      type: object
+      required:
+        - benefit
+      properties:
+        benefit:
+          $ref: '#/components/schemas/Benefit'
+    BusinessListResponse:
+      type: object
+      required:
+        - businesses
+        - truncated
+      properties:
+        businesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Business'
+        truncated:
+          type: boolean
+    BenefitListResponse:
+      type: object
+      required:
+        - benefits
+        - truncated
+      properties:
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Benefit'
+        truncated:
+          type: boolean
+    PublishBenefitRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - conditions_reviewed
+      properties:
+        revision:
+          type: integer
+          minimum: 1
+        conditions_reviewed:
+          type: boolean
+          enum:
+            - true
+    SuspendBenefitRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - reason
+      properties:
+        revision:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 2000

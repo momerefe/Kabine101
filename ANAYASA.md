@@ -1,8 +1,8 @@
 # KoçBenefits Proje Anayasası
 
-Sürüm: 1.2
+Sürüm: 1.3
 Tarih: 21 Ekim 2026
-Durum: 3A'nın ardından proje sahibinin devam talimatıyla 3B kimlik ve erişim teslimi tamamlandı ve test edildi. Kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. [Teslim raporu](docs/TESLIM_3B.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) günceldir; sonraki teslimlerin kabul noktaları korunur.
+Durum: Proje sahibinin devam talimatıyla 3C iş ortaklığı ve avantaj yönetimi tamamlandı ve incelemeye hazırlandı. Normal kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Özel e-postasız yönetici istisnası normal hesaplara uygulanmaz. [Güncel teslim raporu](docs/TESLIM_3C.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) esas alınır; sonraki teslimlerin kabul noktaları korunur.
 
 KoçBenefits, Koç Okulu öğrencilerinin anlaşmalı işletmelerin avantajlarını bulmasını ve kullanım koşullarını kolayca anlamasını sağlar. Kabine, işletmeleri ve avantajları sade bir yönetim panelinden yönetir. Başarı ölçütü; öğrencinin geçerli bir avantaja ulaşabilmesi, yöneticinin doğru bilgiyi güvenilir biçimde yayımlayabilmesi ve sistemin sonraki kabineye devredilebilmesidir.
 
@@ -112,7 +112,7 @@ Yalnızca avantajın seçili yöntemi gösterilir: **indirim kodu, bağlantı, Q
 | Tarayıcı görüntüleme sayıları ve günlüğü | Tanımı belirli ölçüm, sunucuda yönetim işlem kaydı ve erişim sınırı |
 | Sabit örnek QR ve geçersiz kart | İşletmeyle kararlaştırılan yöntem; doğrulama kapsamının açık belirtilmesi |
 
-Örnek işletmeler, kodlar, destek adresleri ve kullanıcılar üretime gerçek kayıt olarak taşınmaz. Gerçek okul alan adı henüz bilinmemektedir; `ogrenci.example` yalnızca örnektir.
+Örnek işletmeler, kodlar, destek adresleri ve kullanıcılar üretime gerçek kayıt olarak taşınmaz. Gerçek okul alan adı `stu.koc.k12.tr` olarak kesinleşmiştir; `ogrenci.example` yalnızca izole testlerde kullanılır.
 
 ## 8 Güvenlik ve veri sorumluluğu
 

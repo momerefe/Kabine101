@@ -17,6 +17,7 @@ import (
 	"github.com/momerefe/Kabine101/internal/database"
 	"github.com/momerefe/Kabine101/internal/httpapi"
 	"github.com/momerefe/Kabine101/internal/mailer"
+	"github.com/momerefe/Kabine101/internal/management"
 )
 
 func main() {
@@ -66,7 +67,7 @@ func run(log *slog.Logger) error {
 		_, err := queries.GetPlatformName(ctx)
 		return err
 	}
-	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: httpapi.Router(ready, authentication), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second}
+	srv := &http.Server{Addr: cfg.HTTPAddress, Handler: httpapi.Router(ready, authentication, management.New(pool, authentication)), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second}
 	result := make(chan error, 1)
 	go func() { result <- srv.ListenAndServe() }()
 	log.Info("API started", "address", cfg.HTTPAddress, "environment", cfg.Environment)

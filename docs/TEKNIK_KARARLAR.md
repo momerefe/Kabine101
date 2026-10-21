@@ -2,6 +2,18 @@
 
 Tarih: 21 Ekim 2026
 
+## 3C devam kararı
+
+Proje sahibi 3B ve özel yönetici hesabını kabul ederek plana uygun devam edilmesini istedi. Bu teslim iş ortaklığı, işletme ve avantaj yönetimini kapsar; öğrenci kataloğu/favoriler 3D'de, diğer yönetim modüllerinin tamamlanması 3E'de kalır.
+
+- Tek Go API, PostgreSQL ve mevcut React/CSS temeli korunur; yeni framework veya hizmet eklenmez. HTML prototipi tasarım referansı olarak değişmeden kalır.
+- İşletme ve avantaj değişiklikleri kayıt sürümüyle denetlenir. İstemcinin oluşturduğu sabit UUID ve yeni kayıtta sürüm 0, tekrar gönderimde ikinci kayıt oluşmasını önler; eski sürümle güncelleme 409 yanıtı verir. Form içeriği korunarak güncel kayıtla karşılaştırma istenir.
+- Avantaj düzenlemesi taslak olarak kaydedilir. İlk yayın ve yeniden yayın ayrı bir koşul kontrolü ve açık onay gerektirir. Yayınlanmış kaydı düzenleyip kaydetmenin yayını durdurduğu formda belirtilir.
+- İş ortaklığını kapatma, bağlı yayımlanmış avantajları aynı veritabanı işlemi içinde askıya alır. Yeniden açma otomatik yayın yapmaz. İşletme/yayın değişiklikleri ve günlük kaydı birlikte tamamlanır.
+- Tarihler İstanbul gününe göre değerlendirilir; bitiş günü dahildir. Sürenin dolması zamanlayıcıya bağlı değildir.
+- Görsel yükleme/depolama kararı verilmediğinden mevcut yerel görsellerden seçim sunulur. Dosya yükleme, harici görsel URL'si veya tarama altyapısı eklenmez. Gerçek sponsor içerikleri uydurulmaz.
+- Backend, React ekranları ve bağımsız PostgreSQL kabul testleri GPT‑6.1 Sol alt işlerine ayrılır. Ana ajan bütünleştirme, tarayıcı kontrolü ve teslimi yürütür.
+
 ## 3B devam kararı
 
 **Sonraki hesap kararı:** Proje sahibi normal hesaplardan ayrı, e-postasız bir özel yönetici istedi. Şema 4, `email` veya `username` kimliğinden tam birini zorunlu kılar. Kullanıcı adı kimliği yalnızca yönetici olabilir; öğrenci rolüne dönüştürülemez. Ayrı yönetici giriş uç noktası aynı oturum, CSRF, deneme sınırı ve Argon2id kontrollerini kullanır. Özel yönetici parolası için 8–128 karakter; normal hesaplarda 15–128 korunur. Seçilen gerçek parola hiçbir kaynak veya dokümanda tutulmaz; yalnızca veritabanındaki özeti kullanılır. Bu istisna okul hesabını e-posta doğrulamasından muaf tutmaz.
