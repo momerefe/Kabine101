@@ -124,6 +124,8 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 ### 3E Yönetim bütünlüğü ve ölçümler
 
+**Teslim durumu:** Uygulama ve otomatik kontroller tamamlandı; proje sahibinin görsel/işlevsel incelemesine hazır. Yerel şema güncellemesi ve sunucu yeniden başlatması proje sahibi tarafından yapılır. 3F henüz başlatılmadı.
+
 **Devam onayı:** Proje sahibi sunulan işlem günlüğü → platform ayarları → kullanıcı/rol yönetimi → sade analitik kapsamını onayladı. Bu teslim mevcut tasarım ve mobil navigasyonla uygulanır. Görüntülenme ve favori tanımları, ayarların sınırları ve yerel güncelleme adımları [3E teslim raporunda](docs/TESLIM_3E.md) yer alır. Sonraki 3F pilot/yayın hazırlığı için kabul noktası korunur.
 
 **Kapsam kararı — Tasarruf ertelendi:** Proje sahibi aylık tasarruf özelliğini istemediği için tasarruf tablosu ve ona bağlı alışveriş kayıt/onay akışı geri alındı. Bu özellik yeniden açıkça talep edilene kadar geliştirme kapsamı dışındadır. Kullanım geçmişi açıklayıcı boş durum olarak kalır; kod/QR görüntüleme kullanım kaydı oluşturmaz.
