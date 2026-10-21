@@ -105,7 +105,7 @@ def main():
                 checks.append({'page': name, 'width': width})
 
         def login():
-            fill('#email', student)
+            fill('#email', student.split('@', 1)[0])
             fill('#password', password)
             dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
             present('.student-panel')

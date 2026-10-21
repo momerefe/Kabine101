@@ -96,6 +96,8 @@ Parola gizli olarak iki kez istenir; 15–128 karakter olmalıdır. Komut yeni b
 
 ### Öğrenci akışı
 
+Giriş ve kayıt formunda okul alan adı kutunun içinde sabittir. Öğrenci yalnızca `@` öncesini yazar; tam adres arayüzde sunucunun bildirdiği okul alan adıyla birleştirilir. Aynı okulun tam adresi yapıştırılırsa ilk kısma dönüştürülür. Sunucudaki alan adı ve e-posta doğrulaması kuralları ayrıca uygulanır.
+
 1. Okul adresiyle kayıt ol.
 2. Yerel posta kutusundaki bağlantıyı aç ve e-posta doğrulama düğmesine bas.
 3. Yönetici hesabında başvuruyu inceleyip onayla. İşlem mevcut yönetici parolası ve onay ister.

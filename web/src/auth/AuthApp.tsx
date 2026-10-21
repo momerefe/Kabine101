@@ -348,6 +348,42 @@ function Field({
   );
 }
 
+function schoolEmailLocalPart(value: string, domain: string): string {
+  const text = value.trim();
+  const parts = text.split('@');
+  return parts.length === 2 && parts[1].toLowerCase() === domain.toLowerCase()
+    ? parts[0]
+    : text;
+}
+
+function SchoolEmailField({ domain }: { domain: string }) {
+  return (
+    <div className="field">
+      <label htmlFor="email">Okul e-posta adresi</label>
+      <div className="school-email-field">
+        <input
+          id="email"
+          name="email"
+          type="text"
+          required
+          maxLength={254}
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-describedby="email-domain email-hint"
+          onInput={(event) => {
+            const input = event.currentTarget;
+            input.value = schoolEmailLocalPart(input.value, domain);
+          }}
+        />
+        <span id="email-domain">@{domain}</span>
+      </div>
+      <small id="email-hint">Sadece @ işaretinden önceki kısmı yaz.</small>
+    </div>
+  );
+}
+
 function AuthForm({
   route,
   session,
@@ -409,6 +445,7 @@ function AuthForm({
   const verify = mode === 'verify-email';
   const password = isLogin || register || reset;
   const needsEmail = !reset && !verify;
+  const schoolEmail = register || mode === 'login/student';
   const label = register
     ? 'Hesap oluştur'
     : isLogin
@@ -429,7 +466,17 @@ function AuthForm({
     mutation.reset();
     const form = event.currentTarget;
     const values = new FormData(form);
-    const email = String(values.get('email') || '').trim();
+    const emailValue = String(values.get('email') || '').trim();
+    const localPart = schoolEmailLocalPart(emailValue, session.school_domain);
+    if (schoolEmail && (!localPart || /[\s@]/.test(localPart))) {
+      setValidation(
+        'Okul e-postanın yalnızca @ işaretinden önceki kısmını yaz.',
+      );
+      return;
+    }
+    const email = schoolEmail
+      ? `${localPart}@${session.school_domain}`
+      : emailValue;
     const username = String(values.get('username') || '').trim();
     const passwordValue = String(values.get('password') || '');
     if (
@@ -560,21 +607,27 @@ function AuthForm({
                 maxLength={120}
               />
             )}
-            {needsEmail && (
-              <Field
-                name={admin ? 'username' : 'email'}
-                label={
-                  admin
-                    ? 'Kullanıcı adı veya okul e-postası'
-                    : 'Okul e-posta adresi'
-                }
-                type={admin ? 'text' : 'email'}
-                autoComplete="username"
-                maxLength={254}
-                hint={
-                  admin ? undefined : `Okul alan adı: @${session.school_domain}`
-                }
-              />
+            {schoolEmail ? (
+              <SchoolEmailField domain={session.school_domain} />
+            ) : (
+              needsEmail && (
+                <Field
+                  name={admin ? 'username' : 'email'}
+                  label={
+                    admin
+                      ? 'Kullanıcı adı veya okul e-postası'
+                      : 'Okul e-posta adresi'
+                  }
+                  type={admin ? 'text' : 'email'}
+                  autoComplete="username"
+                  maxLength={254}
+                  hint={
+                    admin
+                      ? undefined
+                      : `Okul alan adı: @${session.school_domain}`
+                  }
+                />
+              )
             )}
             {password && (
               <Field

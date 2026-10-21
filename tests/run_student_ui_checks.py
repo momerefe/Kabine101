@@ -32,7 +32,7 @@ def main():
     for n,method in enumerate(('code','link','qr','membership','code','code'),1):
         items.append({'id':f'00000000-0000-4000-8000-{n:012d}','business_id':f'10000000-0000-4000-8000-{n:012d}','business_name':f'Test işletmesi {n}','image_path':'assets/cafe.svg' if n%2 else 'assets/books.svg','category':'food' if n%2 else 'other','title':f'Öğrenci avantajı {n}','description':'Yalnızca otomatik arayüz testi için kurgusal içerik.','perk':'%15 test indirimi','conditions':['Öğrenci kimliğini göster.','Başka kampanyalarla birleştirilemez.'],'instructions':['Koşulları kontrol et.','Kasada işletmenin tanımladığı bilgiyi göster.'],'products':'Seçili ürünler','branches':'Test şubesi','exceptions':'Paketli ürünler hariç','minimum_spend':'25.50' if n==1 else '', 'currency':'TRY','verification_requirement':'Öğrenci kimliği','valid_from':str(today-datetime.timedelta(days=5)),'valid_until':str(today+datetime.timedelta(days=7)),'method':method,'featured':n<=2,'status':'expired' if n==5 else 'scheduled' if n==6 else 'active','is_favorite':False,'support_contact':''})
     script='window.__offers='+json.dumps(items,ensure_ascii=False)+r""";
-    window.__apiCalls=[];window.__blocked=false;window.__failCatalog=false;window.__long=sessionStorage.getItem('synthetic-long')==='1';
+    window.__apiCalls=[];window.__submittedEmails=[];window.__blocked=false;window.__failCatalog=false;window.__long=sessionStorage.getItem('synthetic-long')==='1';
     const storeKey='synthetic-student-favorites';
     const saved=()=>JSON.parse(sessionStorage.getItem(storeKey)||'[]');
     const response=(v,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json'}});
@@ -46,7 +46,10 @@ def main():
       const method=init?.method||(input instanceof Request?input.method:'GET');
       window.__apiCalls.push({path:u.pathname,query:u.search,method});
       if(u.pathname==='/api/auth/session')return response(session());
-      if(u.pathname==='/api/auth/login'){
+      if(u.pathname==='/api/auth/login'||u.pathname==='/api/auth/register'){
+        const body=input instanceof Request?await input.clone().json():JSON.parse(init.body);
+        window.__submittedEmails.push({path:u.pathname,email:body.email});
+        if(u.pathname==='/api/auth/register')return response({message:'Test kayıt talebi alındı.'},202);
         sessionStorage.removeItem('synthetic-anon');return response({user:account()});
       }
       if(u.pathname==='/api/auth/logout'){
@@ -83,6 +86,8 @@ def main():
     Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});
     document.execCommand=()=>false;
     """
+    email_only=os.environ.get('KOC_SCHOOL_EMAIL_ONLY')=='1'
+    if email_only:script+="sessionStorage.setItem('synthetic-anon','1');"
     OUT.mkdir(parents=True,exist_ok=True)
     profile=tempfile.TemporaryDirectory(prefix='koc-student-ui-',ignore_cleanup_errors=True)
     chrome=os.environ.get('KOC_CHROME','C:/Program Files/Google/Chrome/Application/chrome.exe')
@@ -135,6 +140,33 @@ def main():
             if w in(320,390,1440):dev.evaluate('window.scrollTo(0,0)');shot(f'{name}-{w}')
         def matrix(name):
             for w,h in((320,740),(390,844),(768,1024),(1024,768),(1440,1000),(844,390)):layout(name,w,h)
+        if email_only:
+            size(1440,1000);dev.call('Page.navigate',{'url':base+'/#register'});present('.school-email-field')
+            for w,h in((320,740),(390,844),(1440,1000)):layout('email-register',w,h)
+            assert dev.evaluate("document.querySelector('#email-domain').textContent")=='@ogrenci.example'
+            fill('#name','Test Öğrencisi');fill('#email','deniz.test');fill('#password','Synthetic password 2026!')
+            dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
+            wait(lambda:dev.evaluate("window.__submittedEmails.length===1"),'registration request')
+            assert dev.evaluate('window.__submittedEmails[0].email')=='deniz.test@ogrenci.example'
+            text('Test kayıt talebi alındı')
+            fill('#email','deniz.test@ogrenci.example')
+            assert dev.evaluate("document.querySelector('#email').value")=='deniz.test','full email paste not normalized'
+            fill('#email','deniz@outside.example');fill('#password','Synthetic password 2026!')
+            dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
+            text('yalnızca @ işaretinden önceki kısmını yaz')
+            assert dev.evaluate('window.__submittedEmails.length')==1,'foreign domain was submitted'
+            route('login/admin','#username')
+            assert not dev.evaluate("!!document.querySelector('.school-email-field')"),'admin username altered'
+            route('login/student','#email')
+            for w,h in((320,740),(390,844),(1440,1000)):layout('email-login',w,h)
+            fill('#email','browser');fill('#password','Synthetic password 2026!')
+            dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
+            present('.student-panel')
+            assert dev.evaluate('window.__submittedEmails.at(-1).email')=='browser@ogrenci.example'
+            assert not dev.errors,'JavaScript runtime errors'
+            (OUT/'school-email-report.json').write_text(json.dumps({'scope':'Synthetic API UI check; no real account created','checks':checks,'runtimeErrors':dev.errors},ensure_ascii=False,indent=2),encoding='utf-8')
+            print('School email UI passed: 6 layouts; prefix-only register/login, paste normalization, foreign-domain rejection, admin username preserved. No servers started.')
+            return
         size(1440,1000);dev.call('Page.navigate',{'url':base+'/#overview'});present('.benefit-card')
         for section,selector in [('overview','.benefit-card'),('discover','.benefit-card'),('favorites','.empty-state'),('history','.empty-state'),('profile','.student-profile'),('help','.faq-list')]:
             route(section,selector);matrix(section)

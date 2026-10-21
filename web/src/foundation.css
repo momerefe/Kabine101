@@ -122,6 +122,34 @@
 .account-dialog .field input {
   font-size: 16px;
 }
+.school-email-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.school-email-field:focus-within {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+.auth-form .school-email-field input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+.school-email-field span {
+  flex-shrink: 0;
+  padding-right: 14px;
+  font-size: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .auth-help {
   display: flex;
   flex-direction: column;
