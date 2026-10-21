@@ -103,6 +103,37 @@ type PlatformSetting struct {
 	ShowFeatured   bool        `json:"show_featured"`
 }
 
+type Purchase struct {
+	ID                  pgtype.UUID        `json:"id"`
+	StudentID           pgtype.UUID        `json:"student_id"`
+	BusinessID          pgtype.UUID        `json:"business_id"`
+	BenefitID           pgtype.UUID        `json:"benefit_id"`
+	BusinessName        string             `json:"business_name"`
+	BenefitTitle        string             `json:"benefit_title"`
+	PurchaseDate        pgtype.Date        `json:"purchase_date"`
+	OriginalAmount      int64              `json:"original_amount"`
+	PaidAmount          int64              `json:"paid_amount"`
+	Currency            string             `json:"currency"`
+	Reference           string             `json:"reference"`
+	ReferenceNormalized string             `json:"reference_normalized"`
+	Status              string             `json:"status"`
+	ReviewReason        string             `json:"review_reason"`
+	CreatedBy           pgtype.UUID        `json:"created_by"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	ReviewedBy          pgtype.UUID        `json:"reviewed_by"`
+	ReviewedAt          pgtype.Timestamptz `json:"reviewed_at"`
+}
+
+type PurchaseEvent struct {
+	ID         int64              `json:"id"`
+	PurchaseID pgtype.UUID        `json:"purchase_id"`
+	ActorID    pgtype.UUID        `json:"actor_id"`
+	FromStatus string             `json:"from_status"`
+	ToStatus   string             `json:"to_status"`
+	Reason     string             `json:"reason"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	TokenHash []byte             `json:"token_hash"`
 	AccountID pgtype.UUID        `json:"account_id"`

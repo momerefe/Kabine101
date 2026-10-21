@@ -4,6 +4,75 @@
  */
 
 export interface paths {
+  '/api/admin/purchases': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Administrator only. Up to 1000 records; truncated indicates additional rows. */
+    get: operations['getAdminPurchases'];
+    put?: never;
+    /** @description Administrator records a pending purchase. Eligible student and published benefit required. Receipt reference is normalized and unique per business across all statuses. Retry with identical client UUID is safe; conflicting input returns 409. Amounts are immutable; an administrator must explicitly approve the purchase. */
+    post: operations['createPurchase'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/purchases/{id}/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Administrator with current session and CSRF. pending -> approved/rejected; approved -> revoked only. Rejection/revocation require a reason. Repeated transitions conflict; all transitions are audited atomically. */
+    post: operations['reviewPurchase'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/student/savings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Eligible account, own approved purchases only. Full aggregation for the current Istanbul calendar month by purchase date, independent of list limits. All amounts TRY. No approvals yields 0.00. no-store. */
+    get: operations['getStudentSavings'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/student/purchases': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Eligible account, own approved purchases only. Up to 1000 latest purchases with truncation flag. No receipt references, review notes or other students exposed. no-store. */
+    get: operations['getStudentPurchases'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/student/catalog': {
     parameters: {
       query?: never;
@@ -796,6 +865,10 @@ export interface components {
         | 'benefit.save'
         | 'benefit.publish'
         | 'benefit.suspend'
+        | 'purchase.create'
+        | 'purchase.approved'
+        | 'purchase.rejected'
+        | 'purchase.revoked'
         | 'account.review.approved'
         | 'account.review.rejected'
         | 'account.role.admin'
@@ -803,7 +876,7 @@ export interface components {
       /** @description Current actor name, or Sistem if the actor no longer exists. */
       actor_name: string;
       /** @enum {string} */
-      entity_type: 'business' | 'benefit' | 'account';
+      entity_type: 'business' | 'benefit' | 'account' | 'purchase';
       /** Format: uuid */
       entity_id: string;
       /** @description Current business name, benefit title or account name; empty if the entity no longer exists. */
@@ -861,6 +934,101 @@ export interface components {
       platform_name: string;
       support_contact: string;
     };
+    /** @description Administrative purchase; name/title snapshots and monetary values are immutable. */
+    Purchase: {
+      id: string;
+      business_name: string;
+      benefit_title: string;
+      /** Format: date */
+      purchase_date: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      original_amount: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      paid_amount: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      savings_amount: string;
+      /** @enum {string} */
+      currency: 'TRY';
+      /** @enum {string} */
+      status: 'pending' | 'approved' | 'rejected' | 'revoked';
+      student_id: string;
+      student_name: string;
+      student_email: string;
+      business_id: string;
+      benefit_id: string;
+      reference: string;
+      review_reason: string;
+      /** Format: date-time */
+      created_at: string;
+      /** @description RFC3339 timestamp, or empty string for pending. */
+      reviewed_at: string;
+    };
+    /** @description Purchase date must not be after today in Istanbul and must fall within benefit validity. Include branch in receipt reference when needed. */
+    PurchaseCreate: {
+      /** Format: uuid */
+      id: string;
+      student_email: string;
+      /** Format: uuid */
+      benefit_id: string;
+      /** Format: date */
+      purchase_date: string;
+      /** @description Positive TRY decimal, at most two fractional digits; max 9999999.99. */
+      original_amount: string;
+      /** @description TRY decimal, between zero and original_amount. */
+      paid_amount: string;
+      reference: string;
+    };
+    PurchaseReview: {
+      /** @enum {string} */
+      decision: 'approved' | 'rejected' | 'revoked';
+      reason: string;
+    };
+    PurchaseResponse: {
+      purchase: components['schemas']['Purchase'];
+    };
+    PurchaseList: {
+      purchases: components['schemas']['Purchase'][];
+      truncated: boolean;
+    };
+    StudentPurchase: {
+      id: string;
+      business_name: string;
+      benefit_title: string;
+      /** Format: date */
+      purchase_date: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      original_amount: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      paid_amount: string;
+      /** @description TRY decimal string, never a floating point amount. */
+      savings_amount: string;
+      /** @enum {string} */
+      currency: 'TRY';
+      /** @enum {string} */
+      status: 'approved';
+    };
+    StudentPurchaseList: {
+      purchases: components['schemas']['StudentPurchase'][];
+      truncated: boolean;
+    };
+    BusinessSavings: {
+      business_id: string;
+      business_name: string;
+      /** Format: int64 */
+      purchase_count: number;
+      /** @description TRY decimal string, never a floating point amount. */
+      savings_amount: string;
+    };
+    StudentSavings: {
+      month: string;
+      /** @enum {string} */
+      currency: 'TRY';
+      /** @description TRY decimal string, never a floating point amount. */
+      total_savings: string;
+      /** Format: int64 */
+      purchase_count: number;
+      businesses: components['schemas']['BusinessSavings'][];
+    };
   };
   responses: never;
   parameters: never;
@@ -870,6 +1038,402 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  getAdminPurchases: {
+    parameters: {
+      query?: {
+        q?: string;
+        status?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PurchaseList'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Record not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Duplicate reference or conflicting state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  createPurchase: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PurchaseCreate'];
+      };
+    };
+    responses: {
+      /** @description Identical client UUID replay; no additional record created. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PurchaseResponse'];
+        };
+      };
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PurchaseResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Record not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Duplicate reference or conflicting state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  reviewPurchase: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PurchaseReview'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PurchaseResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Record not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Duplicate reference or conflicting state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getStudentSavings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StudentSavings'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Record not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Duplicate reference or conflicting state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getStudentPurchases: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StudentPurchaseList'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Record not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Duplicate reference or conflicting state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
   getStudentCatalog: {
     parameters: {
       query?: {

@@ -56,6 +56,11 @@ def main():
         sessionStorage.setItem('synthetic-anon','1');return response({message:'Çıkış yapıldı.'});
       }
       if(u.pathname==='/api/student/settings')return response({platform_name:'KoçBenefits',support_contact:''});
+      if(u.pathname==='/api/student/savings'){
+        if(window.__failSavings)return response({message:'Test bağlantı hatası'},503);
+        return response(window.__savings||{month:new Intl.DateTimeFormat('sv-SE',{year:'numeric',month:'2-digit',timeZone:'Europe/Istanbul'}).format(new Date()),currency:'TRY',total_savings:'0.00',purchase_count:0,businesses:[]});
+      }
+      if(u.pathname==='/api/student/purchases')return response({purchases:[],truncated:false});
       if(u.pathname==='/api/student/catalog'){
         await new Promise(r=>setTimeout(r,100));
         if(window.__failCatalog)return response({message:'Synthetic failure'},503);
@@ -87,7 +92,10 @@ def main():
     document.execCommand=()=>false;
     """
     email_only=os.environ.get('KOC_SCHOOL_EMAIL_ONLY')=='1'
+    savings_only=os.environ.get('KOC_SAVINGS_UI_ONLY')=='1'
     if email_only:script+="sessionStorage.setItem('synthetic-anon','1');"
+    if savings_only:
+        script+='window.__savings='+json.dumps({'month':str(today)[:7],'currency':'TRY','total_savings':'42.07','purchase_count':7,'businesses':[{'business_id':str(n),'business_name':'Test işletmesi '+str(n),'purchase_count':1,'savings_amount':'6.01'} for n in range(7)]},ensure_ascii=False)+';'
     OUT.mkdir(parents=True,exist_ok=True)
     profile=tempfile.TemporaryDirectory(prefix='koc-student-ui-',ignore_cleanup_errors=True)
     chrome=os.environ.get('KOC_CHROME','C:/Program Files/Google/Chrome/Application/chrome.exe')
@@ -168,6 +176,26 @@ def main():
             print('School email UI passed: 6 layouts; prefix-only register/login, paste normalization, foreign-domain rejection, admin username preserved. No servers started.')
             return
         size(1440,1000);dev.call('Page.navigate',{'url':base+'/#overview'});present('.benefit-card')
+        if savings_only:
+            present('.student-savings-breakdown tbody')
+            assert dev.evaluate("document.querySelector('.student-savings-total').textContent")=='₺42,07'
+            assert dev.evaluate("document.querySelectorAll('.student-savings-breakdown tbody tr').length")==3
+            text('Diğer 4 işletme')
+            matrix('savings-approved')
+            route('profile','.student-profile');dev.evaluate('window.__failSavings=true')
+            route('overview','.student-savings');text('Tasarruf bilgileri alınamadı')
+            assert dev.evaluate("document.querySelector('.student-savings-total').textContent")=='—','API error shown as zero or stale savings'
+            layout('savings-error',320,740)
+            dev.evaluate('window.__failSavings=false');button('Yeniden dene')
+            text('₺42,07')
+            route('profile','.student-profile')
+            dev.evaluate("window.__savings.total_savings='9007199254740993.01';window.__savings.businesses[0].business_name='UZUNİŞLETMEADI'.repeat(25);window.__savings.businesses[0].savings_amount='9007199254740956.95'")
+            route('overview','.student-savings');text('₺9.007.199.254.740.993,01')
+            layout('savings-long',320,740)
+            assert not dev.errors,dev.errors
+            (OUT/'savings-report.json').write_text(json.dumps({'scope':'Real frontend, synthetic API, existing Vite only','checks':checks,'runtimeErrors':dev.errors},ensure_ascii=False,indent=2),encoding='utf-8')
+            print(f'Savings UI passed: {len(checks)} layouts; exact amount, max3 breakdown/all-business total, error versus zero, retry, long name/amount. No servers started.')
+            return
         for section,selector in [('overview','.benefit-card'),('discover','.benefit-card'),('favorites','.empty-state'),('history','.empty-state'),('profile','.student-profile'),('help','.faq-list')]:
             route(section,selector);matrix(section)
         route('profile','.student-profile')

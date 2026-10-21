@@ -51,6 +51,28 @@
 .management-content dd {
   white-space: pre-wrap;
 }
+.purchase-create {
+  margin-bottom: 24px;
+}
+.purchase-create > p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 12px 0 20px;
+}
+.purchase-table td {
+  max-width: 300px;
+  overflow-wrap: anywhere;
+}
+.purchase-review fieldset,
+.purchase-create fieldset {
+  border: 0;
+  min-width: 0;
+  padding: 0;
+}
+.purchase-review textarea {
+  width: 100%;
+  resize: vertical;
+}
 .management-content .heading-actions {
   margin-bottom: 20px;
 }

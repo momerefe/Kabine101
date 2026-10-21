@@ -123,16 +123,18 @@ func (q *Queries) OverviewExpiringBenefits(ctx context.Context, today pgtype.Dat
 
 const overviewRecentActivity = `-- name: OverviewRecentActivity :many
 SELECT e.id::text AS id,e.action,coalesce(actor.name,'Sistem')::text AS actor_name,e.entity_type,
- e.entity_id::text AS entity_id,coalesce(b.name,v.title,target.name,'')::text AS entity_label,e.created_at
+ e.entity_id::text AS entity_id,coalesce(b.name,v.title,target.name,p.business_name,'')::text AS entity_label,e.created_at
 FROM audit_events e
 LEFT JOIN accounts actor ON actor.id=e.actor_id
 LEFT JOIN businesses b ON e.entity_type='business' AND b.id=e.entity_id
 LEFT JOIN benefits v ON e.entity_type='benefit' AND v.id=e.entity_id
 LEFT JOIN accounts target ON e.entity_type='account' AND target.id=e.entity_id
+LEFT JOIN purchases p ON e.entity_type='purchase' AND p.id=e.entity_id
 WHERE e.entity_id IS NOT NULL AND (
  (e.entity_type='business' AND e.action='business.save') OR
  (e.entity_type='benefit' AND e.action IN ('benefit.save','benefit.publish','benefit.suspend')) OR
- (e.entity_type='account' AND e.action IN ('account.review.approved','account.review.rejected','account.role.admin','account.role.student')))
+ (e.entity_type='account' AND e.action IN ('account.review.approved','account.review.rejected','account.role.admin','account.role.student')) OR
+ (e.entity_type='purchase' AND e.action IN ('purchase.create','purchase.approved','purchase.rejected','purchase.revoked')))
 ORDER BY e.created_at DESC,e.id DESC LIMIT 6
 `
 
