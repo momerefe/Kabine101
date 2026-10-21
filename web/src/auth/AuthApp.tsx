@@ -259,9 +259,13 @@ function LocalEmail({ enabled }: { enabled: boolean }) {
       <p>
         Bu ortamda e-posta gönderimi yerel posta kutusu üzerinden test edilir;
         gerçek adreslere gönderilmez.{' '}
-        <a href="http://127.0.0.1:8025" target="_blank" rel="noreferrer">
-          Yerel posta kutusunu aç ↗
-        </a>
+        {['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname) ? (
+          <a href="http://127.0.0.1:8025" target="_blank" rel="noreferrer">
+            Yerel posta kutusunu aç ↗
+          </a>
+        ) : (
+          'Test e-postalarını sunucunun çalıştığı bilgisayarda http://127.0.0.1:8025 adresinden açabilirsin.'
+        )}
       </p>
     </div>
   ) : null;

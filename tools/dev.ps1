@@ -1,17 +1,35 @@
-param([ValidateSet('api','web','mail','admin-create','db-up','db-version','seed-demo','generate','check','build')][string]$Task = 'api', [string]$Name, [string]$Email, [string]$Username)
+param([ValidateSet('api','web','mail','admin-create','db-up','db-version','seed-demo','generate','check','build')][string]$Task = 'api', [string]$Name, [string]$Email, [string]$Username, [string]$LanAddress)
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 if (Test-Path '.tools/go/bin') { $env:Path = "$PWD/.tools/go/bin;$env:Path" }
 $nodeDir = Get-ChildItem '.tools/node-*-win-x64' -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($nodeDir) { $env:Path = "$($nodeDir.FullName);$env:Path" }
 if (Test-Path '.tools/pnpm/node_modules/.bin') { $env:Path = "$PWD/.tools/pnpm/node_modules/.bin;$env:Path" }
+if ($LanAddress) {
+    if ($Task -notin @('api','web')) { throw '-LanAddress is only supported for api and web.' }
+    $parsedAddress = $null
+    if (![System.Net.IPAddress]::TryParse($LanAddress, [ref]$parsedAddress) -or $parsedAddress.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork -or [System.Net.IPAddress]::IsLoopback($parsedAddress)) {
+        throw 'Provide the LAN IPv4 address of this computer, for example -LanAddress 192.168.1.94.'
+    }
+    $LanAddress = $parsedAddress.ToString()
+    if (!(Get-NetIPAddress -AddressFamily IPv4 -IPAddress $LanAddress -ErrorAction SilentlyContinue | Where-Object { $_.AddressState -eq 'Preferred' })) {
+        throw 'The LAN address is not assigned to an active adapter on this computer. Check ipconfig.'
+    }
+    Write-Host "Use http://${LanAddress}:5173 on both the computer and phone."
+}
 function Run([string]$Command, [string[]]$Arguments) {
     & $Command @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Command failed (exit $LASTEXITCODE)" }
 }
 switch ($Task) {
-    'api' { Run 'go' @('run','./cmd/api') }
-    'web' { Run 'pnpm.cmd' @('dev') }
+    'api' {
+        if ($LanAddress) { $env:APP_ORIGIN = "http://${LanAddress}:5173" }
+        Run 'go' @('run','./cmd/api')
+    }
+    'web' {
+        if ($LanAddress) { Run 'pnpm.cmd' @('exec','vite','--host',$LanAddress) }
+        else { Run 'pnpm.cmd' @('dev') }
+    }
     'mail' {
         if (!(Test-Path '.tools/mailpit/mailpit.exe')) { throw 'Run python tools/install_mailpit.py first.' }
         New-Item -ItemType Directory -Force '.local' | Out-Null

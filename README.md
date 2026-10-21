@@ -44,6 +44,32 @@ powershell -ExecutionPolicy Bypass -File tools/dev.ps1 web
 
 Adreslerde `127.0.0.1` kullan; `APP_ORIGIN` kaynak kontrolü nedeniyle `localhost` farklı bir kaynak sayılır. Terminalde `Ctrl+C` ilgili süreci kapatır. Execution policy seçimi yalnızca o PowerShell sürecine uygulanır.
 
+### Aynı Wi-Fi üzerinden telefondan erişim
+
+Backend ve frontend'i proje sahibi kendi terminallerinde başlatır. Önce açık API ve web terminallerini `Ctrl+C` ile durdur. Bilgisayarın Wi-Fi IPv4 adresini `ipconfig` ile kontrol et. Aşağıdaki örnekte bu adres `192.168.1.94`; adres değişirse iki komutta da yeni adresi kullan:
+
+```powershell
+# Birinci terminal: API aynı bilgisayarda kalır; izin verilen site adresi ayarlanır.
+powershell -ExecutionPolicy Bypass -File tools/dev.ps1 api -LanAddress 192.168.1.94
+```
+
+```powershell
+# İkinci terminal: Vite yalnızca belirtilen ağ adresinde dinler.
+powershell -ExecutionPolicy Bypass -File tools/dev.ps1 web -LanAddress 192.168.1.94
+```
+
+Hem bilgisayarda hem telefonda **http://192.168.1.94:5173** adresini kullan. Telefon aynı Wi-Fi'da olmalı. API istekleri Vite üzerinden geçer; 8080'i ağa açmak gerekmez. `-LanAddress` yalnızca o başlatma için geçerlidir; `.env` değişmez. Bu seçenek olmadan komutlar önceki `127.0.0.1` davranışını korur. IP adresi bu bilgisayara atanmış değilse komut açık bir hata verir. Vite'nin [resmî host ayarı](https://vite.dev/config/server-options#server-host) kullanılır; kaynak/CSRF kontrolü kaldırılmaz.
+
+Bilgisayarda aynı IP adresiyle açılıyor fakat telefonda açılmıyorsa Windows Güvenlik Duvarı veya Wi-Fi istemci yalıtımı engelliyor olabilir. Mevcut Wi-Fi profili **Genel/Public** olarak ayarlıysa yalnızca Özel/Private ağlara verilen Node.js izni yeterli olmaz. Güvenilir yerel ağda gerekirse **yönetici PowerShell** içinde yalnızca yerel alt ağdan bu IP ve porta izin ver:
+
+```powershell
+New-NetFirewallRule -Name 'KocBenefits-LAN-5173' -DisplayName 'KocBenefits yerel test 5173' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5173 -LocalAddress 192.168.1.94 -RemoteAddress LocalSubnet -Profile Any
+```
+
+Bu kural otomatik eklenmez; güvenlik duvarı kapatılmaz. Daha önce aynı adla eklediysen tekrar oluşturma. Kuralı kaldırmak için `Remove-NetFirewallRule -Name 'KocBenefits-LAN-5173'` kullan. IP değişirse eski kuralı kaldırıp yeni IP ile oluştur. Misafir Wi-Fi veya erişim noktası cihazları birbirinden yalıtıyorsa ağ ayarını ayrıca kontrol et.
+
+Bu HTTP bağlantısı aynı güvenilir ağda geliştirme içindir; genel yayın değildir. Mailpit bilgisayarda **http://127.0.0.1:8025** adresinde kalır. Telefondaki e-posta doğrulama/sıfırlama bağlantısını denemek için Mailpit'teki bağlantıyı telefona aktar. Aynı IP adresini kullanmıyorsan giriş/kayıt istekleri kaynak kontrolünden reddedilir.
+
 ### İlk yönetici
 
 **Özel yönetici:** Yönetici girişindeki **Kullanıcı adı veya okul e-postası** alanından giriş yapar. Hesabın e-postası ve e-posta doğrulama kaydı yoktur; uygulamada sahte bir adres üretilmez. Proje sahibinin seçtiği bilgiler yalnızca yerel veritabanındaki hesapta kullanılır; parola kaynak koduna veya README'ye eklenmez. Bu hesap açık kayıtla oluşturulamaz veya öğrenci rolüne dönüştürülemez.

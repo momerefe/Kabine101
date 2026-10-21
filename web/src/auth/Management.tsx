@@ -8,6 +8,7 @@
 } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { newRecordId } from '../api/record-id';
 import type { components } from '../api/schema.gen';
 type Business = components['schemas']['Business'];
 type Benefit = components['schemas']['Benefit'];
@@ -315,7 +316,7 @@ export function Management({
   );
 }
 const blankBusiness = (): Business => ({
-  id: crypto.randomUUID(),
+  id: newRecordId(),
   revision: 0,
   name: '',
   category: 'food',
@@ -331,7 +332,7 @@ const blankBusiness = (): Business => ({
   updated_at: '',
 });
 const blankBenefit = (): Benefit => ({
-  id: crypto.randomUUID(),
+  id: newRecordId(),
   revision: 0,
   business_id: '',
   business_name: '',
