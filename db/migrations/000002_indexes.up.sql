@@ -1,0 +1,10 @@
+CREATE INDEX sessions_account_idx ON sessions(account_id);
+CREATE INDEX sessions_expiry_idx ON sessions(expires_at);
+CREATE INDEX account_tokens_account_idx ON account_tokens(account_id);
+CREATE INDEX account_tokens_expiry_idx ON account_tokens(expires_at);
+CREATE INDEX accounts_pending_idx ON accounts(created_at) WHERE status = 'pending';
+CREATE INDEX businesses_category_idx ON businesses(category);
+CREATE INDEX benefits_business_idx ON benefits(business_id);
+CREATE INDEX benefits_publication_idx ON benefits(publication_status, valid_until);
+CREATE INDEX favorites_benefit_idx ON favorites(benefit_id);
+CREATE INDEX audit_events_created_idx ON audit_events(created_at DESC);

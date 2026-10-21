@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: KoçBenefits API
+  version: 0.1.0
+  description: Foundation endpoints only. Student and admin APIs are not implemented yet.
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Process health without database dependency
+      responses:
+        '200':
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /api/ready:
+    get:
+      operationId: getReady
+      summary: Database connection and schema readiness
+      responses:
+        '200':
+          description: Database is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Database or schema unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+components:
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]

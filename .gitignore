@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+tests/artifacts/
+.env
+.env.*
+!.env.example
+.local/
+.tools/
+node_modules/
+dist/
+bin/
+coverage/
+*.log
+*.dump
+*.backup

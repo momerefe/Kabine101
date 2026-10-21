@@ -1,0 +1,10 @@
+DROP INDEX audit_events_created_idx;
+DROP INDEX favorites_benefit_idx;
+DROP INDEX benefits_publication_idx;
+DROP INDEX benefits_business_idx;
+DROP INDEX businesses_category_idx;
+DROP INDEX accounts_pending_idx;
+DROP INDEX account_tokens_expiry_idx;
+DROP INDEX account_tokens_account_idx;
+DROP INDEX sessions_expiry_idx;
+DROP INDEX sessions_account_idx;
