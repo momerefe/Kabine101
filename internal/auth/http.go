@@ -36,6 +36,7 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 		r.Post("/api/auth/reset-password", s.reset)
 		r.Post("/api/admin/accounts/{id}/review", s.review)
 		r.Post("/api/admin/accounts/{id}/role", s.role)
+		r.Post("/api/admin/accounts/{id}/status", s.status)
 	})
 }
 

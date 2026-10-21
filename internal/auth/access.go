@@ -10,6 +10,9 @@ import (
 )
 
 func (s *Service) CSRF(next http.Handler) http.Handler { return s.csrf(next) }
+
+// SchoolDomain is deployment-owned and cannot be modified through platform settings.
+func (s *Service) SchoolDomain() string { return s.cfg.SchoolDomain }
 func (s *Service) RequireAdmin(w http.ResponseWriter, r *http.Request) (pgtype.UUID, []byte, bool) {
 	a, h, ok := s.requireAdmin(w, r)
 	return a.ID, h, ok

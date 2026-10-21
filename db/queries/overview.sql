@@ -43,8 +43,9 @@ LEFT JOIN accounts actor ON actor.id=e.actor_id
 LEFT JOIN businesses b ON e.entity_type='business' AND b.id=e.entity_id
 LEFT JOIN benefits v ON e.entity_type='benefit' AND v.id=e.entity_id
 LEFT JOIN accounts target ON e.entity_type='account' AND target.id=e.entity_id
-WHERE e.entity_id IS NOT NULL AND (
+WHERE (
  (e.entity_type='business' AND e.action='business.save') OR
  (e.entity_type='benefit' AND e.action IN ('benefit.save','benefit.publish','benefit.suspend')) OR
- (e.entity_type='account' AND e.action IN ('account.review.approved','account.review.rejected','account.role.admin','account.role.student')))
+ (e.entity_type='account' AND e.action IN ('account.review.approved','account.review.rejected','account.role.admin','account.role.student','account.status.active','account.status.disabled')) OR
+ (e.entity_type='platform' AND e.action='platform.settings'))
 ORDER BY e.created_at DESC,e.id DESC LIMIT 6;

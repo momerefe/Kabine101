@@ -10,6 +10,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { newRecordId } from '../api/record-id';
 import { Overview } from './Overview';
+import {
+  Analytics,
+  Audit,
+  PlatformSettings,
+  useAdminSettings,
+} from './AdminTools';
 import type { components } from '../api/schema.gen';
 type Business = components['schemas']['Business'];
 type Benefit = components['schemas']['Benefit'];
@@ -92,10 +98,11 @@ export function Management({
   logout,
 }: {
   session: Session;
-  accounts: ReactNode;
+  accounts: (section: 'students' | 'users') => ReactNode;
   logout: ReactNode;
 }) {
   const [hash, setHash] = useState(location.hash);
+  const settings = useAdminSettings(session.user!.id);
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [drawer, setDrawer] = useState(
@@ -178,7 +185,7 @@ export function Management({
           <span className="brand-mark">
             k<span>✦</span>
           </span>
-          <span>KoçBenefits</span>
+          <span>{settings.data?.settings.platform_name || 'KoçBenefits'}</span>
         </a>
         <div className="sidebar-label">
           <span>YÖNETİCİ PANELİ</span>
@@ -257,7 +264,7 @@ export function Management({
             </div>
           </div>
           {section === 'students' || section === 'users' ? (
-            accounts
+            accounts(section)
           ) : [
               'partners',
               'businesses',
@@ -274,6 +281,15 @@ export function Management({
             />
           ) : section === 'overview' ? (
             <Overview accountId={session.user!.id} />
+          ) : section === 'audit' ? (
+            <Audit accountId={session.user!.id} />
+          ) : section === 'analytics' ? (
+            <Analytics accountId={session.user!.id} />
+          ) : section === 'settings' ? (
+            <PlatformSettings
+              accountId={session.user!.id}
+              csrf={session.csrf_token}
+            />
           ) : (
             <section className="surface management-intro">
               <h2>
@@ -674,6 +690,12 @@ function Records({
             });
             await client.invalidateQueries({
               queryKey: ['management-overview', accountId],
+            });
+            await client.invalidateQueries({
+              queryKey: ['management-audit', accountId],
+            });
+            await client.invalidateQueries({
+              queryKey: ['management-analytics', accountId],
             });
           }}
         />

@@ -178,10 +178,9 @@ export function StudentPanel({
   const settings = useQuery({
     queryKey: ['student-settings', accountId],
     queryFn: ({ signal }) =>
-      studentRequest<{ platform_name: string; support_contact: string }>(
-        'settings',
-        { signal },
-      ),
+      studentRequest<components['schemas']['StudentSettings']>('settings', {
+        signal,
+      }),
   });
   const favorite = useMutation({
     mutationFn: ({ benefit }: { benefit: Benefit }) =>
@@ -510,16 +509,18 @@ export function StudentPanel({
                   ))}
                 </div>
               </section>
-              <section>
-                <div className="section-heading">
-                  <h2>Bir göz at, sevebilirsin.</h2>
-                  <a className="text-link" href="#discover">
-                    Tümünü gör
-                    <Icon name="arrow" />
-                  </a>
-                </div>
-                <Cards featured />
-              </section>
+              {settings.data?.show_featured !== false && (
+                <section>
+                  <div className="section-heading">
+                    <h2>Bir göz at, sevebilirsin.</h2>
+                    <a className="text-link" href="#discover">
+                      Tümünü gör
+                      <Icon name="arrow" />
+                    </a>
+                  </div>
+                  <Cards featured />
+                </section>
+              )}
               <aside className="how-strip">
                 <Icon name="help" />
                 <div>
@@ -666,6 +667,8 @@ export function StudentPanel({
               key={`${accountId}/${id}`}
               id={id}
               accountId={accountId}
+              csrf={session.csrf_token}
+              recordView={account.role === 'student'}
               favorite={(b) => <Favorite benefit={b} detail />}
             />
           ) : (
@@ -694,9 +697,13 @@ function BenefitDetail({
   id,
   accountId,
   favorite,
+  csrf,
+  recordView,
 }: {
   id: string;
   accountId: string;
+  csrf: string;
+  recordView: boolean;
   favorite: (b: Benefit) => ReactNode;
 }) {
   const detail = useQuery({
@@ -710,6 +717,30 @@ function BenefitDetail({
     refetchOnWindowFocus: true,
   });
   const [payload, setPayload] = useState<Redemption | null>(null);
+  const recordedViews = useRef(new Set<string>());
+  const loadedId = !detail.isError ? detail.data?.benefit.id : undefined;
+  useEffect(() => {
+    if (!recordView || !loadedId) return;
+    const key = `${accountId}/${loadedId}`;
+    const record = () => {
+      if (
+        document.visibilityState !== 'visible' ||
+        recordedViews.current.has(key)
+      )
+        return;
+      recordedViews.current.add(key);
+      void studentRequest(`benefits/${encodeURIComponent(loadedId)}/view`, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
+        body: '{}',
+      }).catch(() => {
+        /* Analytics never blocks the visible benefit. */
+      });
+    };
+    record();
+    document.addEventListener('visibilitychange', record);
+    return () => document.removeEventListener('visibilitychange', record);
+  }, [accountId, csrf, loadedId, recordView]);
   const [hint, setHint] = useState('');
   const [manualCopy, setManualCopy] = useState('');
   const revealGeneration = useRef(0);

@@ -1,12 +1,14 @@
 # KoçBenefits Proje Anayasası
 
-Sürüm: 1.4
+Sürüm: 1.5
 Tarih: 21 Ekim 2026
 Durum: Proje sahibi Yönetici Genel Bakış'ı kabul edip 3D öğrenci deneyimi ve avantaj detaylarını onayladı. 3D bu onayla gerçek katalog, hesap bazlı favoriler ve koşullu kullanım bilgileriyle incelemeye hazırlandı. Normal kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Özel e-postasız yönetici istisnası normal hesaplara uygulanmaz. [Güncel teslim raporu](docs/TESLIM_3D.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) esas alınır; sonraki teslimlerin kabul noktaları korunur.
 
 KoçBenefits, Koç Okulu öğrencilerinin anlaşmalı işletmelerin avantajlarını bulmasını ve kullanım koşullarını kolayca anlamasını sağlar. Kabine, işletmeleri ve avantajları sade bir yönetim panelinden yönetir. Başarı ölçütü; öğrencinin geçerli bir avantaja ulaşabilmesi, yöneticinin doğru bilgiyi güvenilir biçimde yayımlayabilmesi ve sistemin sonraki kabineye devredilebilmesidir.
 
 Bu anayasa ürünün kapsamını, tasarımını ve geliştirme kurallarını belirler. İş sırası ve aşama kabul koşulları [ROADMAP.md](ROADMAP.md), mevcut HTML demosunun çalıştırılması [README.md](README.md) içindedir.
+
+**3E onayı:** Proje sahibi işlem günlüğü, platform ayarları, kullanıcı/rol yönetiminin tamamlanması ve sade analitik için devam onayı verdi. Tasarruf ve alışveriş onayı kapsam dışında kalır. Görüntülenme, aynı öğrencinin aynı avantajı bir İstanbul takvim gününde açması için en fazla bir kayıt; favori sayısı mevcut kayıtların toplamıdır. Bu ölçümler gerçek avantaj kullanımı değildir. Okul alan adı sunucu yapılandırmasında korunur ve platform ayarları ekranından değiştirilemez.
 
 ## 1 Karar ve kapsam yönetimi
 

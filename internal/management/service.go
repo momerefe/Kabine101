@@ -32,12 +32,16 @@ type Service struct {
 func New(pool *pgxpool.Pool, a *auth.Service) *Service { return &Service{pool, a, database.New(pool)} }
 func (s *Service) RegisterRoutes(r chi.Router) {
 	r.Get("/api/admin/overview", s.overview)
+	r.Get("/api/admin/audit", s.auditEvents)
+	r.Get("/api/admin/settings", s.settings)
+	r.Get("/api/admin/analytics", s.analytics)
 	r.Get("/api/admin/businesses", s.businesses)
 	r.Get("/api/admin/businesses/{id}", s.business)
 	r.Get("/api/admin/benefits", s.benefits)
 	r.Get("/api/admin/benefits/{id}", s.benefit)
 	r.Group(func(r chi.Router) {
 		r.Use(s.auth.CSRF)
+		r.Put("/api/admin/settings", s.putSettings)
 		r.Put("/api/admin/businesses/{id}", s.putBusiness)
 		r.Put("/api/admin/benefits/{id}", s.putBenefit)
 		r.Post("/api/admin/benefits/{id}/publish", s.publish)

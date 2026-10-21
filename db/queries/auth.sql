@@ -19,7 +19,12 @@ INSERT INTO accounts (name,username,password_hash,role,status,eligibility_status
 VALUES ($1,$2,$3,'admin','active','approved') RETURNING *;
 
 -- name: ListAccounts :many
-SELECT * FROM accounts ORDER BY created_at DESC;
+SELECT * FROM accounts
+WHERE (sqlc.arg(q)::text='' OR strpos(lower(name||' '||coalesce(email,'')||' '||coalesce(username,'')),lower(sqlc.arg(q)::text))>0)
+AND (sqlc.arg(role)::text='' OR role=sqlc.arg(role)::text)
+AND (sqlc.arg(status)::text='' OR status=sqlc.arg(status)::text)
+AND (sqlc.arg(eligibility_status)::text='' OR eligibility_status=sqlc.arg(eligibility_status)::text)
+ORDER BY created_at DESC,id LIMIT 1001;
 
 -- name: CreateSession :exec
 INSERT INTO sessions(token_hash,account_id,expires_at) VALUES ($1,$2,$3);
@@ -57,6 +62,9 @@ UPDATE accounts SET status=$2,eligibility_status=$3,updated_at=now() WHERE id=$1
 
 -- name: ChangeRole :exec
 UPDATE accounts SET role=$2,updated_at=now() WHERE id=$1;
+
+-- name: ChangeAccountStatus :exec
+UPDATE accounts SET status=$2,updated_at=now() WHERE id=$1;
 
 -- name: CountActiveAdmins :one
 SELECT count(*) FROM accounts WHERE role='admin' AND status='active' AND eligibility_status='approved'

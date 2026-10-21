@@ -8,12 +8,14 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 
 **Yönetici Genel Bakış:** Gerçek işletme, avantaj ve öğrenci özetleri; bekleyen işler, durum dağılımı, bugün dahil yedi gün içinde bitecek aktif avantajlar ve son yönetim işlemleri hazırdır. Sayfa açıkken dakikada bir yenilenir, elle de yenilenebilir. [Teslim ve test bilgileri](docs/TESLIM_GENEL_BAKIS.md).
 
+**3E yönetim ekranları:** İşlem günlüğünde arama/tarih/işlem filtresi ve sayfalama; platform adı, destek iletişimi ve öne çıkan öneri ayarları; hesap arama/filtreleri ve gerekçesi onay ekranında açıklanan devre dışı bırakma/yeniden etkinleştirme akışları bulunur. Analitik, son 30 günün öğrenci görüntülenmelerini ve mevcut favori sayılarını gösterir. Okul alan adı bu ekrandan değiştirilemez. Yeni kurulum ve güncelleme için **şema 6** gerekir. [3E teslim ve çalıştırma bilgileri](docs/TESLIM_3E.md).
+
 | Bölüm | Çalıştırma | Durum |
 | --- | --- | --- |
 | HTML prototipi | Kök dizindeki `index.html` dosyasını aç | Altı öğrenci ve 12 yönetici bölümü, demo veriler |
 | Gerçek uygulama | Go API + Vite + yerel Mailpit | Gerçek hesap/oturum, yönetim, öğrenci kataloğu, favoriler ve avantaj detayları |
 
-Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur; henüz geliştirilmeyen bölümler açıkça sonraki teslim olarak belirtilir. Doğrulanmış kullanım sistemi bulunmadığından kullanım geçmişi kayıt üretmez.
+Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur. Doğrulanmış kullanım sistemi bulunmadığından kullanım geçmişi açıklayıcı boş durumdur; kod/QR açmak kullanım kaydı oluşturmaz. Tasarruf ve alışveriş onay sistemi kapsam dışında kalır.
 
 ## Bu bilgisayarda çalıştırma
 

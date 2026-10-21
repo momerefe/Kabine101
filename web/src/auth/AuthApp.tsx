@@ -42,7 +42,8 @@ type AuthAction =
   | { kind: 'reset-password'; token: string; password: string };
 type ReviewAction =
   | { account: Account; kind: 'review'; value: 'approved' | 'rejected' }
-  | { account: Account; kind: 'role'; value: 'student' | 'admin' };
+  | { account: Account; kind: 'role'; value: 'student' | 'admin' }
+  | { account: Account; kind: 'status'; value: 'active' | 'disabled' };
 
 const titles: Record<Mode, string> = {
   'login/student': 'Yeniden merhaba.',
@@ -716,6 +717,9 @@ function AccountPage({
       client.removeQueries({ queryKey: ['management-businesses'] });
       client.removeQueries({ queryKey: ['management-benefits'] });
       client.removeQueries({ queryKey: ['management-overview'] });
+      client.removeQueries({ queryKey: ['management-audit'] });
+      client.removeQueries({ queryKey: ['management-settings'] });
+      client.removeQueries({ queryKey: ['management-analytics'] });
       client.removeQueries({
         predicate: (query) =>
           studentQueryKeys.includes(String(query.queryKey[0])),
@@ -754,7 +758,14 @@ function AccountPage({
     return (
       <Management
         session={session}
-        accounts={<AdminAccounts session={session} refresh={refresh} />}
+        accounts={(section) => (
+          <AdminAccounts
+            key={section}
+            session={session}
+            refresh={refresh}
+            verificationOnly={section === 'students'}
+          />
+        )}
         logout={
           <>
             <button
@@ -853,27 +864,43 @@ function AccountPage({
 function AdminAccounts({
   session,
   refresh,
+  verificationOnly = false,
 }: {
   session: Session;
   refresh: () => Promise<Session>;
+  verificationOnly?: boolean;
 }) {
   const client = useQueryClient();
   const [action, setAction] = useState<ReviewAction | null>(null);
   const [notice, setNotice] = useState('');
+  const [q, setQ] = useState('');
+  const [role, setRole] = useState(verificationOnly ? 'student' : '');
+  const [status, setStatus] = useState('');
+  const [eligibility, setEligibility] = useState(
+    verificationOnly ? 'pending' : '',
+  );
   const accounts = useQuery({
-    queryKey: ['accounts', session.user?.id],
+    queryKey: ['accounts', session.user?.id, q, role, status, eligibility],
     queryFn: async () => {
       const { data, error } = await api.GET('/api/admin/accounts', {
         credentials: 'same-origin',
+        params: {
+          query: {
+            q,
+            role: role || undefined,
+            status: status || undefined,
+            eligibility_status: eligibility || undefined,
+          },
+        },
       });
       if (error || !data) fail(error);
-      return data.accounts;
+      return data;
     },
   });
   return (
     <section className="foundation-card">
-      <p className="eyebrow">YÖNETİM · 3B</p>
-      <h1>Hesap yönetimi</h1>
+      <p className="eyebrow">YÖNETİM</p>
+      <h2>{verificationOnly ? 'Öğrenci başvuruları' : 'Hesap yönetimi'}</h2>
       <p>
         Öğrenci başvurularını incele ve hesap rollerini yönet. E-posta
         doğrulanmadan verilen onay hesabı etkinleştirmez.
@@ -882,6 +909,51 @@ function AdminAccounts({
         İşletme ve avantaj yönetimine soldaki menüden ulaşabilirsin.
       </div>
       {notice && <Notice>{notice}</Notice>}
+      <div className="admin-toolbar">
+        <label className="field">
+          Hesaplarda ara
+          <input
+            type="search"
+            maxLength={100}
+            value={q}
+            placeholder="Ad, e-posta veya kullanıcı adı"
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </label>
+        <label className="field">
+          Hesap rolü
+          <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="">Tüm roller</option>
+            <option value="student">Öğrenci</option>
+            <option value="admin">Yönetici</option>
+          </select>
+        </label>
+        <label className="field">
+          Hesap durumu
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">Tüm durumlar</option>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          Başvuru onayı
+          <select
+            value={eligibility}
+            onChange={(e) => setEligibility(e.target.value)}
+          >
+            <option value="">Tüm başvurular</option>
+            {Object.entries(eligibilityLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {accounts.isPending ? (
         <p role="status">Hesaplar yükleniyor…</p>
       ) : accounts.isError ? (
@@ -899,17 +971,23 @@ function AdminAccounts({
       ) : (
         <>
           <p className="account-count">
-            {accounts.data.length} hesap ·{' '}
+            {accounts.data.accounts.length} hesap ·{' '}
             {
-              accounts.data.filter(
+              accounts.data.accounts.filter(
                 (account) =>
                   !account.username && account.eligibility_status === 'pending',
               ).length
             }{' '}
             başvuru bekliyor
           </p>
+          {accounts.data.truncated && (
+            <Notice>
+              İlk 1000 eşleşme gösteriliyor. Arama ve filtrelerle sonuçları
+              daralt.
+            </Notice>
+          )}
           <div className="admin-account-list">
-            {accounts.data.map((account) => (
+            {accounts.data.accounts.map((account) => (
               <article className="admin-account" key={account.id}>
                 <div className="admin-account-heading">
                   <h2>{account.name}</h2>
@@ -950,6 +1028,27 @@ function AdminAccounts({
                   )}
                 </dl>
                 <div className="account-actions">
+                  {account.eligibility_status === 'approved' &&
+                    (account.username || account.email_verified) &&
+                    ['active', 'disabled'].includes(account.status) && (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() =>
+                          setAction({
+                            account,
+                            kind: 'status',
+                            value:
+                              account.status === 'active'
+                                ? 'disabled'
+                                : 'active',
+                          })
+                        }
+                      >
+                        {account.status === 'active'
+                          ? 'Devre dışı bırak'
+                          : 'Hesabı etkinleştir'}
+                      </button>
+                    )}
                   {!account.username &&
                     account.eligibility_status === 'pending' && (
                       <>
@@ -1003,7 +1102,9 @@ function AdminAccounts({
               </article>
             ))}
           </div>
-          {accounts.data.length === 0 && <p>Henüz başvuru bulunmuyor.</p>}
+          {accounts.data.accounts.length === 0 && (
+            <p>Eşleşen hesap bulunamadı.</p>
+          )}
         </>
       )}
       {action && (
@@ -1018,6 +1119,9 @@ function AdminAccounts({
             await client.invalidateQueries({ queryKey: ['accounts'] });
             await client.invalidateQueries({
               queryKey: ['management-overview', session.user?.id],
+            });
+            await client.invalidateQueries({
+              queryKey: ['management-audit', session.user?.id],
             });
             await refresh();
           }}
@@ -1054,9 +1158,13 @@ function AdminConfirmation({
       ? action.value === 'approved'
         ? 'Başvuruyu onayla'
         : 'Başvuruyu reddet'
-      : action.value === 'admin'
-        ? 'Yönetici rolü ver'
-        : 'Öğrenci rolü ver';
+      : action.kind === 'status'
+        ? action.value === 'active'
+          ? 'Hesabı etkinleştir'
+          : 'Devre dışı bırak'
+        : action.value === 'admin'
+          ? 'Yönetici rolü ver'
+          : 'Öğrenci rolü ver';
   const mutation = useMutation({
     mutationFn: async (current_password: string) => {
       const options = {
@@ -1072,10 +1180,15 @@ function AdminConfirmation({
               ...options,
               body: { decision: action.value, current_password },
             })
-          : await api.POST('/api/admin/accounts/{id}/role', {
-              ...options,
-              body: { role: action.value, current_password },
-            });
+          : action.kind === 'status'
+            ? await api.POST('/api/admin/accounts/{id}/status', {
+                ...options,
+                body: { status: action.value, current_password },
+              })
+            : await api.POST('/api/admin/accounts/{id}/role', {
+                ...options,
+                body: { role: action.value, current_password },
+              });
       if (result.error || !result.data) fail(result.error);
       return result.data.message;
     },
@@ -1107,13 +1220,17 @@ function AdminConfirmation({
         {action.account.username || action.account.email}
       </p>
       <p>
-        {action.kind === 'role'
-          ? action.value === 'admin'
-            ? 'Bu hesap diğer kullanıcıların başvurularını ve rollerini yönetebilecek.'
-            : 'Bu hesabın yönetim alanına erişimi kaldırılacak.'
-          : action.value === 'approved'
-            ? 'E-posta doğrulaması da tamamlandığında bu hesap giriş yapabilecek.'
-            : 'Bu başvuru reddedilecek ve öğrenci giriş yapamayacak.'}
+        {action.kind === 'status'
+          ? action.value === 'disabled'
+            ? 'Bu hesap devre dışı bırakılacak ve mevcut oturumları kapatılacak.'
+            : 'Bu hesabın giriş erişimi yeniden etkinleştirilecek.'
+          : action.kind === 'role'
+            ? action.value === 'admin'
+              ? 'Bu hesap diğer kullanıcıların başvurularını ve rollerini yönetebilecek.'
+              : 'Bu hesabın yönetim alanına erişimi kaldırılacak.'
+            : action.value === 'approved'
+              ? 'E-posta doğrulaması da tamamlandığında bu hesap giriş yapabilecek.'
+              : 'Bu başvuru reddedilecek ve öğrenci giriş yapamayacak.'}
       </p>
       {mutation.isError && <Notice error>{mutation.error.message}</Notice>}
       <form onSubmit={submit}>
@@ -1222,6 +1339,9 @@ export function AuthApp() {
           'management-businesses',
           'management-benefits',
           'management-overview',
+          'management-audit',
+          'management-settings',
+          'management-analytics',
         ].includes(String(query.queryKey[0])) &&
         (session.data?.user?.role !== 'admin' ||
           query.queryKey[1] !== session.data?.user?.id),

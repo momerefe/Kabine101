@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import type { components } from '../api/schema.gen';
 import '../overview.css';
+import { auditActionLabels } from './AdminTools';
 
 type OverviewData = components['schemas']['OverviewResponse'];
 class OverviewAccessError extends Error {}
@@ -14,16 +15,7 @@ function timestamp(value: string, dateOnly = false) {
     timeZone: 'Europe/Istanbul',
   }).format(new Date(dateOnly ? `${value}T12:00:00+03:00` : value));
 }
-const actionLabels: Record<string, string> = {
-  'business.save': 'İşletme kaydedildi',
-  'benefit.save': 'Avantaj kaydedildi',
-  'benefit.publish': 'Avantaj yayımlandı',
-  'benefit.suspend': 'Avantaj askıya alındı',
-  'account.review.approved': 'Öğrenci başvurusu onaylandı',
-  'account.review.rejected': 'Öğrenci başvurusu reddedildi',
-  'account.role.admin': 'Yönetici rolü verildi',
-  'account.role.student': 'Öğrenci rolü verildi',
-};
+const actionLabels = auditActionLabels;
 
 export function Overview({ accountId }: { accountId: string }) {
   const client = useQueryClient();

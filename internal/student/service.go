@@ -2,8 +2,10 @@
 package student
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -34,6 +36,7 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 		r.Use(s.auth.CSRF)
 		r.Put("/api/student/favorites/{id}", s.favorite)
 		r.Delete("/api/student/favorites/{id}", s.favorite)
+		r.Post("/api/student/benefits/{id}/view", s.view)
 	})
 }
 func reply(w http.ResponseWriter, status int, v any) {
@@ -202,7 +205,71 @@ func (s *Service) settings(w http.ResponseWriter, r *http.Request) {
 		dbfail(w, e)
 		return
 	}
-	reply(w, 200, map[string]string{"platform_name": v.PlatformName, "support_contact": v.SupportContact.String})
+	reply(w, 200, map[string]any{"platform_name": v.PlatformName, "support_contact": v.SupportContact.String, "show_featured": v.ShowFeatured})
+}
+
+func (s *Service) view(w http.ResponseWriter, r *http.Request) {
+	account, hash, ok := s.auth.RequireAccount(w, r)
+	if !ok {
+		return
+	}
+	id, ok := identifier(w, r)
+	if !ok {
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1024)
+	body, err := io.ReadAll(r.Body)
+	var in map[string]json.RawMessage
+	if err != nil || json.Unmarshal(body, &in) != nil || in == nil || len(in) != 0 || len(bytes.TrimSpace(body)) == 0 || bytes.TrimSpace(body)[0] != '{' {
+		fail(w, 400, "invalid_request")
+		return
+	}
+	tx, err := s.pool.Begin(r.Context())
+	if err != nil {
+		dbfail(w, err)
+		return
+	}
+	defer tx.Rollback(r.Context())
+	if !s.auth.RecheckAccount(r, tx, account, hash) {
+		fail(w, 403, "forbidden")
+		return
+	}
+	q := database.New(tx)
+	a, err := q.FindAccountByID(r.Context(), account)
+	if err != nil {
+		dbfail(w, err)
+		return
+	}
+	prior, err := q.ManagementGetBenefit(r.Context(), id)
+	if err != nil {
+		dbfail(w, err)
+		return
+	}
+	b, err := q.ManagementLockBusiness(r.Context(), prior.BusinessID)
+	if err != nil {
+		dbfail(w, err)
+		return
+	}
+	v, err := q.ManagementLockBenefit(r.Context(), id)
+	if err != nil {
+		dbfail(w, err)
+		return
+	}
+	if benefitStatus(v, b, time.Now()) == "unavailable" {
+		fail(w, 404, "not_found")
+		return
+	}
+	if a.Role == "student" {
+		if err = q.StudentRecordView(r.Context(), database.StudentRecordViewParams{AccountID: account, BenefitID: id}); err != nil {
+			dbfail(w, err)
+			return
+		}
+	}
+	if err = tx.Commit(r.Context()); err != nil {
+		dbfail(w, err)
+		return
+	}
+	reply(w, 200, map[string]string{"message": "Görüntüleme kaydedildi."})
 }
 func (s *Service) favorite(w http.ResponseWriter, r *http.Request) {
 	account, hash, ok := s.auth.RequireAccount(w, r)

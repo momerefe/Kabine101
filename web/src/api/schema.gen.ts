@@ -4,6 +4,92 @@
  */
 
 export interface paths {
+  '/api/admin/audit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Read-only administrator audit log. Dates inclusive in Europe/Istanbul. No secrets or mutation endpoints. Fifty rows per page. */
+    get: operations['getAdminAudit'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/settings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Administrator settings. School domain is deployment configuration and read-only. */
+    get: operations['getAdminSettings'];
+    /** @description Administrator and CSRF required. Optimistic revision guards concurrent edits. School domain cannot be changed here. Audit and update commit atomically. */
+    put: operations['updateAdminSettings'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/analytics': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Real aggregate data only. Views are one eligible student per benefit per Istanbul day in the current day plus previous 29 days. Favorites are current counts, not time-period additions. Totals cover all benefits; table contains top 20. No purchase or usage statistics. */
+    get: operations['getAdminAnalytics'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/accounts/{id}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Reauthenticate administrator and recheck authority within transaction. Active approved accounts may be disabled; disabled otherwise eligible accounts may be reactivated. Pending/rejected accounts cannot be activated here. Preserve last eligible administrator and revoke target sessions on either transition. */
+    post: operations['changeAccountStatus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/student/benefits/{id}/view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Eligible student and visible benefit required. CSRF protected. One record per student/benefit/Istanbul day; repeats do not increment. Administrators are ignored. A view is not verified usage. */
+    post: operations['recordStudentBenefitView'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/student/catalog': {
     parameters: {
       query?: never;
@@ -179,6 +265,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Administrator-only search and filters. Maximum 1000 accounts; truncated indicates further matches. */
     get: operations['listAccounts'];
     put?: never;
     post?: never;
@@ -489,6 +576,7 @@ export interface components {
     };
     AccountsResponse: {
       accounts: components['schemas']['Account'][];
+      truncated: boolean;
     };
     Message: {
       message: string;
@@ -799,12 +887,15 @@ export interface components {
         | 'account.review.approved'
         | 'account.review.rejected'
         | 'account.role.admin'
-        | 'account.role.student';
+        | 'account.role.student'
+        | 'account.status.active'
+        | 'account.status.disabled'
+        | 'platform.settings';
       /** @description Current actor name, or Sistem if the actor no longer exists. */
       actor_name: string;
       /** @enum {string} */
-      entity_type: 'business' | 'benefit' | 'account';
-      /** Format: uuid */
+      entity_type: 'business' | 'benefit' | 'account' | 'platform';
+      /** @description Entity UUID, or empty string for platform settings. */
       entity_id: string;
       /** @description Current business name, benefit title or account name; empty if the entity no longer exists. */
       entity_label: string;
@@ -860,6 +951,78 @@ export interface components {
     StudentSettings: {
       platform_name: string;
       support_contact: string;
+      show_featured: boolean;
+    };
+    AuditEvent: {
+      id: string;
+      action: string;
+      actor_name: string;
+      entity_type: string;
+      entity_id: string;
+      entity_label: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    AuditList: {
+      events: components['schemas']['AuditEvent'][];
+      /** Format: int64 */
+      page: number;
+      /** Format: int64 */
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    PlatformSettings: {
+      platform_name: string;
+      /** @description Empty or email, HTTPS URL, simple phone. */
+      support_contact: string;
+      show_featured: boolean;
+      revision: number;
+    };
+    PlatformSettingsWrite: {
+      platform_name: string;
+      /** @description Empty or email, HTTPS URL, simple phone. */
+      support_contact: string;
+      show_featured: boolean;
+      revision: number;
+    };
+    PlatformSettingsResponse: {
+      settings: components['schemas']['PlatformSettings'];
+      school_domain: string;
+    };
+    AnalyticsBenefit: {
+      id: string;
+      business_name: string;
+      title: string;
+      status: string;
+      /** Format: int64 */
+      view_count: number;
+      /** Format: int64 */
+      favorite_count: number;
+    };
+    AnalyticsResponse: {
+      /** Format: date */
+      period_start: string;
+      /** Format: date */
+      period_end: string;
+      /** Format: date-time */
+      generated_at: string;
+      totals: {
+        /** Format: int64 */
+        views: number;
+        /** Format: int64 */
+        favorites: number;
+        /** Format: int64 */
+        benefits: number;
+      };
+      benefits: components['schemas']['AnalyticsBenefit'][];
+      /** Format: int64 */
+      limit: number;
+    };
+    AccountStatusRequest: {
+      /** @enum {string} */
+      status: 'active' | 'disabled';
+      current_password: string;
     };
   };
   responses: never;
@@ -870,6 +1033,532 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  getAdminAudit: {
+    parameters: {
+      query?: {
+        q?: string;
+        action?: string;
+        from?: string;
+        until?: string;
+        page?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuditList'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getAdminSettings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlatformSettingsResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  updateAdminSettings: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PlatformSettingsWrite'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlatformSettingsResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getAdminAnalytics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AnalyticsResponse'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  changeAccountStatus: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AccountStatusRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Message'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  recordStudentBenefitView: {
+    parameters: {
+      query?: never;
+      header: {
+        'X-CSRF-Token': string;
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmptyRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Message'];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Login required or failed reauthentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Current state or revision conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Rate limited */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
   getStudentCatalog: {
     parameters: {
       query?: {
@@ -1535,7 +2224,12 @@ export interface operations {
   };
   listAccounts: {
     parameters: {
-      query?: never;
+      query?: {
+        q?: string;
+        role?: string;
+        status?: string;
+        eligibility_status?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -1549,6 +2243,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AccountsResponse'];
+        };
+      };
+      /** @description Invalid filter */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
         };
       };
       /** @description Login required */

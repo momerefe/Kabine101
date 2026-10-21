@@ -35,6 +35,11 @@
 }
 .student-panel .brand > span:last-child {
   overflow-wrap: anywhere;
+  white-space: normal;
+  min-width: 0;
+}
+.student-panel .card-brand {
+  overflow-wrap: anywhere;
 }
 .student-panel .brand small {
   display: block;

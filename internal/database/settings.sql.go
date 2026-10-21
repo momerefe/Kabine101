@@ -19,3 +19,51 @@ func (q *Queries) GetPlatformName(ctx context.Context) (string, error) {
 	err := row.Scan(&platform_name)
 	return platform_name, err
 }
+
+const managementSettings = `-- name: ManagementSettings :one
+SELECT id, platform_name, support_contact, show_featured, revision FROM platform_settings WHERE id=1
+`
+
+func (q *Queries) ManagementSettings(ctx context.Context) (PlatformSetting, error) {
+	row := q.db.QueryRow(ctx, managementSettings)
+	var i PlatformSetting
+	err := row.Scan(
+		&i.ID,
+		&i.PlatformName,
+		&i.SupportContact,
+		&i.ShowFeatured,
+		&i.Revision,
+	)
+	return i, err
+}
+
+const managementUpdateSettings = `-- name: ManagementUpdateSettings :one
+UPDATE platform_settings SET platform_name=$1::text,
+ support_contact=nullif($2::text,''),show_featured=$3::boolean,
+ revision=revision+1 WHERE id=1 AND revision=$4::integer RETURNING id, platform_name, support_contact, show_featured, revision
+`
+
+type ManagementUpdateSettingsParams struct {
+	PlatformName   string `json:"platform_name"`
+	SupportContact string `json:"support_contact"`
+	ShowFeatured   bool   `json:"show_featured"`
+	Revision       int32  `json:"revision"`
+}
+
+func (q *Queries) ManagementUpdateSettings(ctx context.Context, arg ManagementUpdateSettingsParams) (PlatformSetting, error) {
+	row := q.db.QueryRow(ctx, managementUpdateSettings,
+		arg.PlatformName,
+		arg.SupportContact,
+		arg.ShowFeatured,
+		arg.Revision,
+	)
+	var i PlatformSetting
+	err := row.Scan(
+		&i.ID,
+		&i.PlatformName,
+		&i.SupportContact,
+		&i.ShowFeatured,
+		&i.Revision,
+	)
+	return i, err
+}

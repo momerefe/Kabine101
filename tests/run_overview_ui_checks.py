@@ -71,7 +71,8 @@ def main():
       }
       if(url.pathname==='/api/admin/businesses')return response({businesses:[],truncated:false});
       if(url.pathname==='/api/admin/benefits')return response({benefits:[],truncated:false});
-      if(url.pathname==='/api/admin/accounts')return response({accounts:[]});
+      if(url.pathname==='/api/admin/accounts')return response({accounts:[],truncated:false});
+      if(url.pathname==='/api/admin/settings')return response({settings:{platform_name:'KoçBenefits',support_contact:'',show_featured:true,revision:1},school_domain:'ogrenci.example'});
       // Fail closed: never pass account/API operations to the development backend.
       return response({code:'unexpected_test_request'},500);
     };

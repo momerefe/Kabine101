@@ -73,6 +73,12 @@ type Benefit struct {
 	UpdatedAt               pgtype.Timestamptz `json:"updated_at"`
 }
 
+type BenefitDailyView struct {
+	AccountID pgtype.UUID `json:"account_id"`
+	BenefitID pgtype.UUID `json:"benefit_id"`
+	ViewDate  pgtype.Date `json:"view_date"`
+}
+
 type Business struct {
 	ID                pgtype.UUID        `json:"id"`
 	Name              string             `json:"name"`
@@ -101,6 +107,7 @@ type PlatformSetting struct {
 	PlatformName   string      `json:"platform_name"`
 	SupportContact pgtype.Text `json:"support_contact"`
 	ShowFeatured   bool        `json:"show_featured"`
+	Revision       int32       `json:"revision"`
 }
 
 type Session struct {

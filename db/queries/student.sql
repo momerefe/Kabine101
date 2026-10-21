@@ -4,7 +4,7 @@ FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE benefits.publication_status='published' AND businesses.partnership_status='active'
 AND (sqlc.arg(q)::text='' OR strpos(lower(benefits.title||' '||benefits.description||' '||benefits.perk||' '||businesses.name),lower(sqlc.arg(q)::text))>0)
 AND (sqlc.arg(category)::text='' OR businesses.category=sqlc.arg(category)::text)
-ORDER BY benefits.featured DESC, benefits.updated_at DESC, benefits.id LIMIT 1001;
+ORDER BY (benefits.featured AND (SELECT show_featured FROM platform_settings WHERE id=1)) DESC, benefits.updated_at DESC, benefits.id LIMIT 1001;
 
 -- name: StudentFavorites :many
 SELECT sqlc.embed(benefits), sqlc.embed(businesses)
@@ -21,4 +21,8 @@ INSERT INTO favorites(account_id,benefit_id) VALUES($1,$2) ON CONFLICT DO NOTHIN
 DELETE FROM favorites WHERE account_id=$1 AND benefit_id=$2;
 
 -- name: StudentSettings :one
-SELECT platform_name,support_contact FROM platform_settings WHERE id=1;
+SELECT platform_name,support_contact,show_featured FROM platform_settings WHERE id=1;
+
+-- name: StudentRecordView :exec
+INSERT INTO benefit_daily_views(account_id,benefit_id,view_date)
+VALUES($1,$2,(now() AT TIME ZONE 'Europe/Istanbul')::date) ON CONFLICT DO NOTHING;

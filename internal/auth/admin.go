@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
@@ -14,16 +16,52 @@ func (s *Service) accounts(w http.ResponseWriter, r *http.Request) {
 	if _, _, ok := s.requireAdmin(w, r); !ok {
 		return
 	}
-	rows, err := s.q.ListAccounts(r.Context())
+	query := r.URL.Query()
+	q := strings.TrimSpace(query.Get("q"))
+	role, status, eligibility := query.Get("role"), query.Get("status"), query.Get("eligibility_status")
+	validChoice := func(v string, choices ...string) bool {
+		if v == "" {
+			return true
+		}
+		for _, choice := range choices {
+			if v == choice {
+				return true
+			}
+		}
+		return false
+	}
+	if !utf8.ValidString(q) || utf8.RuneCountInString(q) > 100 || strings.ContainsRune(q, 0) || !validChoice(role, "student", "admin") || !validChoice(status, "active", "pending", "rejected", "disabled") || !validChoice(eligibility, "pending", "approved", "rejected") {
+		fail(w, 400, "invalid_request", "Geçersiz hesap filtresi.")
+		return
+	}
+	rows, err := s.q.ListAccounts(r.Context(), database.ListAccountsParams{Q: q, Role: role, Status: status, EligibilityStatus: eligibility})
 	if err != nil {
 		unavailable(w)
 		return
 	}
 	out := make([]Account, 0, len(rows))
-	for _, a := range rows {
+	for i, a := range rows {
+		if i == 1000 {
+			break
+		}
 		out = append(out, publicAccount(a))
 	}
-	reply(w, 200, map[string]any{"accounts": out})
+	reply(w, 200, map[string]any{"accounts": out, "truncated": len(rows) > 1000})
+}
+
+func (s *Service) status(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Status          string `json:"status"`
+		CurrentPassword string `json:"current_password"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if in.Status != "active" && in.Status != "disabled" {
+		fail(w, 400, "invalid_request", "Durum active veya disabled olmalıdır.")
+		return
+	}
+	s.adminChange(w, r, in.CurrentPassword, "status", in.Status)
 }
 
 func (s *Service) review(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +128,7 @@ func (s *Service) adminChange(w http.ResponseWriter, r *http.Request, password, 
 	case errors.Is(err, errDenied):
 		fail(w, 403, "forbidden", "Yönetici yetkisi veya oturum geçerli değil.")
 	case errors.Is(err, errLastAdmin):
-		fail(w, 409, "last_admin", "Son etkin yöneticinin rolü değiştirilemez.")
+		fail(w, 409, "last_admin", "Son etkin yöneticinin erişimi kaldırılamaz.")
 	case errors.Is(err, errConflict):
 		fail(w, 409, "account_state", "Hesabın mevcut durumu bu işleme uygun değil.")
 	case errors.Is(err, pgx.ErrNoRows):
@@ -107,8 +145,8 @@ func (s *Service) changeAccount(r *http.Request, priorActor database.Account, se
 		return err
 	}
 	defer tx.Rollback(ctx)
-	// A transaction-scoped PostgreSQL lock serializes approval/role mutations.
-	// Concurrent self-demotions therefore cannot both observe two administrators.
+	// A transaction-scoped PostgreSQL lock serializes approval, role and status changes.
+	// Concurrent removals therefore cannot both observe two administrators.
 	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(180181001)"); err != nil {
 		return err
 	}
@@ -149,6 +187,39 @@ func (s *Service) changeAccount(r *http.Request, priorActor database.Account, se
 			if err = q.RevokeAccountSessions(ctx, target.ID); err != nil {
 				return err
 			}
+		}
+	} else if kind == "status" {
+		if target.Status == value || target.EligibilityStatus != "approved" {
+			return errConflict
+		}
+		if value == "disabled" {
+			if !s.eligible(target) {
+				return errConflict
+			}
+			if target.Role == "admin" {
+				count, err := q.CountActiveAdmins(ctx, s.cfg.SchoolDomain)
+				if err != nil {
+					return err
+				}
+				if count <= 1 {
+					return errLastAdmin
+				}
+			}
+		} else {
+			if target.Status != "disabled" {
+				return errConflict
+			}
+			candidate := target
+			candidate.Status = "active"
+			if !s.eligible(candidate) {
+				return errConflict
+			}
+		}
+		if err = q.ChangeAccountStatus(ctx, database.ChangeAccountStatusParams{ID: target.ID, Status: value}); err != nil {
+			return err
+		}
+		if err = q.RevokeAccountSessions(ctx, target.ID); err != nil {
+			return err
 		}
 	} else {
 		if target.Username.Valid && value != "admin" {

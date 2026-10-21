@@ -70,6 +70,24 @@ func (e AccountStatus) Valid() bool {
 	}
 }
 
+// Defines values for AccountStatusRequestStatus.
+const (
+	AccountStatusRequestStatusActive   AccountStatusRequestStatus = "active"
+	AccountStatusRequestStatusDisabled AccountStatusRequestStatus = "disabled"
+)
+
+// Valid indicates whether the value is a known member of the AccountStatusRequestStatus enum.
+func (e AccountStatusRequestStatus) Valid() bool {
+	switch e {
+	case AccountStatusRequestStatusActive:
+		return true
+	case AccountStatusRequestStatusDisabled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BenefitCurrency.
 const (
 	BenefitCurrencyTRY BenefitCurrency = "TRY"
@@ -334,10 +352,13 @@ const (
 	OverviewActivityActionAccountReviewRejected OverviewActivityAction = "account.review.rejected"
 	OverviewActivityActionAccountRoleAdmin      OverviewActivityAction = "account.role.admin"
 	OverviewActivityActionAccountRoleStudent    OverviewActivityAction = "account.role.student"
+	OverviewActivityActionAccountStatusActive   OverviewActivityAction = "account.status.active"
+	OverviewActivityActionAccountStatusDisabled OverviewActivityAction = "account.status.disabled"
 	OverviewActivityActionBenefitPublish        OverviewActivityAction = "benefit.publish"
 	OverviewActivityActionBenefitSave           OverviewActivityAction = "benefit.save"
 	OverviewActivityActionBenefitSuspend        OverviewActivityAction = "benefit.suspend"
 	OverviewActivityActionBusinessSave          OverviewActivityAction = "business.save"
+	OverviewActivityActionPlatformSettings      OverviewActivityAction = "platform.settings"
 )
 
 // Valid indicates whether the value is a known member of the OverviewActivityAction enum.
@@ -351,6 +372,10 @@ func (e OverviewActivityAction) Valid() bool {
 		return true
 	case OverviewActivityActionAccountRoleStudent:
 		return true
+	case OverviewActivityActionAccountStatusActive:
+		return true
+	case OverviewActivityActionAccountStatusDisabled:
+		return true
 	case OverviewActivityActionBenefitPublish:
 		return true
 	case OverviewActivityActionBenefitSave:
@@ -358,6 +383,8 @@ func (e OverviewActivityAction) Valid() bool {
 	case OverviewActivityActionBenefitSuspend:
 		return true
 	case OverviewActivityActionBusinessSave:
+		return true
+	case OverviewActivityActionPlatformSettings:
 		return true
 	default:
 		return false
@@ -369,6 +396,7 @@ const (
 	OverviewActivityEntityTypeAccount  OverviewActivityEntityType = "account"
 	OverviewActivityEntityTypeBenefit  OverviewActivityEntityType = "benefit"
 	OverviewActivityEntityTypeBusiness OverviewActivityEntityType = "business"
+	OverviewActivityEntityTypePlatform OverviewActivityEntityType = "platform"
 )
 
 // Valid indicates whether the value is a known member of the OverviewActivityEntityType enum.
@@ -379,6 +407,8 @@ func (e OverviewActivityEntityType) Valid() bool {
 	case OverviewActivityEntityTypeBenefit:
 		return true
 	case OverviewActivityEntityTypeBusiness:
+		return true
+	case OverviewActivityEntityTypePlatform:
 		return true
 	default:
 		return false
@@ -512,15 +542,68 @@ type AccountRole string
 // AccountStatus defines model for Account.Status.
 type AccountStatus string
 
+// AccountStatusRequest defines model for AccountStatusRequest.
+type AccountStatusRequest struct {
+	CurrentPassword string                     `json:"current_password"`
+	Status          AccountStatusRequestStatus `json:"status"`
+}
+
+// AccountStatusRequestStatus defines model for AccountStatusRequest.Status.
+type AccountStatusRequestStatus string
+
 // AccountsResponse defines model for AccountsResponse.
 type AccountsResponse struct {
-	Accounts []Account `json:"accounts"`
+	Accounts  []Account `json:"accounts"`
+	Truncated bool      `json:"truncated"`
 }
 
 // AdminLoginRequest defines model for AdminLoginRequest.
 type AdminLoginRequest struct {
 	Password string `json:"password"`
 	Username string `json:"username"`
+}
+
+// AnalyticsBenefit defines model for AnalyticsBenefit.
+type AnalyticsBenefit struct {
+	BusinessName  string `json:"business_name"`
+	FavoriteCount int64  `json:"favorite_count"`
+	Id            string `json:"id"`
+	Status        string `json:"status"`
+	Title         string `json:"title"`
+	ViewCount     int64  `json:"view_count"`
+}
+
+// AnalyticsResponse defines model for AnalyticsResponse.
+type AnalyticsResponse struct {
+	Benefits    []AnalyticsBenefit `json:"benefits"`
+	GeneratedAt time.Time          `json:"generated_at"`
+	Limit       int64              `json:"limit"`
+	PeriodEnd   string             `json:"period_end"`
+	PeriodStart string             `json:"period_start"`
+	Totals      struct {
+		Benefits  int64 `json:"benefits"`
+		Favorites int64 `json:"favorites"`
+		Views     int64 `json:"views"`
+	} `json:"totals"`
+}
+
+// AuditEvent defines model for AuditEvent.
+type AuditEvent struct {
+	Action      string    `json:"action"`
+	ActorName   string    `json:"actor_name"`
+	CreatedAt   time.Time `json:"created_at"`
+	EntityId    string    `json:"entity_id"`
+	EntityLabel string    `json:"entity_label"`
+	EntityType  string    `json:"entity_type"`
+	Id          string    `json:"id"`
+}
+
+// AuditList defines model for AuditList.
+type AuditList struct {
+	Events   []AuditEvent `json:"events"`
+	Page     int64        `json:"page"`
+	PageSize int64        `json:"page_size"`
+	Total    int64        `json:"total"`
 }
 
 // Benefit defines model for Benefit.
@@ -735,7 +818,9 @@ type OverviewActivity struct {
 	// ActorName Current actor name, or Sistem if the actor no longer exists.
 	ActorName string    `json:"actor_name"`
 	CreatedAt time.Time `json:"created_at"`
-	EntityId  string    `json:"entity_id"`
+
+	// EntityId Entity UUID, or empty string for platform settings.
+	EntityId string `json:"entity_id"`
 
 	// EntityLabel Current business name, benefit title or account name; empty if the entity no longer exists.
 	EntityLabel string                     `json:"entity_label"`
@@ -838,6 +923,32 @@ type OverviewStudents struct {
 
 	// Total All accounts with student role.
 	Total int64 `json:"total"`
+}
+
+// PlatformSettings defines model for PlatformSettings.
+type PlatformSettings struct {
+	PlatformName string `json:"platform_name"`
+	Revision     int    `json:"revision"`
+	ShowFeatured bool   `json:"show_featured"`
+
+	// SupportContact Empty or email, HTTPS URL, simple phone.
+	SupportContact string `json:"support_contact"`
+}
+
+// PlatformSettingsResponse defines model for PlatformSettingsResponse.
+type PlatformSettingsResponse struct {
+	SchoolDomain string           `json:"school_domain"`
+	Settings     PlatformSettings `json:"settings"`
+}
+
+// PlatformSettingsWrite defines model for PlatformSettingsWrite.
+type PlatformSettingsWrite struct {
+	PlatformName string `json:"platform_name"`
+	Revision     int    `json:"revision"`
+	ShowFeatured bool   `json:"show_featured"`
+
+	// SupportContact Empty or email, HTTPS URL, simple phone.
+	SupportContact string `json:"support_contact"`
 }
 
 // PublishBenefitRequest defines model for PublishBenefitRequest.
@@ -951,6 +1062,7 @@ type StudentRedemptionMethod string
 // StudentSettings defines model for StudentSettings.
 type StudentSettings struct {
 	PlatformName   string `json:"platform_name"`
+	ShowFeatured   bool   `json:"show_featured"`
 	SupportContact string `json:"support_contact"`
 }
 
@@ -965,6 +1077,14 @@ type TokenRequest struct {
 	Token string `json:"token"`
 }
 
+// ListAccountsParams defines parameters for ListAccounts.
+type ListAccountsParams struct {
+	Q                 *string `form:"q,omitempty" json:"q,omitempty"`
+	Role              *string `form:"role,omitempty" json:"role,omitempty"`
+	Status            *string `form:"status,omitempty" json:"status,omitempty"`
+	EligibilityStatus *string `form:"eligibility_status,omitempty" json:"eligibility_status,omitempty"`
+}
+
 // ReviewAccountParams defines parameters for ReviewAccount.
 type ReviewAccountParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
@@ -973,6 +1093,20 @@ type ReviewAccountParams struct {
 // ChangeRoleParams defines parameters for ChangeRole.
 type ChangeRoleParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
+// ChangeAccountStatusParams defines parameters for ChangeAccountStatus.
+type ChangeAccountStatusParams struct {
+	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
+// GetAdminAuditParams defines parameters for GetAdminAudit.
+type GetAdminAuditParams struct {
+	Q      *string `form:"q,omitempty" json:"q,omitempty"`
+	Action *string `form:"action,omitempty" json:"action,omitempty"`
+	From   *string `form:"from,omitempty" json:"from,omitempty"`
+	Until  *string `form:"until,omitempty" json:"until,omitempty"`
+	Page   *int    `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // ListBenefitsParams defines parameters for ListBenefits.
@@ -1010,6 +1144,11 @@ type ListBusinessesParams struct {
 // PutBusinessParams defines parameters for PutBusiness.
 type PutBusinessParams struct {
 	Origin     string `json:"Origin"`
+	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
+// UpdateAdminSettingsParams defines parameters for UpdateAdminSettings.
+type UpdateAdminSettingsParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
 }
 
@@ -1053,6 +1192,11 @@ type VerifyEmailParams struct {
 	XCSRFToken string `json:"X-CSRF-Token"`
 }
 
+// RecordStudentBenefitViewParams defines parameters for RecordStudentBenefitView.
+type RecordStudentBenefitViewParams struct {
+	XCSRFToken string `json:"X-CSRF-Token"`
+}
+
 // GetStudentCatalogParams defines parameters for GetStudentCatalog.
 type GetStudentCatalogParams struct {
 	Q        *string `form:"q,omitempty" json:"q,omitempty"`
@@ -1065,6 +1209,9 @@ type ReviewAccountJSONRequestBody = ReviewRequest
 // ChangeRoleJSONRequestBody defines body for ChangeRole for application/json ContentType.
 type ChangeRoleJSONRequestBody = RoleRequest
 
+// ChangeAccountStatusJSONRequestBody defines body for ChangeAccountStatus for application/json ContentType.
+type ChangeAccountStatusJSONRequestBody = AccountStatusRequest
+
 // PutBenefitJSONRequestBody defines body for PutBenefit for application/json ContentType.
 type PutBenefitJSONRequestBody = BenefitWrite
 
@@ -1076,6 +1223,9 @@ type SuspendBenefitJSONRequestBody = SuspendBenefitRequest
 
 // PutBusinessJSONRequestBody defines body for PutBusiness for application/json ContentType.
 type PutBusinessJSONRequestBody = BusinessWrite
+
+// UpdateAdminSettingsJSONRequestBody defines body for UpdateAdminSettings for application/json ContentType.
+type UpdateAdminSettingsJSONRequestBody = PlatformSettingsWrite
 
 // AdminLoginJSONRequestBody defines body for AdminLogin for application/json ContentType.
 type AdminLoginJSONRequestBody = AdminLoginRequest
@@ -1100,3 +1250,6 @@ type ResetPasswordJSONRequestBody = ResetPasswordRequest
 
 // VerifyEmailJSONRequestBody defines body for VerifyEmail for application/json ContentType.
 type VerifyEmailJSONRequestBody = TokenRequest
+
+// RecordStudentBenefitViewJSONRequestBody defines body for RecordStudentBenefitView for application/json ContentType.
+type RecordStudentBenefitViewJSONRequestBody = EmptyRequest

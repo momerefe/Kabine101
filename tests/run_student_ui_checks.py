@@ -55,7 +55,12 @@ def main():
       if(u.pathname==='/api/auth/logout'){
         sessionStorage.setItem('synthetic-anon','1');return response({message:'Çıkış yapıldı.'});
       }
-      if(u.pathname==='/api/student/settings')return response({platform_name:'KoçBenefits',support_contact:''});
+      if(u.pathname==='/api/student/settings')return response({platform_name:'KoçBenefits',support_contact:'',show_featured:true});
+      if(/^\/api\/student\/benefits\/[^/]+\/view$/.test(u.pathname)){
+        const headers=new Headers(init?.headers||(input instanceof Request?input.headers:{}));
+        if(method!=='POST'||headers.get('X-CSRF-Token')!=='synthetic-csrf')return response({message:'Synthetic view CSRF validation'},403);
+        return response({message:'Görüntülenme kaydedildi.'});
+      }
       if(u.pathname==='/api/student/catalog'){
         await new Promise(r=>setTimeout(r,100));
         if(window.__failCatalog)return response({message:'Synthetic failure'},503);

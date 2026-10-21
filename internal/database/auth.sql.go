@@ -11,6 +11,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const changeAccountStatus = `-- name: ChangeAccountStatus :exec
+UPDATE accounts SET status=$2,updated_at=now() WHERE id=$1
+`
+
+type ChangeAccountStatusParams struct {
+	ID     pgtype.UUID `json:"id"`
+	Status string      `json:"status"`
+}
+
+func (q *Queries) ChangeAccountStatus(ctx context.Context, arg ChangeAccountStatusParams) error {
+	_, err := q.db.Exec(ctx, changeAccountStatus, arg.ID, arg.Status)
+	return err
+}
+
 const changePassword = `-- name: ChangePassword :exec
 UPDATE accounts SET password_hash=$2,updated_at=now() WHERE id=$1
 `
@@ -328,11 +342,28 @@ func (q *Queries) InvalidateAccountTokens(ctx context.Context, arg InvalidateAcc
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts ORDER BY created_at DESC
+SELECT id, name, email, password_hash, role, status, email_verified_at, eligibility_status, created_at, updated_at, username FROM accounts
+WHERE ($1::text='' OR strpos(lower(name||' '||coalesce(email,'')||' '||coalesce(username,'')),lower($1::text))>0)
+AND ($2::text='' OR role=$2::text)
+AND ($3::text='' OR status=$3::text)
+AND ($4::text='' OR eligibility_status=$4::text)
+ORDER BY created_at DESC,id LIMIT 1001
 `
 
-func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
-	rows, err := q.db.Query(ctx, listAccounts)
+type ListAccountsParams struct {
+	Q                 string `json:"q"`
+	Role              string `json:"role"`
+	Status            string `json:"status"`
+	EligibilityStatus string `json:"eligibility_status"`
+}
+
+func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error) {
+	rows, err := q.db.Query(ctx, listAccounts,
+		arg.Q,
+		arg.Role,
+		arg.Status,
+		arg.EligibilityStatus,
+	)
 	if err != nil {
 		return nil, err
 	}

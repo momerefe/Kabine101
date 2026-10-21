@@ -9,6 +9,14 @@
   align-items: center;
   font-size: 12px;
 }
+.is-admin .sidebar .brand > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.is-admin .sidebar .brand-mark {
+  flex-shrink: 0;
+}
 .management-intro {
   padding: 28px;
   margin: 20px 0;
@@ -99,6 +107,62 @@
   height: 110px;
   object-fit: cover;
   border-radius: 10px;
+}
+.audit-pagination,
+.settings-actions {
+  margin-top: 22px;
+}
+.settings-fields {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.management-content .confirmation-check {
+  align-self: center;
+}
+.management-content .confirmation-check input {
+  flex-shrink: 0;
+}
+.analytics-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.analytics-totals > div {
+  padding: 20px;
+}
+.analytics-totals dt {
+  font-size: 13px;
+  color: var(--muted, #68727d);
+}
+.analytics-totals dd {
+  margin: 10px 0 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+.analytics-bar {
+  height: 6px;
+  width: 120px;
+  max-width: 100%;
+  background: #edf0f3;
+  border-radius: 4px;
+  margin-top: 9px;
+  overflow: hidden;
+}
+.analytics-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--primary, #de3f50);
+}
+.analytics-generated {
+  font-size: 12px;
+  color: var(--muted, #68727d);
+}
+@media (max-width: 760px) {
+  .analytics-totals {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Keep long records contained and touch controls readable without browser zoom. */

@@ -1,9 +1,424 @@
 'openapi': '3.0.3'
 'info':
   'title': 'KoçBenefits API'
-  'version': '0.4.0'
+  'version': '0.5.0'
   'description': '3C administrator partnership and benefit management. Lists return at most 1000 matching rows with truncated=true when additional matching records exist. Dates use Europe/Istanbul, inclusive end day. Optional text and dates use empty strings. PUT revision 0 creates a client-selected UUID; all edits require the current revision, reset benefit publication to draft and clear approval. Existing benefit business_id is immutable. Eligible accounts also have a published student catalogue, private favorites and active-only redemption. Student lists and details never include redemption payloads.'
 'paths':
+  /api/admin/audit:
+    get:
+      operationId: getAdminAudit
+      description: Read-only administrator audit log. Dates inclusive in Europe/Istanbul. No secrets or mutation endpoints. Fifty rows per page.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditList'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+            x-go-type: string
+        - name: until
+          in: query
+          schema:
+            type: string
+            format: date
+            x-go-type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+  /api/admin/settings:
+    get:
+      operationId: getAdminSettings
+      description: Administrator settings. School domain is deployment configuration and read-only.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSettingsResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: updateAdminSettings
+      description:
+        Administrator and CSRF required. Optimistic revision guards concurrent edits. School domain cannot be changed here. Audit and
+        update commit atomically.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSettingsResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformSettingsWrite'
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+  /api/admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      description:
+        Real aggregate data only. Views are one eligible student per benefit per Istanbul day in the current day plus previous 29 days.
+        Favorites are current counts, not time-period additions. Totals cover all benefits; table contains top 20. No purchase or usage statistics.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/admin/accounts/{id}/status:
+    post:
+      operationId: changeAccountStatus
+      description:
+        Reauthenticate administrator and recheck authority within transaction. Active approved accounts may be disabled; disabled otherwise
+        eligible accounts may be reactivated. Pending/rejected accounts cannot be activated here. Preserve last eligible administrator and revoke
+        target sessions on either transition.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountStatusRequest'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+  /api/student/benefits/{id}/view:
+    post:
+      operationId: recordStudentBenefitView
+      description:
+        Eligible student and visible benefit required. CSRF protected. One record per student/benefit/Istanbul day; repeats do not increment.
+        Administrators are ignored. A view is not verified usage.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Login required or failed reauthentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Current state or revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyRequest'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
   /api/student/catalog:
     get:
       operationId: getStudentCatalog
@@ -462,36 +877,60 @@
             'application/json':
               'schema':
                 '$ref': '#/components/schemas/Error'
-  '/api/admin/accounts':
-    'get':
-      'operationId': 'listAccounts'
-      'responses':
+  /api/admin/accounts:
+    get:
+      operationId: listAccounts
+      responses:
         '200':
-          'description': 'Success'
-          'content':
-            'application/json':
-              'schema':
-                '$ref': '#/components/schemas/AccountsResponse'
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountsResponse'
         '401':
-          'description': 'Login required'
-          'content':
-            'application/json':
-              'schema':
-                '$ref': '#/components/schemas/Error'
+          description: Login required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '403':
-          'description': 'Administrator required'
-          'content':
-            'application/json':
-              'schema':
-                '$ref': '#/components/schemas/Error'
+          description: Administrator required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '503':
-          'description': 'Unavailable'
-          'content':
-            'application/json':
-              'schema':
-                '$ref': '#/components/schemas/Error'
-      'security':
-        - 'sessionCookie': []
+          description: Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid filter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: eligibility_status
+          in: query
+          schema:
+            type: string
+      description: Administrator-only search and filters. Maximum 1000 accounts; truncated indicates further matches.
   '/api/auth/register':
     'post':
       'operationId': 'register'
@@ -1692,16 +2131,19 @@
       'properties':
         'user':
           '$ref': '#/components/schemas/Account'
-    'AccountsResponse':
-      'type': 'object'
-      'additionalProperties': false
-      'required':
-        - 'accounts'
-      'properties':
-        'accounts':
-          'type': 'array'
-          'items':
-            '$ref': '#/components/schemas/Account'
+    AccountsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - accounts
+        - truncated
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        truncated:
+          type: boolean
     'Message':
       'type': 'object'
       'additionalProperties': false
@@ -2304,15 +2746,13 @@
     OverviewActivity:
       type: object
       required:
-        [
-          id,
-          action,
-          actor_name,
-          entity_type,
-          entity_id,
-          entity_label,
-          created_at,
-        ]
+        - id
+        - action
+        - actor_name
+        - entity_type
+        - entity_id
+        - entity_label
+        - created_at
       properties:
         id:
           type: string
@@ -2320,26 +2760,31 @@
         action:
           type: string
           enum:
-            [
-              business.save,
-              benefit.save,
-              benefit.publish,
-              benefit.suspend,
-              account.review.approved,
-              account.review.rejected,
-              account.role.admin,
-              account.role.student,
-            ]
+            - business.save
+            - benefit.save
+            - benefit.publish
+            - benefit.suspend
+            - account.review.approved
+            - account.review.rejected
+            - account.role.admin
+            - account.role.student
+            - account.status.active
+            - account.status.disabled
+            - platform.settings
         actor_name:
           type: string
           description: Current actor name, or Sistem if the actor no longer exists.
         entity_type:
           type: string
-          enum: [business, benefit, account]
+          enum:
+            - business
+            - benefit
+            - account
+            - platform
         entity_id:
           type: string
-          format: uuid
           x-go-type: string
+          description: Entity UUID, or empty string for platform settings.
         entity_label:
           type: string
           description: Current business name, benefit title or account name; empty if the entity no longer exists.
@@ -2467,9 +2912,205 @@
           type: string
     StudentSettings:
       type: object
-      required: [platform_name, support_contact]
+      required:
+        - platform_name
+        - support_contact
+        - show_featured
       properties:
         platform_name:
           type: string
         support_contact:
           type: string
+        show_featured:
+          type: boolean
+    AuditEvent:
+      type: object
+      required:
+        - id
+        - action
+        - actor_name
+        - entity_type
+        - entity_id
+        - entity_label
+        - created_at
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        actor_name:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+        entity_label:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuditList:
+      type: object
+      required:
+        - events
+        - page
+        - page_size
+        - total
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        page_size:
+          type: integer
+          format: int64
+          minimum: 0
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+    PlatformSettings:
+      type: object
+      required:
+        - platform_name
+        - support_contact
+        - show_featured
+        - revision
+      properties:
+        platform_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        support_contact:
+          type: string
+          maxLength: 254
+          description: Empty or email, HTTPS URL, simple phone.
+        show_featured:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 1
+    PlatformSettingsWrite:
+      type: object
+      required:
+        - platform_name
+        - support_contact
+        - show_featured
+        - revision
+      properties:
+        platform_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        support_contact:
+          type: string
+          maxLength: 254
+          description: Empty or email, HTTPS URL, simple phone.
+        show_featured:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    PlatformSettingsResponse:
+      type: object
+      required:
+        - settings
+        - school_domain
+      properties:
+        settings:
+          $ref: '#/components/schemas/PlatformSettings'
+        school_domain:
+          type: string
+    AnalyticsBenefit:
+      type: object
+      required:
+        - id
+        - business_name
+        - title
+        - status
+        - view_count
+        - favorite_count
+      properties:
+        id:
+          type: string
+        business_name:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        view_count:
+          type: integer
+          format: int64
+          minimum: 0
+        favorite_count:
+          type: integer
+          format: int64
+          minimum: 0
+    AnalyticsResponse:
+      type: object
+      required:
+        - period_start
+        - period_end
+        - generated_at
+        - totals
+        - benefits
+        - limit
+      properties:
+        period_start:
+          type: string
+          format: date
+          x-go-type: string
+        period_end:
+          type: string
+          format: date
+          x-go-type: string
+        generated_at:
+          type: string
+          format: date-time
+        totals:
+          type: object
+          required:
+            - views
+            - favorites
+            - benefits
+          properties:
+            views:
+              type: integer
+              format: int64
+              minimum: 0
+            favorites:
+              type: integer
+              format: int64
+              minimum: 0
+            benefits:
+              type: integer
+              format: int64
+              minimum: 0
+        benefits:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsBenefit'
+        limit:
+          type: integer
+          format: int64
+          minimum: 0
+    AccountStatusRequest:
+      type: object
+      required:
+        - status
+        - current_password
+      properties:
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+        current_password:
+          type: string
+      additionalProperties: false

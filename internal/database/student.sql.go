@@ -31,7 +31,7 @@ FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE benefits.publication_status='published' AND businesses.partnership_status='active'
 AND ($2::text='' OR strpos(lower(benefits.title||' '||benefits.description||' '||benefits.perk||' '||businesses.name),lower($2::text))>0)
 AND ($3::text='' OR businesses.category=$3::text)
-ORDER BY benefits.featured DESC, benefits.updated_at DESC, benefits.id LIMIT 1001
+ORDER BY (benefits.featured AND (SELECT show_featured FROM platform_settings WHERE id=1)) DESC, benefits.updated_at DESC, benefits.id LIMIT 1001
 `
 
 type StudentCatalogParams struct {
@@ -204,6 +204,21 @@ func (q *Queries) StudentHasFavorite(ctx context.Context, arg StudentHasFavorite
 	return exists, err
 }
 
+const studentRecordView = `-- name: StudentRecordView :exec
+INSERT INTO benefit_daily_views(account_id,benefit_id,view_date)
+VALUES($1,$2,(now() AT TIME ZONE 'Europe/Istanbul')::date) ON CONFLICT DO NOTHING
+`
+
+type StudentRecordViewParams struct {
+	AccountID pgtype.UUID `json:"account_id"`
+	BenefitID pgtype.UUID `json:"benefit_id"`
+}
+
+func (q *Queries) StudentRecordView(ctx context.Context, arg StudentRecordViewParams) error {
+	_, err := q.db.Exec(ctx, studentRecordView, arg.AccountID, arg.BenefitID)
+	return err
+}
+
 const studentRemoveFavorite = `-- name: StudentRemoveFavorite :exec
 DELETE FROM favorites WHERE account_id=$1 AND benefit_id=$2
 `
@@ -219,17 +234,18 @@ func (q *Queries) StudentRemoveFavorite(ctx context.Context, arg StudentRemoveFa
 }
 
 const studentSettings = `-- name: StudentSettings :one
-SELECT platform_name,support_contact FROM platform_settings WHERE id=1
+SELECT platform_name,support_contact,show_featured FROM platform_settings WHERE id=1
 `
 
 type StudentSettingsRow struct {
 	PlatformName   string      `json:"platform_name"`
 	SupportContact pgtype.Text `json:"support_contact"`
+	ShowFeatured   bool        `json:"show_featured"`
 }
 
 func (q *Queries) StudentSettings(ctx context.Context) (StudentSettingsRow, error) {
 	row := q.db.QueryRow(ctx, studentSettings)
 	var i StudentSettingsRow
-	err := row.Scan(&i.PlatformName, &i.SupportContact)
+	err := row.Scan(&i.PlatformName, &i.SupportContact, &i.ShowFeatured)
 	return i, err
 }

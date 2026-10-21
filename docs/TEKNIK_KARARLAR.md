@@ -2,6 +2,18 @@
 
 Tarih: 21 Ekim 2026
 
+## 3E devam kararı
+
+Proje sahibi yönetim bütünlüğü ve sade analitik kapsamını onayladı. Go/Chi, PostgreSQL, React/Query ve mevcut CSS korunur; yeni hizmet, framework veya ölçüm sağlayıcısı eklenmez. Tasarruf ve alışveriş onayı geri alınmış olarak kalır.
+
+- Şema 6 (`management_insights`) platform ayarlarına eşzamanlı düzenleme için `revision`, ölçümlere `benefit_daily_views`, günlük sorgularına tarih/kimlik indeksi ekler. Önceki geri alınan tasarruf migration'ı yerel veritabanına uygulanmamıştır; bu migration mevcut şema 5'in devamıdır.
+- Öğrenci, görünür avantaj detayını açtıktan sonra CSRF korumalı ayrı bir `POST` gönderir. Sunucu hesap, rol ve avantaj görünürlüğünü yeniden kontrol eder. Bir hesap/avantaj/İstanbul günü en fazla bir kez sayılır; yöneticiler ölçüme katılmaz. IP, cihaz veya tarayıcı bilgisi saklanmaz. Günlük kayıt görüntüleme ölçümüdür, kullanım değildir.
+- Analitik son 30 İstanbul takvim gününü kapsar; mevcut favori toplamı ayrı etiketlenir. Toplamlar bütün kayıtlardan, gösterilen en çok 20 avantajdan bağımsız hesaplanır. Görüntüleme ve favoriler aynı veritabanı görünümünden okunur.
+- İşlem günlüğü yalnızca okunabilir. Arama/tarih/işlem filtresi, 50 satırlık sayfalama ve açık alan listesi kullanılır. Ayar değişikliği ve hesap durum değişikliği ilgili işlemle aynı transaction içinde günlüğe yazılır.
+- Platform adı, destek iletişimi ve öne çıkan öneri tercihi düzenlenebilir. Okul alan adı dağıtım yapılandırmasında kalır; toplu hesap alan adı değişimi eklenmez. Eski `revision` ile kaydetme 409 verir; arayüzde girilmiş değerler korunur.
+- Hesap kapatma/açma mevcut yönetici parolasıyla yeniden doğrulama gerektirir; mevcut yönetici yetkisi transaction içinde tekrar denetlenir. Son uygun yöneticinin kapatılması engellenir. Durum/rol değişimi hedef hesabın oturumlarını iptal eder. Bekleyen veya reddedilen hesaplar etkinleştirme üzerinden onay atlayamaz.
+- Gerçek backend/DB/browser kabul testleri CI'da izole şemalarda yürütülür. Yerel API ve frontend'i proje sahibi başlatır.
+
 ## 3D devam kararı
 
 Proje sahibi Yönetici Genel Bakış'ı kabul etti ve planlanan öğrenci deneyimi/avantaj detaylarının geliştirilmesini açıkça onayladı.
