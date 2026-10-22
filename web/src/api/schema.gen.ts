@@ -124,6 +124,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/student/benefits/{id}/image': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Normalized PNG or JPEG bytes. Requires an eligible account and a currently published benefit of an active business; scheduled and expired benefits remain visible. All responses are private and use no-store. */
+    get: operations['getStudentBenefitImage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/student/benefits/{id}/redemption': {
     parameters: {
       query?: never;
@@ -509,6 +526,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/admin/benefits/{id}/image': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Normalized PNG or JPEG bytes. Requires administrator access, including drafts. All responses are private and use no-store. */
+    get: operations['getAdminBenefitImage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/admin/benefits/{id}/publish': {
     parameters: {
       query?: never;
@@ -638,6 +672,8 @@ export interface components {
       revision: number;
     };
     BenefitWrite: {
+      /** @description Raw base64 PNG or JPEG, without a data URL prefix. Omit or null to preserve the current image, empty string to remove it. Decoded input and normalized output at most 5 MiB; each side at most 8192 pixels and total at most 16 million pixels. Image changes share the benefit revision and reset publication to draft. */
+      image_data?: string | null;
       /** Format: uuid */
       business_id: string;
       title: string;
@@ -692,6 +728,8 @@ export interface components {
       updated_at: string;
     };
     Benefit: {
+      /** @description Authenticated administrator image URL with a revision query, or empty string when no custom image exists. */
+      image_path: string;
       /** Format: uuid */
       business_id: string;
       title: string;
@@ -1702,6 +1740,77 @@ export interface operations {
         };
       };
       /** @description Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getStudentBenefitImage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Normalized raster image */
+      200: {
+        headers: {
+          'Cache-Control'?: 'no-store';
+          'X-Content-Type-Options'?: 'nosniff';
+          'Content-Length'?: number;
+          [name: string]: unknown;
+        };
+        content: {
+          'image/png': string;
+          'image/jpeg': string;
+        };
+      };
+      /** @description Invalid benefit identifier */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Image missing or benefit unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Service unavailable */
       503: {
         headers: {
           [name: string]: unknown;
@@ -3552,7 +3661,87 @@ export interface operations {
           'application/json': components['schemas']['Error'];
         };
       };
+      /** @description Image or request exceeds the upload limit */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
       /** @description Error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  getAdminBenefitImage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Normalized raster image */
+      200: {
+        headers: {
+          'Cache-Control'?: 'no-store';
+          'X-Content-Type-Options'?: 'nosniff';
+          'Content-Length'?: number;
+          [name: string]: unknown;
+        };
+        content: {
+          'image/png': string;
+          'image/jpeg': string;
+        };
+      };
+      /** @description Invalid benefit identifier */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication required */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Image missing or benefit unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Service unavailable */
       503: {
         headers: {
           [name: string]: unknown;

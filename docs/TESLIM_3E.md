@@ -74,4 +74,19 @@ Avantaj listesi API'sine isteğe bağlı `business_id` filtresi eklendi; SQL son
 
 `fe4d60c` için [tüm GitHub Actions kontrolleri geçti](https://github.com/momerefe/Kabine101/actions/runs/39760869052). Gerçek API ile tarayıcı testleri; aktif işletme satırı/formundaki kırmızı düğmeleri, işletmesi önseçili oluşturmayı, tek onayla kaydet-yayımla işlemini, yayın hatası sonrası taslak/sürüm korunmasını ve tekrar denemeyi, birden fazla avantajdan yalnız seçilenin yayımlanmasını ve normal öğrenci erişimini doğruladı. 320/390/1440 px yerleşimleri kontrol edildi. İşletme filtresinin yetkilendirme, geçersiz kimlik ve SQL sınırı öncesi uygulanması entegrasyon testlerinden geçti. Yerel sunucular başlatılmadı; gerçek sponsorluk kayıtları değiştirilmedi.
 
+### Avantaj bilgilerine görsel yükleme
+
+Proje sahibinin isteğiyle avantaj başına isteğe bağlı tek JPG/PNG eklenebilir. **Avantaj bilgileri → Avantaj görseli** alanında dosya seçilince önizlenir; **Taslak olarak kaydet** veya **Kaydet ve yayımla** ile kalıcı kayda girer. Görsel değiştirme ve kaldırma da aynı kayıt/onay akışını kullanır. Yayımlanan görsel öğrenci kartında ve detayında görünür; özel görsel kaldırılırsa işletme görseli kullanılır. JPEG fotoğrafların tarayıcıda okunan yönü yüklemeden önce piksellere aktarılır.
+
+Sınır dosya başına 5 MiB, 16 milyon piksel ve kenar başına 8192 pikseldir. Go sunucusu JPEG/PNG içeriğini doğrulayıp yeniden kodlar. Görseller ayrı PostgreSQL tablosunda saklanır; katalog yanıtlarına ikili veri eklenmez. Taslak/askı görselleri öğrenciye açılmaz; yetki, CSRF, kayıt sürümü ve işlem günlüğüyle aynı transaction korunur. Hata olursa eski görsel korunur; formdaki yeni seçim yeniden denenebilir.
+
+Bu teslim **000007_benefit_images** migration'ını gerektirir. Proje sahibi API terminalinde `Ctrl+C` ile durdurduktan sonra proje kökünde:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/dev.ps1 db-up
+powershell -ExecutionPolicy Bypass -File tools/dev.ps1 api
+```
+
+Bu komutlar son kullanılan localhost düzeni içindir. Açık frontend sayfası yenilenir. LAN kullanılıyorsa mevcut API/frontend adres eşleşmesi korunarak aynı `-LanAddress` değeriyle başlatılır. Ajan yerel migration veya sunucu başlatma işlemi yapmaz. Yeni yedekler görselleri de içerir; üretim kapasite ve geri yükleme denemesi pilot hazırlığında değerlendirilir.
+
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.

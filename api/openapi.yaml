@@ -533,6 +533,74 @@
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/student/benefits/{id}/image:
+    get:
+      operationId: getStudentBenefitImage
+      description: Normalized PNG or JPEG bytes. Requires an eligible account and a currently published benefit of an active business; scheduled and expired benefits remain visible. All responses are private and use no-store.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+      responses:
+        '200':
+          description: Normalized raster image
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-store]
+            X-Content-Type-Options:
+              schema:
+                type: string
+                enum: [nosniff]
+            Content-Length:
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid benefit identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Image missing or benefit unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/student/benefits/{id}/redemption:
     get:
       operationId: getStudentRedemption
@@ -1882,6 +1950,12 @@
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '413':
+          description: Image or request exceeds the upload limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       parameters:
         - name: id
           in: path
@@ -1906,6 +1980,74 @@
           application/json:
             schema:
               $ref: '#/components/schemas/BenefitWrite'
+  /api/admin/benefits/{id}/image:
+    get:
+      operationId: getAdminBenefitImage
+      description: Normalized PNG or JPEG bytes. Requires administrator access, including drafts. All responses are private and use no-store.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
+      responses:
+        '200':
+          description: Normalized raster image
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-store]
+            X-Content-Type-Options:
+              schema:
+                type: string
+                enum: [nosniff]
+            Content-Length:
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid benefit identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Image missing or benefit unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/admin/benefits/{id}/publish:
     post:
       operationId: publishBenefit
@@ -2324,6 +2466,10 @@
         - method
         - currency
       properties:
+        image_data:
+          type: string
+          nullable: true
+          description: Raw base64 PNG or JPEG, without a data URL prefix. Omit or null to preserve the current image, empty string to remove it. Decoded input and normalized output at most 5 MiB; each side at most 8192 pixels and total at most 16 million pixels. Image changes share the benefit revision and reset publication to draft.
         business_id: &id012
           type: string
           format: uuid
@@ -2434,6 +2580,7 @@
       type: object
       additionalProperties: false
       required:
+        - image_path
         - business_id
         - title
         - description
@@ -2467,6 +2614,9 @@
         - business_name
         - category
       properties:
+        image_path:
+          type: string
+          description: Authenticated administrator image URL with a revision query, or empty string when no custom image exists.
         business_id: *id012
         title: *id013
         description: *id014

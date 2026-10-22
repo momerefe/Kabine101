@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	_ "time/tzdata"
@@ -20,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/momerefe/Kabine101/internal/auth"
+	"github.com/momerefe/Kabine101/internal/benefitimage"
 	"github.com/momerefe/Kabine101/internal/database"
 )
 
@@ -39,6 +41,7 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 	r.Get("/api/admin/businesses/{id}", s.business)
 	r.Get("/api/admin/benefits", s.benefits)
 	r.Get("/api/admin/benefits/{id}", s.benefit)
+	r.Get("/api/admin/benefits/{id}/image", s.benefitImage)
 	r.Group(func(r chi.Router) {
 		r.Use(s.auth.CSRF)
 		r.Put("/api/admin/settings", s.putSettings)
@@ -71,8 +74,16 @@ func handleError(w http.ResponseWriter, e error) {
 	}
 }
 func decode(w http.ResponseWriter, r *http.Request, dst any) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+	return decodeBody(w, r, dst, 64*1024)
+}
+func decodeBody(w http.ResponseWriter, r *http.Request, dst any, limit int64) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	b, e := io.ReadAll(r.Body)
+	var oversized *http.MaxBytesError
+	if limit > 64*1024 && errors.As(e, &oversized) {
+		reply(w, 413, map[string]string{"code": "invalid_request", "message": "İstek çok büyük. En fazla 5 MiB boyutunda bir PNG veya JPEG görsel seçin."})
+		return false
+	}
 	if e != nil || len(bytes.TrimSpace(b)) == 0 || bytes.TrimSpace(b)[0] != '{' {
 		fail(w, 400, "invalid_request")
 		return false
@@ -141,6 +152,10 @@ func benefitStatus(v database.Benefit, now time.Time) string {
 func benefitDTO(v database.Benefit, b database.Business) map[string]any {
 	m := fields(v, "id revision business_id title description perk conditions instructions products branches exceptions minimum_spend currency verification_requirement valid_from valid_until method code target_url qr_content membership_label support_contact featured publication_status suspension_reason reviewed_at published_at created_at updated_at")
 	m["status"] = benefitStatus(v, time.Now())
+	m["image_path"] = ""
+	if v.HasImage {
+		m["image_path"] = "/api/admin/benefits/" + v.ID.String() + "/image?v=" + strconv.Itoa(int(v.Revision))
+	}
 	m["business_name"] = b.Name
 	m["category"] = b.Category
 	m["minimum_spend"] = ""
@@ -326,6 +341,7 @@ type BenefitWrite struct {
 	MembershipLabel         string   `json:"membership_label"`
 	SupportContact          string   `json:"support_contact"`
 	Featured                bool     `json:"featured"`
+	ImageData               *string  `json:"image_data,omitempty"`
 }
 
 func (v BusinessWrite) valid() bool {
@@ -452,8 +468,12 @@ func (s *Service) putBusiness(w http.ResponseWriter, r *http.Request) {
 	reply(w, 200, map[string]any{"business": businessDTO(v)})
 }
 func (s *Service) putBenefit(w http.ResponseWriter, r *http.Request) {
+	// Reject unauthorized uploads before reading or decoding their larger bodies.
+	if _, _, ok := s.auth.RequireAdmin(w, r); !ok {
+		return
+	}
 	var in BenefitWrite
-	if !decode(w, r, &in) {
+	if !decodeBody(w, r, &in, benefitimage.MaxBodyBytes) {
 		return
 	}
 	id, ok := identifier(w, r)
@@ -464,6 +484,17 @@ func (s *Service) putBenefit(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "invalid_request")
 		return
 	}
+	imageChanged := in.ImageData != nil
+	var image benefitimage.Asset
+	if imageChanged && *in.ImageData != "" {
+		var issue *benefitimage.Error
+		image, issue = benefitimage.Normalize(*in.ImageData)
+		if issue != nil {
+			reply(w, issue.Status, map[string]string{"code": "invalid_request", "message": issue.Message})
+			return
+		}
+	}
+	in.ImageData = nil
 	tx, q, actor, ok := s.begin(w, r)
 	if !ok {
 		return
@@ -512,6 +543,21 @@ func (s *Service) putBenefit(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		handleError(w, e)
 		return
+	}
+	if imageChanged {
+		if len(image.Data) == 0 {
+			e = q.DeleteBenefitImage(r.Context(), id)
+		} else {
+			e = q.SaveBenefitImage(r.Context(), database.SaveBenefitImageParams{BenefitID: id, ContentType: image.ContentType, Data: image.Data})
+		}
+		if e == nil {
+			e = q.SetBenefitHasImage(r.Context(), database.SetBenefitHasImageParams{ID: id, HasImage: len(image.Data) > 0})
+		}
+		if e != nil {
+			handleError(w, e)
+			return
+		}
+		v.HasImage = len(image.Data) > 0
 	}
 	if e = audit(q, r, actor, "benefit.save", "benefit", id); e == nil {
 		e = tx.Commit(r.Context())

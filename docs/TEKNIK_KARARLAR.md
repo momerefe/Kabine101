@@ -1,6 +1,16 @@
 # Teknik kararlar
 
-Tarih: 21 Ekim 2026
+Tarih: 22 Ekim 2026
+
+## Avantaj görseli yükleme
+
+Proje sahibi avantaj bilgileri bölümüne görsel yüklemeyi açıkça istedi. Her avantaja isteğe bağlı tek JPG/PNG eklenir; mevcut arayüz, yayın onayı ve taslak işleyişi kullanılır. Dosya seçimi yerel önizleme sağlar; kaydetme veya kaydet-yayımla işlemi görseli de aynı kayıt sürümüyle saklar. Değiştirme ve kaldırma aynı akışı izler.
+
+Bu sınırlı ihtiyaç için mevcut PostgreSQL içinde ayrı `benefit_images` tablosu kullanılır (şema 7). Görsel içeriği katalog sorgularına taşınmaz; yalnızca korumalı görsel adresi gönderilir. Avantaj ve görsel aynı transaction içinde kaydedilir; ayrı nesne deposu, yükleme hizmeti veya sahipsiz geçici dosya temizleyicisi gerekmez. Avantaj başına tek dosya ve boyut sınırı büyümeyi sınırlar; yedekleme görselleri de kapsar. Üretim kapasitesi değerlendirilirken görsellerin veritabanı/yedek hacmine etkisi ölçülür.
+
+Yalnızca JPEG/PNG, en fazla 5 MiB, 16 milyon piksel ve kenar başına 8192 piksel kabul edilir. Sunucu gerçek dosya içeriğini çözer ve yeniden kodlar; dosya adı veya bildirilen MIME türü güvenlik kararı değildir. Genel dosya yükleme ve harici görsel URL'si sunulmaz. Yönetici değişiklikleri oturum, CSRF ve kayıt sürümü kontrollerinden geçer. Öğrenci görsel uç noktası her istekte hesap uygunluğunu ve avantajın yayımlanmış/işletmenin aktif olmasını denetler; taslak ve askıdaki görseller açılmaz. Yanıtlar `no-store` ve `nosniff` kullanır. Görsel kaldırılırsa öğrenci arayüzü işletmenin mevcut görseline döner.
+
+Yerel şema güncellemesi ve API başlatma proje sahibi tarafından yapılır. Bu istek 3F yayına alma onayı değildir.
 
 ## 3E devam kararı
 

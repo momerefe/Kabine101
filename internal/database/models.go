@@ -71,12 +71,19 @@ type Benefit struct {
 	Revision                int32              `json:"revision"`
 	CreatedAt               pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt               pgtype.Timestamptz `json:"updated_at"`
+	HasImage                bool               `json:"has_image"`
 }
 
 type BenefitDailyView struct {
 	AccountID pgtype.UUID `json:"account_id"`
 	BenefitID pgtype.UUID `json:"benefit_id"`
 	ViewDate  pgtype.Date `json:"view_date"`
+}
+
+type BenefitImage struct {
+	BenefitID   pgtype.UUID `json:"benefit_id"`
+	ContentType string      `json:"content_type"`
+	Data        []byte      `json:"data"`
 }
 
 type Business struct {

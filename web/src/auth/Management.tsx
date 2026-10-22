@@ -9,6 +9,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { newRecordId } from '../api/record-id';
+import { benefitImageURL } from '../api/benefit-image';
+import { BenefitImageField, type ImageChange } from './BenefitImageField';
 import { Overview } from './Overview';
 import {
   Analytics,
@@ -365,6 +367,7 @@ const blankBenefit = (): Benefit => ({
   category: 'food',
   title: '',
   description: '',
+  image_path: '',
   perk: '',
   conditions: [],
   instructions: [],
@@ -703,11 +706,16 @@ function Records({
                 <div key={key}>
                   <dt>{fieldLabels[key] || key}</dt>
                   <dd>
-                    {key === 'image_path' && imageUrls[String(value)] ? (
+                    {key === 'image_path' &&
+                    (imageUrls[String(value)] ||
+                      benefitImageURL(String(value))) ? (
                       <img
                         className="management-image"
-                        src={imageUrls[String(value)]}
-                        alt="İşletme görseli"
+                        src={
+                          imageUrls[String(value)] ||
+                          benefitImageURL(String(value))
+                        }
+                        alt="Kayıt görseli"
                       />
                     ) : key.endsWith('_at') ||
                       ['valid_from', 'valid_until', 'last_contact'].includes(
@@ -1017,8 +1025,12 @@ function Editor({
   const [value, setValue] = useState(initial);
   const client = useQueryClient();
   const [baseline, setBaseline] = useState(initial);
+  const [imageUpload, setImageUpload] = useState<ImageChange | undefined>();
+  const [imageReading, setImageReading] = useState(false);
   const business = 'name' in value;
-  const dirty = JSON.stringify(value) !== JSON.stringify(baseline);
+  const dirty =
+    JSON.stringify(value) !== JSON.stringify(baseline) ||
+    imageUpload !== undefined;
   const [action, setAction] = useState<
     'save' | 'publish' | 'suspend' | 'business-publish' | null
   >(null);
@@ -1143,11 +1155,17 @@ function Editor({
           saved = check(
             await api.PUT('/api/admin/benefits/{id}', {
               params,
-              body: writeBody(value),
+              body: {
+                ...writeBody(value),
+                ...(imageUpload !== undefined
+                  ? { image_data: imageUpload?.data || '' }
+                  : {}),
+              },
             }),
           ).benefit;
           setValue(saved);
           setBaseline(saved);
+          setImageUpload(undefined);
         }
         try {
           check(
@@ -1173,7 +1191,12 @@ function Editor({
         check(
           await api.PUT('/api/admin/benefits/{id}', {
             params,
-            body: writeBody(value),
+            body: {
+              ...writeBody(value),
+              ...(imageUpload !== undefined
+                ? { image_data: imageUpload?.data || '' }
+                : {}),
+            },
           }),
         );
       }
@@ -1225,6 +1248,7 @@ function Editor({
         : check(await api.GET('/api/admin/benefits/{id}', { params })).benefit;
       setValue(next);
       setBaseline(next);
+      setImageUpload(undefined);
       setError('');
       setAction(null);
     } catch (e) {
@@ -1433,7 +1457,11 @@ function Editor({
         </section>
       )}
       <form onSubmit={submit}>
-        <fieldset disabled={mutation.isPending || loading || action !== null}>
+        <fieldset
+          disabled={
+            mutation.isPending || loading || imageReading || action !== null
+          }
+        >
           {business ? (
             <>
               <Group title="İşletme bilgileri">
@@ -1485,6 +1513,12 @@ function Editor({
                 {field('title', 'text', true)}
                 {field('perk')}
                 {field('description', 'textarea')}
+                <BenefitImageField
+                  savedPath={value.image_path}
+                  change={imageUpload}
+                  onChange={setImageUpload}
+                  onBusy={setImageReading}
+                />
                 {field('valid_from', 'date')}
                 {field('valid_until', 'date')}
                 <label className="confirmation-check">

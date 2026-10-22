@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	_ "time/tzdata"
@@ -29,6 +30,7 @@ func New(pool *pgxpool.Pool, a *auth.Service) *Service { return &Service{pool, a
 func (s *Service) RegisterRoutes(r chi.Router) {
 	r.Get("/api/student/catalog", s.catalog)
 	r.Get("/api/student/benefits/{id}", s.detail)
+	r.Get("/api/student/benefits/{id}/image", s.benefitImage)
 	r.Get("/api/student/benefits/{id}/redemption", s.redemption)
 	r.Get("/api/student/favorites", s.favorites)
 	r.Get("/api/student/settings", s.settings)
@@ -102,6 +104,9 @@ func benefitDTO(v database.Benefit, b database.Business, favorite bool) map[stri
 	m["business_id"] = v.BusinessID
 	m["business_name"] = b.Name
 	m["image_path"] = b.ImagePath.String
+	if v.HasImage {
+		m["image_path"] = "/api/student/benefits/" + v.ID.String() + "/image?v=" + strconv.Itoa(int(v.Revision))
+	}
 	m["category"] = b.Category
 	m["title"] = v.Title
 	m["description"] = v.Description

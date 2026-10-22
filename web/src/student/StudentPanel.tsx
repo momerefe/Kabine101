@@ -20,6 +20,7 @@ import {
 } from './student-api';
 import '../student.css';
 import qrcode from 'qrcode-generator';
+import { benefitImageURL } from '../api/benefit-image';
 
 qrcode.stringToBytes = (value) => Array.from(new TextEncoder().encode(value));
 
@@ -249,7 +250,18 @@ export function StudentPanel({
           tabIndex={-1}
         >
           <img
-            src={images[b.image_path] || images['assets/placeholder.svg']}
+            src={
+              benefitImageURL(b.image_path) ||
+              images[b.image_path] ||
+              images['assets/placeholder.svg']
+            }
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              if (
+                !e.currentTarget.src.endsWith(images['assets/placeholder.svg'])
+              )
+                e.currentTarget.src = images['assets/placeholder.svg'];
+            }}
             alt=""
             width="720"
             height="420"
@@ -976,7 +988,18 @@ function BenefitDetail({
           </section>
           <img
             className="student-detail-image"
-            src={images[b.image_path] || images['assets/placeholder.svg']}
+            src={
+              benefitImageURL(b.image_path) ||
+              images[b.image_path] ||
+              images['assets/placeholder.svg']
+            }
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              if (
+                !e.currentTarget.src.endsWith(images['assets/placeholder.svg'])
+              )
+                e.currentTarget.src = images['assets/placeholder.svg'];
+            }}
             alt=""
           />
           <small className="student-metadata">

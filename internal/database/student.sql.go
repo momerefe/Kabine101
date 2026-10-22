@@ -26,7 +26,7 @@ func (q *Queries) StudentAddFavorite(ctx context.Context, arg StudentAddFavorite
 }
 
 const studentCatalog = `-- name: StudentCatalog :many
-SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at, businesses.id, businesses.name, businesses.category, businesses.description, businesses.image_path, businesses.contact_person, businesses.contact_info, businesses.branches, businesses.partnership_status, businesses.last_contact, businesses.notes, businesses.created_at, businesses.updated_at, businesses.revision, EXISTS(SELECT 1 FROM favorites f WHERE f.account_id=$1::uuid AND f.benefit_id=benefits.id) AS is_favorite
+SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at, benefits.has_image, businesses.id, businesses.name, businesses.category, businesses.description, businesses.image_path, businesses.contact_person, businesses.contact_info, businesses.branches, businesses.partnership_status, businesses.last_contact, businesses.notes, businesses.created_at, businesses.updated_at, businesses.revision, EXISTS(SELECT 1 FROM favorites f WHERE f.account_id=$1::uuid AND f.benefit_id=benefits.id) AS is_favorite
 FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE benefits.publication_status='published' AND businesses.partnership_status='active'
 AND ($2::text='' OR strpos(lower(benefits.title||' '||benefits.description||' '||benefits.perk||' '||businesses.name),lower($2::text))>0)
@@ -86,6 +86,7 @@ func (q *Queries) StudentCatalog(ctx context.Context, arg StudentCatalogParams) 
 			&i.Benefit.Revision,
 			&i.Benefit.CreatedAt,
 			&i.Benefit.UpdatedAt,
+			&i.Benefit.HasImage,
 			&i.Business.ID,
 			&i.Business.Name,
 			&i.Business.Category,
@@ -113,7 +114,7 @@ func (q *Queries) StudentCatalog(ctx context.Context, arg StudentCatalogParams) 
 }
 
 const studentFavorites = `-- name: StudentFavorites :many
-SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at, businesses.id, businesses.name, businesses.category, businesses.description, businesses.image_path, businesses.contact_person, businesses.contact_info, businesses.branches, businesses.partnership_status, businesses.last_contact, businesses.notes, businesses.created_at, businesses.updated_at, businesses.revision
+SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at, benefits.has_image, businesses.id, businesses.name, businesses.category, businesses.description, businesses.image_path, businesses.contact_person, businesses.contact_info, businesses.branches, businesses.partnership_status, businesses.last_contact, businesses.notes, businesses.created_at, businesses.updated_at, businesses.revision
 FROM favorites JOIN benefits ON benefits.id=favorites.benefit_id JOIN businesses ON businesses.id=benefits.business_id
 WHERE favorites.account_id=$1 ORDER BY favorites.created_at DESC, benefits.id LIMIT 1001
 `
@@ -163,6 +164,7 @@ func (q *Queries) StudentFavorites(ctx context.Context, accountID pgtype.UUID) (
 			&i.Benefit.Revision,
 			&i.Benefit.CreatedAt,
 			&i.Benefit.UpdatedAt,
+			&i.Benefit.HasImage,
 			&i.Business.ID,
 			&i.Business.Name,
 			&i.Business.Category,

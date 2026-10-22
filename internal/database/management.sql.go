@@ -33,7 +33,7 @@ func (q *Queries) ManagementAudit(ctx context.Context, arg ManagementAuditParams
 }
 
 const managementCreateBenefit = `-- name: ManagementCreateBenefit :one
-INSERT INTO benefits(id,business_id,title,description,perk,conditions,instructions,products,branches,exceptions,minimum_spend,currency,verification_requirement,valid_from,valid_until,method,code,target_url,qr_content,membership_label,support_contact,featured) VALUES($1::uuid,$2::uuid,$3::text,$4::text,$5::text,$6::text[],$7::text[],nullif($8::text, '')::text,nullif($9::text, '')::text,nullif($10::text, '')::text,nullif($11::text, '')::numeric,$12::text,nullif($13::text, '')::text,nullif($14::text, '')::date,nullif($15::text, '')::date,$16::text,nullif($17::text, '')::text,nullif($18::text, '')::text,nullif($19::text, '')::text,nullif($20::text, '')::text,nullif($21::text, '')::text,$22::boolean) RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at
+INSERT INTO benefits(id,business_id,title,description,perk,conditions,instructions,products,branches,exceptions,minimum_spend,currency,verification_requirement,valid_from,valid_until,method,code,target_url,qr_content,membership_label,support_contact,featured) VALUES($1::uuid,$2::uuid,$3::text,$4::text,$5::text,$6::text[],$7::text[],nullif($8::text, '')::text,nullif($9::text, '')::text,nullif($10::text, '')::text,nullif($11::text, '')::numeric,$12::text,nullif($13::text, '')::text,nullif($14::text, '')::date,nullif($15::text, '')::date,$16::text,nullif($17::text, '')::text,nullif($18::text, '')::text,nullif($19::text, '')::text,nullif($20::text, '')::text,nullif($21::text, '')::text,$22::boolean) RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image
 `
 
 type ManagementCreateBenefitParams struct {
@@ -118,6 +118,7 @@ func (q *Queries) ManagementCreateBenefit(ctx context.Context, arg ManagementCre
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }
@@ -175,7 +176,7 @@ func (q *Queries) ManagementCreateBusiness(ctx context.Context, arg ManagementCr
 }
 
 const managementGetBenefit = `-- name: ManagementGetBenefit :one
-SELECT id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at FROM benefits WHERE id=$1
+SELECT id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image FROM benefits WHERE id=$1
 `
 
 func (q *Queries) ManagementGetBenefit(ctx context.Context, id pgtype.UUID) (Benefit, error) {
@@ -212,6 +213,7 @@ func (q *Queries) ManagementGetBenefit(ctx context.Context, id pgtype.UUID) (Ben
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }
@@ -243,7 +245,7 @@ func (q *Queries) ManagementGetBusiness(ctx context.Context, id pgtype.UUID) (Bu
 }
 
 const managementListBenefit = `-- name: ManagementListBenefit :many
-SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at FROM benefits JOIN businesses ON businesses.id=benefits.business_id
+SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at, benefits.has_image FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE ($1::text='' OR strpos(lower(title||' '||benefits.description||' '||perk||' '||businesses.name),lower($1::text))>0)
 AND ($2::uuid IS NULL OR benefits.business_id=$2::uuid)
 AND ($3::text='' OR businesses.category=$3::text)
@@ -307,6 +309,7 @@ func (q *Queries) ManagementListBenefit(ctx context.Context, arg ManagementListB
 			&i.Revision,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.HasImage,
 		); err != nil {
 			return nil, err
 		}
@@ -368,7 +371,7 @@ func (q *Queries) ManagementListBusiness(ctx context.Context, arg ManagementList
 }
 
 const managementLockBenefit = `-- name: ManagementLockBenefit :one
-SELECT id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at FROM benefits WHERE id=$1 FOR UPDATE
+SELECT id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image FROM benefits WHERE id=$1 FOR UPDATE
 `
 
 func (q *Queries) ManagementLockBenefit(ctx context.Context, id pgtype.UUID) (Benefit, error) {
@@ -405,6 +408,7 @@ func (q *Queries) ManagementLockBenefit(ctx context.Context, id pgtype.UUID) (Be
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }
@@ -436,7 +440,7 @@ func (q *Queries) ManagementLockBusiness(ctx context.Context, id pgtype.UUID) (B
 }
 
 const managementPublish = `-- name: ManagementPublish :one
-UPDATE benefits SET publication_status='published',suspension_reason=NULL,reviewed_at=now(),reviewed_by=$2,published_at=now(),updated_at=now(),revision=revision+1 WHERE id=$1 RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at
+UPDATE benefits SET publication_status='published',suspension_reason=NULL,reviewed_at=now(),reviewed_by=$2,published_at=now(),updated_at=now(),revision=revision+1 WHERE id=$1 RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image
 `
 
 type ManagementPublishParams struct {
@@ -478,12 +482,13 @@ func (q *Queries) ManagementPublish(ctx context.Context, arg ManagementPublishPa
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }
 
 const managementSuspend = `-- name: ManagementSuspend :one
-UPDATE benefits SET publication_status='suspended',suspension_reason=$2,reviewed_at=NULL,reviewed_by=NULL,updated_at=now(),revision=revision+1 WHERE id=$1 RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at
+UPDATE benefits SET publication_status='suspended',suspension_reason=$2,reviewed_at=NULL,reviewed_by=NULL,updated_at=now(),revision=revision+1 WHERE id=$1 RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image
 `
 
 type ManagementSuspendParams struct {
@@ -525,6 +530,7 @@ func (q *Queries) ManagementSuspend(ctx context.Context, arg ManagementSuspendPa
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }
@@ -554,7 +560,7 @@ func (q *Queries) ManagementSuspendBusiness(ctx context.Context, businessID pgty
 }
 
 const managementUpdateBenefit = `-- name: ManagementUpdateBenefit :one
-UPDATE benefits SET business_id=$1::uuid,title=$2::text,description=$3::text,perk=$4::text,conditions=$5::text[],instructions=$6::text[],products=nullif($7::text, '')::text,branches=nullif($8::text, '')::text,exceptions=nullif($9::text, '')::text,minimum_spend=nullif($10::text, '')::numeric,currency=$11::text,verification_requirement=nullif($12::text, '')::text,valid_from=nullif($13::text, '')::date,valid_until=nullif($14::text, '')::date,method=$15::text,code=nullif($16::text, '')::text,target_url=nullif($17::text, '')::text,qr_content=nullif($18::text, '')::text,membership_label=nullif($19::text, '')::text,support_contact=nullif($20::text, '')::text,featured=$21::boolean,publication_status='draft',suspension_reason=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,revision=revision+1,updated_at=now() WHERE id=$22::uuid AND revision=$23::integer RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at
+UPDATE benefits SET business_id=$1::uuid,title=$2::text,description=$3::text,perk=$4::text,conditions=$5::text[],instructions=$6::text[],products=nullif($7::text, '')::text,branches=nullif($8::text, '')::text,exceptions=nullif($9::text, '')::text,minimum_spend=nullif($10::text, '')::numeric,currency=$11::text,verification_requirement=nullif($12::text, '')::text,valid_from=nullif($13::text, '')::date,valid_until=nullif($14::text, '')::date,method=$15::text,code=nullif($16::text, '')::text,target_url=nullif($17::text, '')::text,qr_content=nullif($18::text, '')::text,membership_label=nullif($19::text, '')::text,support_contact=nullif($20::text, '')::text,featured=$21::boolean,publication_status='draft',suspension_reason=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,revision=revision+1,updated_at=now() WHERE id=$22::uuid AND revision=$23::integer RETURNING id, business_id, title, description, perk, conditions, instructions, products, branches, exceptions, minimum_spend, currency, verification_requirement, valid_from, valid_until, method, code, target_url, qr_content, membership_label, support_contact, publication_status, suspension_reason, reviewed_at, reviewed_by, published_at, featured, revision, created_at, updated_at, has_image
 `
 
 type ManagementUpdateBenefitParams struct {
@@ -641,6 +647,7 @@ func (q *Queries) ManagementUpdateBenefit(ctx context.Context, arg ManagementUpd
 		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HasImage,
 	)
 	return i, err
 }

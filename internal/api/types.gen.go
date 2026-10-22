@@ -608,21 +608,24 @@ type AuditList struct {
 
 // Benefit defines model for Benefit.
 type Benefit struct {
-	Branches        string          `json:"branches"`
-	BusinessId      string          `json:"business_id"`
-	BusinessName    string          `json:"business_name"`
-	Category        string          `json:"category"`
-	Code            string          `json:"code"`
-	Conditions      []string        `json:"conditions"`
-	CreatedAt       time.Time       `json:"created_at"`
-	Currency        BenefitCurrency `json:"currency"`
-	Description     string          `json:"description"`
-	Exceptions      string          `json:"exceptions"`
-	Featured        bool            `json:"featured"`
-	Id              string          `json:"id"`
-	Instructions    []string        `json:"instructions"`
-	MembershipLabel string          `json:"membership_label"`
-	Method          BenefitMethod   `json:"method"`
+	Branches     string          `json:"branches"`
+	BusinessId   string          `json:"business_id"`
+	BusinessName string          `json:"business_name"`
+	Category     string          `json:"category"`
+	Code         string          `json:"code"`
+	Conditions   []string        `json:"conditions"`
+	CreatedAt    time.Time       `json:"created_at"`
+	Currency     BenefitCurrency `json:"currency"`
+	Description  string          `json:"description"`
+	Exceptions   string          `json:"exceptions"`
+	Featured     bool            `json:"featured"`
+	Id           string          `json:"id"`
+
+	// ImagePath Authenticated administrator image URL with a revision query, or empty string when no custom image exists.
+	ImagePath       string        `json:"image_path"`
+	Instructions    []string      `json:"instructions"`
+	MembershipLabel string        `json:"membership_label"`
+	Method          BenefitMethod `json:"method"`
 
 	// MinimumSpend Nonnegative decimal with at most two fractional digits, or empty string.
 	MinimumSpend      string                   `json:"minimum_spend"`
@@ -673,17 +676,20 @@ type BenefitResponse struct {
 
 // BenefitWrite defines model for BenefitWrite.
 type BenefitWrite struct {
-	Branches        *string              `json:"branches,omitempty"`
-	BusinessId      string               `json:"business_id"`
-	Code            *string              `json:"code,omitempty"`
-	Conditions      *[]string            `json:"conditions,omitempty"`
-	Currency        BenefitWriteCurrency `json:"currency"`
-	Description     *string              `json:"description,omitempty"`
-	Exceptions      *string              `json:"exceptions,omitempty"`
-	Featured        *bool                `json:"featured,omitempty"`
-	Instructions    *[]string            `json:"instructions,omitempty"`
-	MembershipLabel *string              `json:"membership_label,omitempty"`
-	Method          BenefitWriteMethod   `json:"method"`
+	Branches    *string              `json:"branches,omitempty"`
+	BusinessId  string               `json:"business_id"`
+	Code        *string              `json:"code,omitempty"`
+	Conditions  *[]string            `json:"conditions,omitempty"`
+	Currency    BenefitWriteCurrency `json:"currency"`
+	Description *string              `json:"description,omitempty"`
+	Exceptions  *string              `json:"exceptions,omitempty"`
+	Featured    *bool                `json:"featured,omitempty"`
+
+	// ImageData Raw base64 PNG or JPEG, without a data URL prefix. Omit or null to preserve the current image, empty string to remove it. Decoded input and normalized output at most 5 MiB; each side at most 8192 pixels and total at most 16 million pixels. Image changes share the benefit revision and reset publication to draft.
+	ImageData       *string            `json:"image_data,omitempty"`
+	Instructions    *[]string          `json:"instructions,omitempty"`
+	MembershipLabel *string            `json:"membership_label,omitempty"`
+	Method          BenefitWriteMethod `json:"method"`
 
 	// MinimumSpend Nonnegative decimal with at most two fractional digits, or empty string.
 	MinimumSpend   *string `json:"minimum_spend,omitempty"`

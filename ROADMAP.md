@@ -92,7 +92,9 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 **Teslim durumu:** Yönetici formları gerçek API/şema 5 ile çalışır. Beş PostgreSQL yönetim kabul senaryosu; yetki/CSRF, yayın koşulları, eşzamanlı düzenleme, iş ortaklığı kapanışı ve işlem günlüğü hatasında geri alma kontrollerini kapsar. Gerçek API ile izole Chrome akışında taslak/yayın/askı, kayıt çakışması, 12 menü, mobil ekranlar ve öğrenci erişim sınırı doğrulandı. Önceki 18 kimlik senaryosu ve migration testi de geçti. [Ayrıntılar](docs/TESLIM_3C.md).
 
-**Sınırlar:** Görseller hazır yerel seçeneklerdir; dosya yükleme eklenmedi. Gerçek sponsor koşulları kullanıcı tarafından girilir; yayınlanan kayıtların öğrenci kataloğuna bağlanması 3D'dedir. İşlem günlüğü sunucuda kaydedilir; günlük ekranı 3E'de tamamlanır.
+**İlk teslim sınırları:** Görseller hazır yerel seçeneklerdi; avantaj görseli yükleme, proje sahibinin 22 Ekim talebiyle aşağıdaki ek teslim kapsamına alındı. Gerçek sponsor koşulları kullanıcı tarafından girilir; yayınlanan kayıtların öğrenci kataloğuna bağlanması 3D'dedir. İşlem günlüğü sunucuda kaydedilir; günlük ekranı 3E'de tamamlanır.
+
+**Onaylı ek teslim — Avantaj görseli:** Avantaj bilgileri formunda isteğe bağlı JPG/PNG seçme, önizleme, kaydetme, değiştirme ve kaldırma; öğrenci kartı/detayında gösterim. Şema 7 ile PostgreSQL'de ayrı görsel tablosu kullanılır. Dosya/boyut/piksel sınırları, yönetici/öğrenci erişimi, taslak-yayın-askı sınırları ve mobil görünüm test edilir. Yerel migration/API başlatma proje sahibindedir; [teknik kararlar](docs/TEKNIK_KARARLAR.md) geçerlidir.
 
 **İşler:**
 

@@ -8,7 +8,9 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 
 **Yönetici Genel Bakış:** Gerçek işletme, avantaj ve öğrenci özetleri; bekleyen işler, durum dağılımı, bugün dahil yedi gün içinde bitecek aktif avantajlar ve son yönetim işlemleri hazırdır. Sayfa açıkken dakikada bir yenilenir, elle de yenilenebilir. [Teslim ve test bilgileri](docs/TESLIM_GENEL_BAKIS.md).
 
-**3E yönetim ekranları:** İşlem günlüğünde arama/tarih/işlem filtresi ve sayfalama; platform adı, destek iletişimi ve öne çıkan öneri ayarları; hesap arama/filtreleri ve gerekçesi onay ekranında açıklanan devre dışı bırakma/yeniden etkinleştirme akışları bulunur. Analitik, son 30 günün öğrenci görüntülenmelerini ve mevcut favori sayılarını gösterir. Okul alan adı bu ekrandan değiştirilemez. Yeni kurulum ve güncelleme için **şema 6** gerekir. [3E teslim ve çalıştırma bilgileri](docs/TESLIM_3E.md).
+**3E yönetim ekranları:** İşlem günlüğünde arama/tarih/işlem filtresi ve sayfalama; platform adı, destek iletişimi ve öne çıkan öneri ayarları; hesap arama/filtreleri ve gerekçesi onay ekranında açıklanan devre dışı bırakma/yeniden etkinleştirme akışları bulunur. Analitik, son 30 günün öğrenci görüntülenmelerini ve mevcut favori sayılarını gösterir. Okul alan adı bu ekrandan değiştirilemez. [3E teslim ve çalıştırma bilgileri](docs/TESLIM_3E.md).
+
+**Avantaj görseli:** Avantaj bilgileri formundan isteğe bağlı tek JPG/PNG seçilebilir, önizlenebilir, değiştirilebilir ve kaldırılabilir. En fazla 5 MB/16 megapiksel desteklenir. Görsel, avantajı kaydetme veya kaydet-yayımla işlemiyle kalıcılaşır; yayımlanan avantajın öğrenci kartında ve detayında görünür. Yeni **şema 7** gerekir: API'yi kendi terminalinde durdur, `tools/dev.ps1 db-up` komutunu çalıştır ve API'yi yeniden başlat. [Görsel teslimi ve kurulum](docs/TESLIM_3E.md).
 
 | Bölüm | Çalıştırma | Durum |
 | --- | --- | --- |
@@ -183,7 +185,7 @@ API ve Vite zaten açıkken `python tests/run_foundation_checks.py`, `#system` h
 
 ## Şema ve örnek veri
 
-Migration sürümü **5**. Mevcut migration değiştirilmez; yeni sürüm eklenir. API otomatik migration veya seed çalıştırmaz. `tools/dev.ps1 seed-demo` yalnızca geliştirme ortamında kurgusal işletme ve yayımlanmamış avantaj taslağı ekler; hesap veya gerçek sponsor oluşturmaz. Mailpit'in kendi yerel dosyası uygulamanın veritabanı değildir; uygulama yalnızca PostgreSQL kullanır.
+Migration sürümü **7**. Mevcut migration değiştirilmez; yeni sürüm eklenir. API otomatik migration veya seed çalıştırmaz. `tools/dev.ps1 seed-demo` yalnızca geliştirme ortamında kurgusal işletme ve yayımlanmamış avantaj taslağı ekler; hesap veya gerçek sponsor oluşturmaz. Avantaj görselleri ayrı bir PostgreSQL tablosunda saklanır ve veritabanı yedeğine dahildir. Mailpit'in kendi yerel dosyası uygulamanın veritabanı değildir; uygulama yalnızca PostgreSQL kullanır.
 
 ## Plan ve lisans
 

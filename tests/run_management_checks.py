@@ -26,6 +26,15 @@ def main():
     if not chrome.exists():
         raise SystemExit('Chrome is required; set KOC_CHROME to its executable.')
     profile = tempfile.TemporaryDirectory(prefix='koc-management-browser-', ignore_cleanup_errors=True)
+    image_files = tempfile.TemporaryDirectory(prefix='koc-management-images-')
+    first_image = Path(image_files.name)/'synthetic-red.png'
+    replacement_image = Path(image_files.name)/'synthetic-blue.png'
+    unsupported_image = Path(image_files.name)/'unsupported.txt'
+    corrupt_image = Path(image_files.name)/'corrupt.png'
+    first_image.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAEElEQVR4nGM4oawLQQxwFgBFVgaRFk6yZAAAAABJRU5ErkJggg=='))
+    replacement_image.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAEElEQVR4nGMQybsERAwoFABPTQf5lXKNhQAAAABJRU5ErkJggg=='))
+    unsupported_image.write_text('Synthetic unsupported image input.', encoding='utf-8')
+    corrupt_image.write_bytes(b'Synthetic invalid PNG bytes.')
     process = subprocess.Popen([str(chrome), '--headless=new', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0', '--user-data-dir='+profile.name, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
     dev = None
     student_dev = None
@@ -117,6 +126,21 @@ def main():
             click(label, "document.querySelector('.management-editor')")
         def api(path):
             return dev.evaluate(f"fetch({json.dumps(path)}).then(r=>r.json())")
+        def image_response(path, page=None):
+            page = page or dev
+            return page.evaluate(f"""(async()=>{{const r=await fetch({json.dumps(path)},{{cache:'no-store'}});const type=r.headers.get('content-type')||'';const data=await r.arrayBuffer();const digest=r.ok&&type.startsWith('image/')?[...new Uint8Array(await crypto.subtle.digest('SHA-256',data))].map(b=>b.toString(16).padStart(2,'0')).join(''):'';return {{status:r.status,type,length:data.byteLength,digest}}}})()""")
+        def select_image(path, valid=True):
+            present('#edit-image_file')
+            root = dev.call('DOM.getDocument')['root']['nodeId']
+            node = dev.call('DOM.querySelector', {'nodeId':root,'selector':'#edit-image_file'})['nodeId']
+            dev.call('DOM.setFileInputFiles', {'nodeId':node,'files':[str(path)]})
+            if valid:
+                wait(lambda:dev.evaluate(f"(()=>{{const input=document.querySelector('#edit-image_file');const panel=document.querySelector('.benefit-image-editor');const image=panel?.querySelector('img');return !!input&&!input.matches(':disabled')&&panel.textContent.includes({json.dumps(path.name)})&&!!image&&image.src.startsWith('data:')&&image.complete&&image.naturalWidth>0}})()"), 'image reading did not finish: '+path.name)
+        def loaded_image(selector, page=None):
+            page = page or dev
+            present(selector,page)
+            page.evaluate(f'document.querySelector({json.dumps(selector)}).scrollIntoView({{block:"center"}})')
+            wait(lambda:page.evaluate(f"(()=>{{const image=document.querySelector({json.dumps(selector)});return !!image&&image.complete&&image.naturalWidth>0}})()"), 'image did not load: '+selector)
         def viewport(width, page=None):
             page = page or dev
             page.call('Emulation.setDeviceMetricsOverride', {'width':width,'height':950,'deviceScaleFactor':1,'mobile':width<500})
@@ -183,6 +207,31 @@ def main():
         present('#edit-business_id')
         assert dev.evaluate("document.querySelector('#edit-business_id').value") == business['id'], 'business publication did not preselect its business'
         required_marks(('business_id','title','method','description','perk','conditions','instructions','code'), ('products','branches','exceptions','minimum_spend','valid_from','valid_until','verification_requirement','support_contact'))
+        present('#edit-image_file')
+        present('label[for=edit-image_file]')
+        assert dev.evaluate("!document.querySelector('#edit-image_file').required&&!document.querySelector('label[for=edit-image_file]').querySelector('.required-mark')"), 'benefit image must remain optional'
+        assert dev.evaluate("['image/png','image/jpeg'].every(type=>document.querySelector('#edit-image_file').accept.split(',').map(s=>s.trim()).includes(type))"), 'image chooser must describe the supported formats'
+        writes_before=dev.evaluate('window.__managementWrites.length')
+        select_image(unsupported_image,valid=False)
+        present('.benefit-image-editor [role=alert]')
+        assert dev.evaluate('window.__managementWrites.length')==writes_before, 'unsupported image triggered a write'
+        select_image(corrupt_image,valid=False)
+        wait(lambda:dev.evaluate("document.querySelector('.benefit-image-editor [role=alert]')?.textContent.includes('Görsel açılamadı')&&!document.querySelector('#edit-image_file').matches(':disabled')"), 'invalid PNG did not release the form after image decoding failed')
+        assert dev.evaluate('window.__managementWrites.length')==writes_before, 'invalid image decoding triggered a write'
+        # A phone JPEG may store rotation in EXIF. Normalize that orientation into
+        # pixels before server-side metadata stripping so preview and storage agree.
+        jpeg = base64.b64decode(dev.evaluate("(()=>{const c=document.createElement('canvas');c.width=3;c.height=2;c.getContext('2d').fillRect(0,0,3,2);return c.toDataURL('image/jpeg').split(',')[1]})()"))
+        exif = bytes.fromhex('45786966000049492a0008000000010012010300010000000600000000000000')
+        oriented = Path(image_files.name)/'phone-orientation.jpg'
+        oriented.write_bytes(jpeg[:2]+b'\xff\xe1'+(len(exif)+2).to_bytes(2,'big')+exif+jpeg[2:])
+        select_image(oriented)
+        assert dev.evaluate("(()=>{const i=document.querySelector('.benefit-image-editor img');return i.naturalWidth===2&&i.naturalHeight===3})()"), 'JPEG orientation was not preserved'
+        normalized = base64.b64decode(dev.evaluate("document.querySelector('.benefit-image-editor img').src.split(',')[1]"))
+        assert b'Exif\x00\x00' not in normalized, 'JPEG orientation still depends on removable metadata'
+        select_image(first_image)
+        loaded_image('.benefit-image-editor img')
+        assert dev.evaluate('window.__managementWrites.length')==writes_before, 'image selection uploaded before the record save'
+        assert dev.evaluate("![...document.querySelectorAll('.benefit-image-editor button')].some(b=>/yükle|upload/i.test(b.textContent))"), 'image selection unexpectedly requires a separate upload step'
         assert dev.evaluate("document.querySelector('#edit-title').required&&!document.querySelector('#edit-perk').required"), 'publication requirements must still permit incomplete draft saves'
         fill('#edit-method','link')
         required_marks(('target_url',), ('products','support_contact'))
@@ -191,6 +240,10 @@ def main():
         # Drafts may be incomplete; publishing requires a separate reviewed form.
         click('Taslak olarak kaydet'); confirm(); saved()
         benefit=api('/api/admin/benefits')['benefits'][0]
+        assert benefit['image_path'].startswith('/api/admin/'), 'draft image URL is not protected by administrator authentication'
+        original_image=image_response(benefit['image_path'])
+        assert original_image['status']==200 and original_image['type'].startswith('image/png') and original_image['length']>0
+        student_image_path='/api/student/benefits/'+benefit['id']+'/image'
         nav('benefits')
 
         # A separate Chrome profile keeps a normal student's HTTP session alive
@@ -241,7 +294,10 @@ def main():
 
         student_catalog(False)
         assert student_api('/api/student/benefits/'+benefit['id'])['status']==404, 'student opened an unpublished draft'
+        assert image_response(student_image_path, student_dev)['status']==404, 'student downloaded an unpublished draft image'
         click('Düzenle'); fill('#edit-description','Test için kahvelerde indirim.')
+        loaded_image('.benefit-image-editor img')
+        assert image_response(dev.evaluate("document.querySelector('.benefit-image-editor img').src"))['digest']==original_image['digest'], 'saved draft image did not survive reopening the form'
         fill('#edit-conditions','Öğrenci kimliği gösterilir.\nYalnızca test şubesinde.')
         fill('#edit-instructions','Kasada kodu göster.'); fill('#edit-code','SYNTHETIC-COFFEE')
         fill('#edit-products','Kahveler'); fill('#edit-exceptions','Paketli ürünler hariç.')
@@ -270,6 +326,11 @@ def main():
         benefit=api('/api/admin/benefits')['benefits'][0]
         assert benefit['status']=='active' and benefit['minimum_spend']=='25.50'
         student_catalog(True)
+        published_image=image_response(student_image_path,student_dev)
+        assert published_image['status']==200 and published_image['digest']==original_image['digest'], 'published image is not accessible to the normal student'
+        card_image='.benefit-card:has(a[href="#benefit/'+benefit['id']+'"]) img'
+        loaded_image(card_image,student_dev)
+        assert student_dev.evaluate('new URL(document.querySelector('+json.dumps(card_image)+').currentSrc).pathname')==student_image_path, 'student card used a fallback instead of the uploaded image'
         detail = student_api('/api/student/benefits/'+benefit['id'])
         assert detail['status']==200 and detail['body']['benefit']['status']=='active'
         assert not any(key in detail['body']['benefit'] for key in ('code','target_url','qr_content','membership_label')), 'catalogue detail leaked redemption secrets'
@@ -277,6 +338,8 @@ def main():
         present('.student-redemption', student_dev)
         text('Test kahve avantajı', student_dev)
         text('Paketli ürünler hariç.', student_dev)
+        loaded_image('.student-detail-image',student_dev)
+        assert student_dev.evaluate("new URL(document.querySelector('.student-detail-image').currentSrc).pathname")==student_image_path, 'student detail used a fallback instead of the uploaded image'
         for width in (320,390,1440):
             viewport(width, student_dev)
             shot(f'management-student-published-{width}.png', student_dev)
@@ -289,6 +352,7 @@ def main():
         student_catalog(False)
         suspended = student_api('/api/student/benefits/'+benefit['id'])
         assert suspended['status']==404 and 'benefit' not in suspended['body'], 'suspended detail retained a student payload'
+        assert image_response(student_image_path,student_dev)['status']==404, 'suspension left the student image downloadable'
         nav('archived'); text('Test için geçici askı.')
         click('Düzenle'); publish()
         dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
@@ -394,6 +458,50 @@ def main():
         assert dev.evaluate('window.__publishRequests')==before+1, 'selected publication affected more than one advantage'
         student_catalog(True)
 
+        # Replacing an image is part of the record write. A failed save keeps
+        # the previous server image and the selected replacement for a retry.
+        nav('benefits'); fill('.admin-toolbar input[type=search]',benefit['title'])
+        wait(lambda:dev.evaluate("document.querySelectorAll('.admin-table tbody tr').length===1"), 'image replacement target is not unique')
+        click('Düzenle'); loaded_image('.benefit-image-editor img')
+        select_image(replacement_image); loaded_image('.benefit-image-editor img')
+        preview_path=dev.evaluate("document.querySelector('.benefit-image-editor img').src")
+        replacement_digest=image_response(preview_path)['digest']
+        assert replacement_digest and replacement_digest!=original_image['digest']
+        writes_before=dev.evaluate('window.__managementWrites.length')
+        before=dev.evaluate('window.__publishRequests')
+        dev.call('Network.setBlockedURLs', {'urls':['*/api/admin/benefits/'+benefit['id']]})
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm(); present('.management-editor [role=alert]')
+        operations=dev.evaluate('window.__managementWrites.slice('+str(writes_before)+')')
+        assert [op['method'] for op in operations]==['PUT'] and dev.evaluate('window.__publishRequests')==before, 'failed image save continued to publication'
+        dev.call('Network.setBlockedURLs', {'urls':[]})
+        assert image_response(student_image_path,student_dev)['digest']==original_image['digest'], 'failed image save modified the stored image'
+        assert image_response(dev.evaluate("document.querySelector('.benefit-image-editor img').src"))['digest']==replacement_digest, 'failed save discarded the image selection'
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm(); saved()
+        replaced=image_response(student_image_path,student_dev)
+        assert replaced['status']==200 and replaced['digest']!=original_image['digest'], 'replacement image was not stored'
+        student_catalog(True); loaded_image(card_image,student_dev)
+        wait(lambda:student_dev.evaluate('document.querySelector('+json.dumps(card_image)+').naturalWidth===2'), 'student card retained the old image after replacement')
+
+        # Removing the optional image preserves the published offer and restores
+        # its normal business image fallback after the reviewed save/publication.
+        click('Düzenle'); loaded_image('.benefit-image-editor img')
+        writes_before=dev.evaluate('window.__managementWrites.length')
+        click('Görseli kaldır', "document.querySelector('.benefit-image-editor')")
+        assert dev.evaluate('window.__managementWrites.length')==writes_before, 'image removal wrote before record confirmation'
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm(); saved()
+        without_image=next(b for b in api('/api/admin/benefits')['benefits'] if b['id']==benefit['id'])
+        assert without_image['image_path']=='' and without_image['publication_status']=='published', 'removing an optional image changed publication availability'
+        assert image_response(student_image_path,student_dev)['status']==404, 'removed image remained accessible'
+        student_catalog(True)
+        wait(lambda:student_dev.evaluate('new URL(document.querySelector('+json.dumps(card_image)+').currentSrc).pathname')!=student_image_path, 'student card did not restore its image fallback')
+        loaded_image(card_image,student_dev)
+
         # Desktop rail expands without moving content; mobile closes on selection.
         nav('businesses'); dev.evaluate('document.activeElement.blur()')
         dev.call('Input.dispatchMouseEvent', {'type':'mouseMoved','x':600,'y':100}); time.sleep(.25)
@@ -430,7 +538,7 @@ def main():
         click('Çıkış yap'); present('#password')
         assert not dev.errors, 'browser runtime error'
         assert not student_dev.errors, 'student browser runtime error'
-        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, red business row/form publication, preselected creation, single-confirmation save and publish, failed POST draft retention, explicit multi-offer selection, required fields, inactive-business guard, normal-student visibility, conflicts, network retry and logout.')
+        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, business publication, single-confirmation save/publish, explicit selection, optional image validation/save/replace/remove with protected student access, required fields, inactive-business guard, normal-student visibility, conflicts, network retry and logout.')
     except Exception:
         if dev:
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)
@@ -444,6 +552,7 @@ def main():
         if student_process:
             student_process.terminate(); student_process.wait(timeout=15)
         if student_profile: student_profile.cleanup()
+        image_files.cleanup()
         process.terminate(); process.wait(timeout=15); profile.cleanup()
 
 
