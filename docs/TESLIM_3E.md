@@ -44,4 +44,14 @@ Tarayıcı ölçüleri gerçek cihaz testinin yerine geçmez; proje sahibinin te
 
 ## Kapsam sınırı ve sonraki adım
 
+### 22 Ekim 2026 — Sponsorluk Yönetimi düzenlemesi
+
+Proje sahibinin isteğiyle işletme detayları, avantaj yönetimi, yayımlanmış avantajlar ve süresi dolan/askıdaki kayıtlar tek **Sponsorluk Yönetimi** menüsünde toplandı. İçeride dört görünüm bulunur: İşletmeler, Tüm avantajlar, Yayındakiler ve Süresi dolan / askıdaki. Eski adresler ve genel bakıştan gelen durum filtreleri korunur. Ana menü 9 bölüme indirildi; mevcut tasarım ve mobil açılır menü kullanılır.
+
+Öğrenci **Avantajları Keşfet** ekranına elle yenileme eklendi. Yayın işlemi mevcut ortak PostgreSQL kayıtlarını kullanır; ayrı aktarım veya demo içerik gerekmez. Yayımlama sonrası açık katalog otomatik yenilenmeyle veya **Avantajları yenile** düğmesiyle güncellenir. İşletmenin aktif olması gerekir; taslak/askıdaki kayıtlar öğrenciye açılmaz. Yayımlanmış kayıtların yönetici detayında öğrenci detay sayfasına bağlantı bulunur.
+
+`2b8791b` sürümünün [GitHub Actions kontrollerinin tamamı geçti](https://github.com/momerefe/Kabine101/actions/runs/39754493174). Ayrı Chrome profillerindeki yönetici ve normal öğrenci oturumlarıyla taslak gizliliği → yönetici yayını → öğrenci katalog/detay erişimi → askıya alma → öğrenci erişiminin kapanması gerçek API üzerinde sınandı. Dokuz ana menü bağlantısı ve dört sponsorluk görünümü 320/390/1440 px boyutlarında kontrol edildi. Yerelde öğrenci arayüzünün 87 ve genel bakışın 17 kontrolü, TypeScript/ESLint, derleme ve biçim kontrolleri geçti.
+
+Bu düzenleme yeni migration veya backend yeniden başlatması gerektirmez. Önceki 3E kurulumunun şema 6 ile çalışması gerekir. Açık Vite sunucusunda tarayıcıyı yenilemek yeterlidir; yerel sunucular ajan tarafından başlatılmadı ve gerçek hesaplara test kaydı eklenmedi.
+
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.
