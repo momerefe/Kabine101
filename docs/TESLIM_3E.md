@@ -72,4 +72,6 @@ Avantaj formunun sonunda kırmızı **Yayınla**, yeni/değişmiş kayıtta **Ka
 
 Avantaj listesi API'sine isteğe bağlı `business_id` filtresi eklendi; SQL sonucu sınırlandırılmadan önce uygulanır. Bu güncelleme migration gerektirmez, ancak yeni filtre için API proje sahibi tarafından yeniden başlatılmalıdır.
 
+`fe4d60c` için [tüm GitHub Actions kontrolleri geçti](https://github.com/momerefe/Kabine101/actions/runs/39760869052). Gerçek API ile tarayıcı testleri; aktif işletme satırı/formundaki kırmızı düğmeleri, işletmesi önseçili oluşturmayı, tek onayla kaydet-yayımla işlemini, yayın hatası sonrası taslak/sürüm korunmasını ve tekrar denemeyi, birden fazla avantajdan yalnız seçilenin yayımlanmasını ve normal öğrenci erişimini doğruladı. 320/390/1440 px yerleşimleri kontrol edildi. İşletme filtresinin yetkilendirme, geçersiz kimlik ve SQL sınırı öncesi uygulanması entegrasyon testlerinden geçti. Yerel sunucular başlatılmadı; gerçek sponsorluk kayıtları değiştirilmedi.
+
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.
