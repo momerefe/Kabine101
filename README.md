@@ -15,7 +15,7 @@ Normal hesaplar için izin verilen okul alan adı **`stu.koc.k12.tr`**. Öğrenc
 | HTML prototipi | Kök dizindeki `index.html` dosyasını aç | Altı öğrenci ve 12 yönetici bölümü, demo veriler |
 | Gerçek uygulama | Go API + Vite + yerel Mailpit | Gerçek hesap/oturum, yönetim, öğrenci kataloğu, favoriler ve avantaj detayları |
 
-Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Yönetici menüsünün 12 bölümü korunur. Doğrulanmış kullanım sistemi bulunmadığından kullanım geçmişi açıklayıcı boş durumdur; kod/QR açmak kullanım kaydı oluşturmaz. Tasarruf ve alışveriş onay sistemi kapsam dışında kalır.
+Prototipteki hesaplar, favoriler ve sponsorlar gerçek veritabanına aktarılmaz. Ayrıntılar [PROTOTIP.md](PROTOTIP.md) içinde. Gerçek yönetici paneli 9 ana bölümden oluşur; işletmeler ve avantajların yayın durumları **Sponsorluk Yönetimi** altında toplanır. Eski yönetim bağlantıları ilgili görünümü açmaya devam eder. Doğrulanmış kullanım sistemi bulunmadığından kullanım geçmişi açıklayıcı boş durumdur; kod/QR açmak kullanım kaydı oluşturmaz. Tasarruf ve alışveriş onay sistemi kapsam dışında kalır.
 
 ## Bu bilgisayarda çalıştırma
 
@@ -111,11 +111,12 @@ E-posta doğrulaması ve yönetici kararı farklı sırada tamamlanabilir; ikisi
 
 ### İşletme ve avantaj yönetimini deneme
 
-1. [Yönetici girişini](http://127.0.0.1:5173/#login/admin) aç. **İşletme Detayları → İşletme ekle** üzerinden kayıt oluştur. Gerçek anlaşma girilmiyorsa ad ve açıklamada test olduğunu belirt.
+1. [Yönetici girişini](http://127.0.0.1:5173/#login/admin) aç. **Sponsorluk Yönetimi → İşletmeler → İşletme ekle** üzerinden kayıt oluştur. Gerçek anlaşma girilmiyorsa ad ve açıklamada test olduğunu belirt.
 2. **İş Ortaklığı Takibi** bölümünden durum, iletişim kişisi, görüşme tarihi ve notları düzenle. Yayımlama için işletme aktif olmalıdır.
-3. **Avantaj Yönetimi → Avantaj taslağı ekle**. İşletme, başlık ve kullanım yöntemini belirle. Diğer bilgiler tamamlanmadan taslak kaydedilebilir.
+3. **Sponsorluk Yönetimi → Tüm avantajlar → Avantaj taslağı ekle**. İşletme, başlık ve kullanım yöntemini belirle. Diğer bilgiler tamamlanmadan taslak kaydedilebilir.
 4. Açıklama, ayrıcalık, koşullar, kullanım adımları ve seçili yöntemin bilgisini tamamlayıp taslağı kaydet. Ardından **Düzenle → Koşulları incele ve yayımla** ile onayla. Kaydedilmemiş değişiklikler varken yayın yapılamaz.
-5. **Yayımlanmış Avantajlar** ve **Süresi Dolan / Askıdaki** listelerinden durum ve tarihleri kontrol et. Askıya alma neden ister; yeniden yayın yeniden koşul incelemesi ister.
+5. Aynı alandaki **Yayındakiler** ve **Süresi dolan / askıdaki** görünümlerinden durum ve tarihleri kontrol et. Askıya alma neden ister; yeniden yayın yeniden koşul incelemesi ister.
+6. E-posta doğrulaması ve yönetici onayı tamamlanmış normal öğrenci hesabıyla aynı uygulamada **Avantajları Keşfet** bölümünü aç. Yayımlanan avantaj ortak veritabanından görünür; ayrı bir aktarım gerekmez. Açık katalog odaklanınca ve görünürken yaklaşık 60 saniyede yenilenir; **Avantajları yenile** düğmesiyle hemen kontrol edilebilir. Taslak/askıdaki avantajlar görünmez; işletme aktif olmalıdır. Yakında/süresi dolmuş avantajlar etiketlenir ve kullanım öğeleri kapalıdır.
 
 Yayımlanmış avantajı düzenleyip kaydetmek onu taslağa çevirir; onay penceresi bunu açıklar. İş ortaklığını aktif durumdan çıkarmak bağlı yayımlanmış avantajları birlikte askıya alır; tekrar aktif etmek otomatik yayın yapmaz. Bitiş günü İstanbul saatine göre dahildir. Eşzamanlı düzenlemede eski sürüm reddedilir; form bilgileri korunur. Kayıt sürümünü yenilemeden tekrar göndermek ikinci kayıt oluşturmaz.
 

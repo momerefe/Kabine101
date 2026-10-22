@@ -28,6 +28,9 @@ def main():
     profile = tempfile.TemporaryDirectory(prefix='koc-management-browser-', ignore_cleanup_errors=True)
     process = subprocess.Popen([str(chrome), '--headless=new', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0', '--user-data-dir='+profile.name, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
     dev = None
+    student_dev = None
+    student_process = None
+    student_profile = None
     def wait(check, label):
         deadline = time.monotonic()+20
         while time.monotonic()<deadline:
@@ -44,21 +47,30 @@ def main():
         dev = DevTools(next(t['webSocketDebuggerUrl'] for t in targets if t['type']=='page'))
         for method in ('Runtime.enable','Page.enable','Network.enable'): dev.call(method)
         dev.call('Emulation.setFocusEmulationEnabled', {'enabled':True})
-        def present(selector):
-            wait(lambda: dev.evaluate(f'!!document.querySelector({json.dumps(selector)})'), 'missing '+selector)
-        def text(value):
-            wait(lambda: dev.evaluate(f'document.body.innerText.includes({json.dumps(value)})'), 'missing text '+value)
-        def fill(selector, value):
-            present(selector)
-            wait(lambda:dev.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(selector)});return e.tagName!=='SELECT'||Array.from(e.options).some(o=>o.value==={json.dumps(value)})}})()"),'select option not loaded '+selector)
-            dev.evaluate(f"""(()=>{{const e=document.querySelector({json.dumps(selector)});const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,{json.dumps(value)});e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{{bubbles:true}}));}})()""")
-        def click(label, scope='document', prefix=False):
+        def present(selector, page=None):
+            page = page or dev
+            wait(lambda: page.evaluate(f'!!document.querySelector({json.dumps(selector)})'), 'missing '+selector)
+        def text(value, page=None):
+            page = page or dev
+            wait(lambda: page.evaluate(f'document.body.innerText.includes({json.dumps(value)})'), 'missing text '+value)
+        def fill(selector, value, page=None):
+            page = page or dev
+            present(selector, page)
+            wait(lambda:page.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(selector)});return e.tagName!=='SELECT'||Array.from(e.options).some(o=>o.value==={json.dumps(value)})}})()"),'select option not loaded '+selector)
+            page.evaluate(f"""(()=>{{const e=document.querySelector({json.dumps(selector)});const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,{json.dumps(value)});e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{{bubbles:true}}));}})()""")
+        def click(label, scope='document', prefix=False, page=None):
+            page = page or dev
             # Keep the button lookup readable; disabled controls must never pass.
             predicate = f'b.textContent.trim().startsWith({json.dumps(label)})' if prefix else f'b.textContent.trim()==={json.dumps(label)}'
-            assert dev.evaluate(f"(()=>{{const e=Array.from({scope}.querySelectorAll('button')).find(b=>{predicate});if(!e||e.disabled)return false;e.click();return true}})()"), 'button missing/disabled '+label
+            wait(lambda: page.evaluate(f"(()=>{{const root={scope};if(!root)return false;const e=Array.from(root.querySelectorAll('button')).find(b=>{predicate});if(!e||e.disabled)return false;e.click();return true}})()"), 'button missing/disabled '+label)
         def nav(section):
             dev.evaluate('location.hash='+json.dumps('admin/'+section))
-            present(f'#desktop-nav a[href="#admin/{section}"][aria-current="page"]')
+            view = section.split('?', 1)[0]
+            active = 'benefits' if view in ('businesses','benefits','published','archived') else view
+            present(f'#desktop-nav a[href="#admin/{active}"][aria-current="page"]')
+            if active == 'benefits':
+                present(f'nav[aria-label="Sponsorluk bölümleri"] a[href="#admin/{view}"][aria-current="page"]')
+                assert dev.evaluate("document.querySelectorAll('main h1').length===1&&document.querySelector('main h1').textContent==='Sponsorluk Yönetimi'"), 'sponsorship views must share one heading'
         def confirm():
             present('dialog[open]'); click('Onayla', "document.querySelector('dialog[open]')")
             wait(lambda: not dev.evaluate("!!document.querySelector('dialog[open]')"), 'confirmation not closed')
@@ -66,14 +78,16 @@ def main():
             wait(lambda: not dev.evaluate("!!document.querySelector('.management-editor')"), 'editor did not close after save')
         def api(path):
             return dev.evaluate(f"fetch({json.dumps(path)}).then(r=>r.json())")
-        def viewport(width):
-            dev.call('Emulation.setDeviceMetricsOverride', {'width':width,'height':950,'deviceScaleFactor':1,'mobile':width<500})
+        def viewport(width, page=None):
+            page = page or dev
+            page.call('Emulation.setDeviceMetricsOverride', {'width':width,'height':950,'deviceScaleFactor':1,'mobile':width<500})
             # Let resize/media listeners and React commit before interacting.
-            dev.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))')
-            assert dev.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'overflow {width}'
-        def shot(name):
+            page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))')
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'overflow {width}'
+        def shot(name, page=None):
+            page = page or dev
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)
-            image=dev.call('Page.captureScreenshot', {'format':'png','captureBeyondViewport':False})
+            image=page.call('Page.captureScreenshot', {'format':'png','captureBeyondViewport':False})
             (output/name).write_bytes(base64.b64decode(image['data']))
 
         viewport(1440)
@@ -81,10 +95,37 @@ def main():
         fill('#username', os.environ['KOC_BROWSER_USERNAME']); fill('#password', os.environ['KOC_BROWSER_PASSWORD'])
         dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
         present('#desktop-nav')
-        present('#desktop-nav a[href="#admin/businesses"][aria-current="page"]')
-        assert dev.evaluate("document.querySelectorAll('#desktop-nav a').length===12")
-        for section in ('overview','partners','businesses','benefits','students','published','archived','usage','analytics','users','audit','settings'):
-            nav(section)
+        present('#desktop-nav a[href="#admin/benefits"][aria-current="page"]')
+        sections = ('overview','partners','benefits','students','usage','analytics','users','audit','settings')
+        tabs = {'businesses':'İşletmeler','benefits':'Tüm avantajlar','published':'Yayındakiler','archived':'Süresi dolan / askıdaki'}
+        assert dev.evaluate("document.querySelectorAll('#desktop-nav a').length===9")
+        for width in (320,390,1440):
+            viewport(width)
+            for section in sections:
+                if width < 500:
+                    click('☰ Menü'); present('.admin-menu-open')
+                selector = f'#desktop-nav a[href="#admin/{section}"]'
+                present(selector)
+                wait(lambda: dev.evaluate(f"(()=>{{const r=document.querySelector({json.dumps(selector)}).getBoundingClientRect();return r.width>0&&r.left>=0&&r.left<innerWidth}})()"), 'sidebar destination is unreachable')
+                dev.evaluate(f'document.querySelector({json.dumps(selector)}).click()')
+                present(selector+'[aria-current="page"]')
+                if width < 500:
+                    wait(lambda:not dev.evaluate("document.body.classList.contains('admin-menu-open')"),'mobile selection did not close menu')
+            nav('benefits')
+            assert dev.evaluate("document.querySelectorAll('nav[aria-label=\"Sponsorluk bölümleri\"] a').length===4")
+            for section, label in tabs.items():
+                selector=f'nav[aria-label="Sponsorluk bölümleri"] a[href="#admin/{section}"]'
+                assert dev.evaluate(f'document.querySelector({json.dumps(selector)}).textContent.trim()==={json.dumps(label)}')
+                dev.evaluate(f'document.querySelector({json.dumps(selector)}).click()')
+                present(selector+'[aria-current="page"]')
+                viewport(width)
+                assert dev.evaluate("document.querySelector('main h1').textContent==='Sponsorluk Yönetimi'")
+                assert dev.evaluate(f"(()=>{{const r=document.querySelector({json.dumps(selector)}).getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth+1}})()"), 'sponsorship tab is clipped'
+            shot(f'management-sponsorship-tabs-{width}.png')
+        for section, status in (('businesses','active'),('benefits','draft'),('published','active'),('archived','suspended')):
+            nav(section+'?status='+status)
+            wait(lambda:dev.evaluate(f'document.querySelectorAll(".admin-toolbar select")[1]?.value==={json.dumps(status)}'),'legacy filtered link lost its status')
+        viewport(1440)
         nav('businesses'); text('Eşleşen kayıt bulunamadı')
         click('İşletme ekle', prefix=True)
         fill('#edit-name','Tarayıcı Test Kafesi'); fill('#edit-description','Yalnızca izole test kaydı.')
@@ -98,6 +139,56 @@ def main():
         fill('#edit-business_id', business['id']); fill('#edit-title','Test kahve avantajı')
         # Drafts may be incomplete; publishing requires a separate reviewed form.
         click('Taslak olarak kaydet'); confirm(); saved()
+        benefit=api('/api/admin/benefits')['benefits'][0]
+
+        # A separate Chrome profile keeps a normal student's HTTP session alive
+        # while the administrator publishes and suspends the same isolated offer.
+        student_profile = tempfile.TemporaryDirectory(prefix='koc-management-student-', ignore_cleanup_errors=True)
+        student_process = subprocess.Popen([str(chrome), '--headless=new', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0', '--user-data-dir='+student_profile.name, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        student_portfile = Path(student_profile.name)/'DevToolsActivePort'
+        wait(lambda: bool(student_portfile.read_text().splitlines()), 'student Chrome startup')
+        student_port = student_portfile.read_text().splitlines()[0]
+        with urllib.request.urlopen(f'http://127.0.0.1:{student_port}/json/list') as r: student_targets = json.load(r)
+        student_dev = DevTools(next(t['webSocketDebuggerUrl'] for t in student_targets if t['type']=='page'))
+        for method in ('Runtime.enable','Page.enable','Network.enable'): student_dev.call(method)
+        student_dev.call('Page.addScriptToEvaluateOnNewDocument', {'source': '''
+            window.__catalogResponses=0;
+            const originalFetch=window.fetch.bind(window);
+            window.fetch=async(input,options)=>{
+                const response=await originalFetch(input,options);
+                const path=new URL(typeof input==='string'?input:input.url,location.href).pathname;
+                if(path==='/api/student/catalog'&&response.ok)window.__catalogResponses++;
+                return response;
+            };
+        '''})
+        viewport(1440, student_dev)
+        student_dev.call('Page.navigate', {'url':base+'/#discover'})
+        fill('#email', os.environ['KOC_BROWSER_STUDENT'].split('@',1)[0], student_dev)
+        fill('#password', os.environ['KOC_BROWSER_PASSWORD'], student_dev)
+        student_dev.evaluate("document.querySelector('form.auth-form').requestSubmit()")
+        present('.student-panel .catalog-toolbar', student_dev)
+
+        def student_api(path):
+            return student_dev.evaluate(f"(async()=>{{const r=await fetch({json.dumps(path)});return {{status:r.status,body:await r.json()}}}})()")
+
+        student_session = student_api('/api/auth/session')['body']['user']
+        assert student_session['role']=='student' and student_session['id']==os.environ['KOC_BROWSER_STUDENT_ID'], 'publication check must use the ordinary student account'
+        assert api('/api/auth/session')['user']['role']=='admin', 'student profile replaced the administrator session'
+
+        def student_catalog(visible):
+            student_dev.evaluate("location.hash='discover'")
+            present('.catalog-toolbar', student_dev)
+            before = student_dev.evaluate('window.__catalogResponses')
+            click('Avantajları yenile', page=student_dev)
+            wait(lambda:student_dev.evaluate('window.__catalogResponses')>before, 'student refresh did not reach the real catalogue API')
+            result = student_api('/api/student/catalog')
+            assert result['status']==200
+            assert any(b['id']==benefit['id'] for b in result['body']['benefits']) is visible, 'student catalogue publication boundary'
+            selector='.benefit-card a[href="#benefit/'+benefit['id']+'"]'
+            wait(lambda:student_dev.evaluate(f'!!document.querySelector({json.dumps(selector)})') is visible, 'student rendered catalogue publication boundary')
+
+        student_catalog(False)
+        assert student_api('/api/student/benefits/'+benefit['id'])['status']==404, 'student opened an unpublished draft'
         click('Düzenle'); fill('#edit-description','Test için kahvelerde indirim.')
         fill('#edit-perk','%10 indirim'); fill('#edit-conditions','Öğrenci kimliği gösterilir.\nYalnızca test şubesinde.')
         fill('#edit-instructions','Kasada kodu göster.'); fill('#edit-code','SYNTHETIC-COFFEE')
@@ -112,10 +203,26 @@ def main():
         confirm(); saved()
         benefit=api('/api/admin/benefits')['benefits'][0]
         assert benefit['status']=='active' and benefit['minimum_spend']=='25.50'
+        student_catalog(True)
+        detail = student_api('/api/student/benefits/'+benefit['id'])
+        assert detail['status']==200 and detail['body']['benefit']['status']=='active'
+        assert not any(key in detail['body']['benefit'] for key in ('code','target_url','qr_content','membership_label')), 'catalogue detail leaked redemption secrets'
+        student_dev.evaluate('document.querySelector('+json.dumps('a[href="#benefit/'+benefit['id']+'"]')+').click()')
+        present('.student-redemption', student_dev)
+        text('Test kahve avantajı', student_dev)
+        text('Paketli ürünler hariç.', student_dev)
+        for width in (320,390,1440):
+            viewport(width, student_dev)
+            shot(f'management-student-published-{width}.png', student_dev)
+        student_dev.evaluate("location.hash='discover'")
+        present('.catalog-toolbar', student_dev)
         nav('published'); text('Test kahve avantajı'); click('Detay')
         text('Paketli ürünler hariç.'); shot('management-detail-desktop.png')
         click('Düzenle'); click('Askıya al'); present('dialog textarea')
         fill('dialog textarea','Test için geçici askı.'); confirm(); saved()
+        student_catalog(False)
+        suspended = student_api('/api/student/benefits/'+benefit['id'])
+        assert suspended['status']==404 and 'benefit' not in suspended['body'], 'suspended detail retained a student payload'
         nav('archived'); text('Test için geçici askı.')
         click('Düzenle'); click('Koşulları incele ve yayımla')
         dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
@@ -168,14 +275,21 @@ def main():
         assert not dev.evaluate("!!document.querySelector('#desktop-nav')"), 'student saw administration'
         click('Çıkış yap'); present('#password')
         assert not dev.errors, 'browser runtime error'
-        print('Management browser acceptance passed: 12 sections, real isolated CRUD/publish/suspend, partial drafts, search, conflict preservation, partnership cascade, desktop rail, 390/320 px, reduced motion, network retry, student access boundary and logout.')
+        assert not student_dev.errors, 'student browser runtime error'
+        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, preserved filtered URLs, real isolated CRUD/publish/suspend, normal-student draft/publication/suspension boundary, search, conflicts, partnership cascade, network retry and logout.')
     except Exception:
         if dev:
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)
             (output/'management-failure.txt').write_text(dev.evaluate('document.body.innerText'),encoding='utf-8')
+            if student_dev:
+                (output/'management-student-failure.txt').write_text(student_dev.evaluate('document.body.innerText'),encoding='utf-8')
         raise
     finally:
         if dev: dev.socket.close()
+        if student_dev: student_dev.socket.close()
+        if student_process:
+            student_process.terminate(); student_process.wait(timeout=15)
+        if student_profile: student_profile.cleanup()
         process.terminate(); process.wait(timeout=15); profile.cleanup()
 
 

@@ -83,7 +83,11 @@ def main():
             dev.call('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
             time.sleep(.1)
         def admin(section):
-            route('admin/'+section,f'#desktop-nav a[href="#admin/{section}"][aria-current="page"]')
+            grouped = section in ('businesses','benefits','published','archived')
+            active = 'benefits' if grouped else section
+            route('admin/'+section,f'#desktop-nav a[href="#admin/{active}"][aria-current="page"]')
+            if grouped:
+                present(f'nav[aria-label="Sponsorluk bölümleri"] a[href="#admin/{section}"][aria-current="page"]')
             if section in ('businesses','benefits','published','archived','partners'):
                 wait(lambda:not dev.evaluate("document.querySelector('#management-content')?.innerText.includes('Kayıtlar yükleniyor')"),'list loading')
             if section in ('students','users'): present('.admin-account-list')

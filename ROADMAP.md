@@ -126,6 +126,8 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 **Teslim durumu:** Uygulama ve otomatik kontroller tamamlandı; proje sahibinin görsel/işlevsel incelemesine hazır. Yerel şema güncellemesi ve sunucu yeniden başlatması proje sahibi tarafından yapılır. 3F henüz başlatılmadı.
 
+**22 Ekim düzenlemesi:** Proje sahibinin talebiyle dört içerik yönetim ekranı Sponsorluk Yönetimi altında birleştirilir; ana menü 9 bölüme iner. Eski detay/filtre bağlantıları korunur. Yönetici yayınından normal öğrenci kataloğuna geçiş, ayrı oturumlarla doğrulanır; öğrenci kataloğuna elle yenileme eklenir. Yeni şema veya servis gerekmez.
+
 **Devam onayı:** Proje sahibi sunulan işlem günlüğü → platform ayarları → kullanıcı/rol yönetimi → sade analitik kapsamını onayladı. Bu teslim mevcut tasarım ve mobil navigasyonla uygulanır. Görüntülenme ve favori tanımları, ayarların sınırları ve yerel güncelleme adımları [3E teslim raporunda](docs/TESLIM_3E.md) yer alır. Sonraki 3F pilot/yayın hazırlığı için kabul noktası korunur.
 
 **Kapsam kararı — Tasarruf ertelendi:** Proje sahibi aylık tasarruf özelliğini istemediği için tasarruf tablosu ve ona bağlı alışveriş kayıt/onay akışı geri alındı. Bu özellik yeniden açıkça talep edilene kadar geliştirme kapsamı dışındadır. Kullanım geçmişi açıklayıcı boş durum olarak kalır; kod/QR görüntüleme kullanım kaydı oluşturmaz.
@@ -134,7 +136,7 @@ Yerel e-posta testleri gerçek teslimat garantisi sayılmaz. Gerçek okul adresi
 
 **Bağımlılık:** 3D.
 
-**İşler:** Yönetici Genel Bakış, Kullanıcı ve Rol Yönetimi, İşlem Günlüğü ve Platform Ayarlarının tamamlanması; 12 bölümün tümüne erişim; tanımı belli gerçek görüntüleme/favori ölçümleri; kullanım kayıtlarında açıklayıcı boş durum; alan adı gibi ayarlarda mevcut hesaplara etkinin kontrollü yönetimi.
+**İşler:** Yönetici Genel Bakış, Kullanıcı ve Rol Yönetimi, İşlem Günlüğü ve Platform Ayarlarının tamamlanması; 9 ana bölüm ve Sponsorluk Yönetimi içindeki tüm görünümlere erişim; tanımı belli gerçek görüntüleme/favori ölçümleri; kullanım kayıtlarında açıklayıcı boş durum; alan adı gibi ayarlarda mevcut hesaplara etkinin kontrollü yönetimi.
 
 **Kabul koşulları:** Özetler kayıtlarla uyuşur; demo istatistiği üretimde gösterilmez; QR/kod açmak kullanım sayılmaz; günlük normal arayüzden değiştirilemez; rol değişiklikleri sunucuda korunur ve oturumlara etkisi uygulanır; demo e-posta yeniden yazma davranışı gerçek sisteme taşınmaz. Gerekli hiçbir yönetim ekranı açıklamasız boş veya çalışmayan düğmelerle bırakılmaz.
 
@@ -171,7 +173,7 @@ Otomasyon, elle tarayıcı kontrolü ve gerçek cihaz denemeleri ilgili teslimde
 | --- | --- | --- |
 | Görsel kimlik | Mevcut renkler, kartlar, tipografi ve detay yerleşimi korunmuş | 3D–3F |
 | Öğrenci navigasyonu | Altı bölüm, mobil alt menü, geri dönüş ve boş durumlar | 3D |
-| Yönetici navigasyonu | 12 bölüm; fare, klavye, sabitleme, dokunma ve kapatma | 3C–3F |
+| Yönetici navigasyonu | 9 ana bölüm ve sponsorluk görünümleri; fare, klavye, sabitleme, dokunma ve kapatma | 3C–3F |
 | Giriş ve kayıt | Okul alan adı + gerçek e-posta doğrulama + kararlaştırılmış uygunluk | 3B |
 | Katalog | Arama/kategori filtreleri, aktif/yakında/süresi dolmuş ayrımı | 3D |
 | Favoriler | Hesap bazlı kalıcılık, ekleme/çıkarma, boş/erişilemeyen durum | 3D |

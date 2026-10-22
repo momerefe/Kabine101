@@ -1,7 +1,7 @@
 # KoçBenefits Proje Anayasası
 
-Sürüm: 1.5
-Tarih: 21 Ekim 2026
+Sürüm: 1.6
+Tarih: 22 Ekim 2026
 Durum: Proje sahibi Yönetici Genel Bakış'ı kabul edip 3D öğrenci deneyimi ve avantaj detaylarını onayladı. 3D bu onayla gerçek katalog, hesap bazlı favoriler ve koşullu kullanım bilgileriyle incelemeye hazırlandı. Normal kayıt alan adı `stu.koc.k12.tr`; e-posta doğrulaması ve ayrıca yönetici onayı zorunludur. Özel e-postasız yönetici istisnası normal hesaplara uygulanmaz. [Güncel teslim raporu](docs/TESLIM_3D.md) ve [teknik kararlar](docs/TEKNIK_KARARLAR.md) esas alınır; sonraki teslimlerin kabul noktaları korunur.
 
 KoçBenefits, Koç Okulu öğrencilerinin anlaşmalı işletmelerin avantajlarını bulmasını ve kullanım koşullarını kolayca anlamasını sağlar. Kabine, işletmeleri ve avantajları sade bir yönetim panelinden yönetir. Başarı ölçütü; öğrencinin geçerli bir avantaja ulaşabilmesi, yöneticinin doğru bilgiyi güvenilir biçimde yayımlayabilmesi ve sistemin sonraki kabineye devredilebilmesidir.
@@ -54,17 +54,14 @@ Kategoriler: restoranlar ve kafeler, giyim ve moda, teknoloji, spor ve fitness, 
 
 ## 4 Yönetici kapsamı
 
-Mevcut 12 bölüm korunur. Bir bölümün bulunması, arkasında doğrulanmamış bir hizmetin var olduğu anlamına gelmez.
+Proje sahibinin 22 Ekim 2026 isteğiyle işletme detayları, avantaj yönetimi, yayımlanmış avantajlar ve süresi dolan/askıdaki kayıtlar **Sponsorluk Yönetimi** çatısında birleştirilir. Sol menü 9 ana bölümden oluşur; sponsorluk alanında İşletmeler, Tüm avantajlar, Yayındakiler ve Süresi dolan / askıdaki görünümleri bulunur. Mevcut bağlantılar aynı alanın ilgili görünümünü açar. Bir bölümün bulunması, arkasında doğrulanmamış bir hizmetin var olduğu anlamına gelmez.
 
 | Bölüm | Sınır ve sorumluluk |
 | --- | --- |
 | Yönetici Genel Bakış | Mevcut kayıtlardan özetler ve son işlemler |
 | İş Ortaklığı Takibi | Durum, isteğe bağlı kişi/iletişim, görüşme tarihi ve notlar; basit takip |
-| İşletme Detayları | Ekleme, görüntüleme, düzenleme; kategori, açıklama, görsel ve şubeler |
-| Avantaj Yönetimi | Gruplu form, taslak, yayın ve koşul kontrolü |
+| Sponsorluk Yönetimi | İşletme bilgileri ve avantajların tek alanda yönetimi; gruplu form, taslak, yayın, tarih/durum filtreleri, askıya alma ve kontrollü yeniden yayın |
 | Öğrenci Doğrulama | Hesap, e-posta doğrulaması ve varsa öğrenci uygunluk incelemesinin ayrı durumları |
-| Yayımlanmış Avantajlar | O anda aktif avantajlar, arama, düzenleme ve askıya alma |
-| Süresi Dolan ve Askıdaki | Nedenin görünmesi ve kontrollü yeniden yayımlama |
 | Kullanım Kayıtları | Doğrulama altyapısı yokken açıklayıcı boş durum |
 | Analitik | Tanımı belli, gerçekten toplanan görüntüleme/favori ölçümleri; bunları kullanım diye sunmama |
 | Kullanıcı ve Rol Yönetimi | Öğrenci/yönetici rolleri ve hesap durumu; sunucuda yetki kontrolü |

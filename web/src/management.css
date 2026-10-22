@@ -21,6 +21,38 @@
   padding: 28px;
   margin: 20px 0;
 }
+.sponsorship-hub > p {
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.sponsorship-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.sponsorship-views a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--white);
+  font-weight: 600;
+  transition: background 150ms ease;
+}
+.sponsorship-views a:hover,
+.sponsorship-views a.active {
+  background: var(--pink);
+  border-color: var(--red);
+  color: var(--red-dark);
+}
+.sponsorship-view-title {
+  font-size: 20px;
+  margin-bottom: 18px;
+}
 .management-intro p {
   line-height: 1.8;
   margin: 12px 0;

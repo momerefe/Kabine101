@@ -539,6 +539,13 @@ export function StudentPanel({
               </Heading>
               <section className="catalog-toolbar">
                 <Search />
+                <button
+                  className="btn btn-secondary"
+                  disabled={catalog.isFetching}
+                  onClick={() => void catalog.refetch()}
+                >
+                  {catalog.isFetching ? 'Yenileniyor…' : 'Avantajları yenile'}
+                </button>
                 <div
                   className="filter-row"
                   role="group"

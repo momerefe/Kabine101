@@ -23,16 +23,19 @@ type Session = components['schemas']['SessionResponse'];
 const nav = [
   ['overview', 'Yönetici Genel Bakış', '▦'],
   ['partners', 'İş Ortaklığı Takibi', '♧'],
-  ['businesses', 'İşletme Detayları', '▤'],
-  ['benefits', 'Avantaj Yönetimi', '◇'],
+  ['benefits', 'Sponsorluk Yönetimi', '◇'],
   ['students', 'Öğrenci Doğrulama', '✓'],
-  ['published', 'Yayımlanmış Avantajlar', '☑'],
-  ['archived', 'Süresi Dolan / Askıdaki', 'Ⅱ'],
   ['usage', 'Kullanım Kayıtları', '▣'],
   ['analytics', 'Analitik', '▥'],
   ['users', 'Kullanıcı ve Rol Yönetimi', '♙'],
   ['audit', 'İşlem Günlüğü', '≡'],
   ['settings', 'Platform Ayarları', '⚙'],
+];
+const sponsorshipViews = [
+  ['benefits', 'Tüm avantajlar'],
+  ['businesses', 'İşletmeler'],
+  ['published', 'Yayındakiler'],
+  ['archived', 'Süresi dolan / askıdaki'],
 ];
 const drawerQuery = '(max-width: 760px), (max-width: 1100px) and (hover: none)';
 const categories = {
@@ -112,6 +115,10 @@ export function Management({
   const menu = useRef<HTMLElement>(null);
   const [hashPath, hashSearch = ''] = hash.split('?');
   const section = hashPath.split('/')[1] || 'overview';
+  const sponsorship = sponsorshipViews.some(([id]) => id === section);
+  const activeSection = sponsorship ? 'benefits' : section;
+  const pageTitle =
+    nav.find(([id]) => id === activeSection)?.[1] || 'Sayfa bulunamadı';
   const initialStatus = new URLSearchParams(hashSearch).get('status') || '';
   function close() {
     setOpen(false);
@@ -202,11 +209,11 @@ export function Management({
           {nav.map(([id, label]) => (
             <a
               key={id}
-              className={`nav-link ${section === id ? 'active' : ''}`}
+              className={`nav-link ${activeSection === id ? 'active' : ''}`}
               href={`#admin/${id}`}
               aria-label={label}
               title={label}
-              aria-current={section === id ? 'page' : undefined}
+              aria-current={activeSection === id ? 'page' : undefined}
               onClick={() => {
                 if (drawer) close();
               }}
@@ -243,10 +250,7 @@ export function Management({
           >
             ☰ Menü
           </button>
-          <span className="management-breadcrumb">
-            Yönetim /{' '}
-            {nav.find((n) => n[0] === section)?.[1] || 'Sayfa bulunamadı'}
-          </span>
+          <span className="management-breadcrumb">Yönetim / {pageTitle}</span>
           <div className="management-account">
             {session.user?.name} {logout}
           </div>
@@ -258,11 +262,36 @@ export function Management({
           <div className="page-heading admin-heading">
             <div>
               <div className="admin-eyebrow">YÖNETİM ALANI</div>
-              <h1>
-                {nav.find((n) => n[0] === section)?.[1] || 'Sayfa bulunamadı'}
-              </h1>
+              <h1>{pageTitle}</h1>
             </div>
           </div>
+          {sponsorship && (
+            <div className="sponsorship-hub">
+              <p>
+                İşletmeleri ve öğrencilere sundukları avantajları buradan yönet.
+                Aktif işletmelerin yayımlanan avantajları öğrenci kataloğunda
+                görünür. Taslaklar ve askıdaki avantajlar öğrencilere açılmaz.
+              </p>
+              <nav
+                className="sponsorship-views"
+                aria-label="Sponsorluk bölümleri"
+              >
+                {sponsorshipViews.map(([id, label]) => (
+                  <a
+                    key={id}
+                    href={`#admin/${id}`}
+                    className={section === id ? 'active' : ''}
+                    aria-current={section === id ? 'page' : undefined}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
+              <h2 className="sponsorship-view-title">
+                {sponsorshipViews.find(([id]) => id === section)?.[1]}
+              </h2>
+            </div>
+          )}
           {section === 'students' || section === 'users' ? (
             accounts(section)
           ) : [
@@ -374,13 +403,18 @@ function Records({
   accountId: string;
 }) {
   const businessMode = section === 'partners' || section === 'businesses';
+  const statusOptions = businessMode
+    ? partnership
+    : section === 'published'
+      ? { active: 'Aktif', scheduled: 'Yakında', expired: 'Süresi doldu' }
+      : section === 'archived'
+        ? { expired: 'Süresi doldu', suspended: 'Askıda' }
+        : states;
   const client = useQueryClient();
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState(() =>
-    Object.hasOwn(businessMode ? partnership : states, initialStatus)
-      ? initialStatus
-      : '',
+    Object.hasOwn(statusOptions, initialStatus) ? initialStatus : '',
   );
   const [editing, setEditing] = useState<Business | Benefit | null>(null);
   const [detail, setDetail] = useState<Business | Benefit | null>(null);
@@ -480,19 +514,7 @@ function Records({
           Durum
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Tüm durumlar</option>
-            {Object.entries(
-              businessMode
-                ? partnership
-                : section === 'published'
-                  ? {
-                      active: 'Aktif',
-                      scheduled: 'Yakında',
-                      expired: 'Süresi doldu',
-                    }
-                  : section === 'archived'
-                    ? { expired: 'Süresi doldu', suspended: 'Askıda' }
-                    : states,
-            ).map(([v, l]) => (
+            {Object.entries(statusOptions).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
@@ -609,6 +631,17 @@ function Records({
             Detayı kapat
           </button>
           <h2>{'name' in detail ? detail.name : detail.title}</h2>
+          {'publication_status' in detail &&
+            detail.publication_status === 'published' && (
+              <a
+                className="text-link"
+                href={`#benefit/${detail.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Öğrenci detay sayfasını aç ↗
+              </a>
+            )}
           <dl className="account-details">
             {Object.entries(detail)
               .filter(
@@ -697,6 +730,14 @@ function Records({
             await client.invalidateQueries({
               queryKey: ['management-analytics', accountId],
             });
+            for (const key of [
+              'student-catalog',
+              'student-favorites',
+              'student-benefit',
+              'student-redemption',
+            ]) {
+              await client.invalidateQueries({ queryKey: [key] });
+            }
           }}
         />
       )}
@@ -812,7 +853,7 @@ function Editor({
     onSuccess: () =>
       onSaved(
         action === 'publish'
-          ? 'Avantaj yayımlandı.'
+          ? 'Avantaj yayımlandı. Öğrenciler Avantajları Keşfet bölümünden ulaşabilir.'
           : action === 'suspend'
             ? 'Avantaj askıya alındı.'
             : business
