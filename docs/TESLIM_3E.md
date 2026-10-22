@@ -58,10 +58,18 @@ Bu düzenleme yeni migration veya backend yeniden başlatması gerektirmez. Önc
 
 İşletme ve avantaj formlarında zorunlu alanlar kırmızı yıldızla gösterilir. Avantaj formu taslak kaydı ile yayın gereksinimlerini ayırır: işletme, başlık ve kullanım yöntemiyle taslak kaydedilebilir; yayın için açıklama, indirim/ayrıcalık, koşullar, kullanım adımları ve seçilen yöntemin bilgisi tamamlanmalıdır. İsteğe bağlı alanlar yıldızla işaretlenmez.
 
-Yayına hazırlık alanı eksik bilgileri ve işletmenin iş ortaklığı durumunu açıklar. Eksik alanla yayın denenirse ilgili alana odaklanılır; kayıt kendiliğinden yayımlanmaz veya işletme aktif yapılmaz. Sunucu da kendi kontrollerini sürdürür ve genel hata yerine eksik alanların adlarını döndürür. Değişiklikler önce taslak olarak kaydedilir, ardından koşullar incelenerek yayın onaylanır.
+Yayına hazırlık alanı eksik bilgileri ve işletmenin iş ortaklığı durumunu açıklar. Eksik alanla yayın denenirse ilgili alana odaklanılır; kayıt kendiliğinden yayımlanmaz veya işletme aktif yapılmaz. Sunucu da kendi kontrollerini sürdürür ve genel hata yerine eksik alanların adlarını döndürür.
 
 `f5f4d9b` için [GitHub Actions kontrollerinin tamamı geçti](https://github.com/momerefe/Kabine101/actions/runs/39759058534). Go birim/entegrasyon testleri ve gerçek API ile tarayıcı testleri; eksik ayrıcalıkla taslak kaydetmeyi, açıklayıcı yayın engelini, kırmızı yıldızları, aktif olmayan işletme kontrolünü ve tamamlanan yayının normal öğrenciye açılmasını doğruladı. Form 320/390/1440 px boyutlarında kontrol edildi; TypeScript/ESLint, üretim derlemesi ve biçim kontrolü de geçti.
 
 Bu düzeltme migration gerektirmez. Güncel sunucu hata mesajlarını almak için proje sahibi açık API terminalinde `Ctrl+C` ile durdurup kullandığı API başlatma komutunu yeniden çalıştırmalı; tarayıcı yenilenmelidir. Yerel sunucular ajan tarafından başlatılmaz ve mevcut sponsorluk bilgileri değiştirilmez.
+
+### Aktif işletmeden yayınlama
+
+Aktif işletmelerin satırında **Detay** ve **Düzenle** yanında kırmızı **Yayınla** düğmesi bulunur. İşletme formunun sonunda da aynı akışa erişilir; kaydedilmemiş değişiklik varsa **Kaydet ve yayına devam et** önce işletme kaydını günceller. Bu akış işletmenin avantajlarını getirir. Yönetici yayımlayacağı avantajı seçer veya henüz yoksa işletmesi önseçili yeni bir avantaj oluşturur. Aktif işletme tek başına indirim içeriği sağlamaz; boş bilgilerle veya bütün avantajları birden yayımlama yapılmaz.
+
+Avantaj formunun sonunda kırmızı **Yayınla**, yeni/değişmiş kayıtta **Kaydet ve yayımla** bulunur. Koşulların incelendiğine dair tek onaydan sonra gerekiyorsa kayıt taslak olarak saklanır ve dönen sürümle yayın isteği yapılır. Yayın başarısız olursa kaydedilmiş taslak ve sürümü formda korunur; yeniden yayın denenebilir. Eksik bilgiler, aktif olmayan işletme, süresi dolmuş tarih, yetki ve sürüm çakışması kontrolleri korunur. Başarılı yayın ortak veritabanından öğrenci kataloğuna yansır; açık öğrenci ekranında **Avantajları yenile** ile hemen alınabilir.
+
+Avantaj listesi API'sine isteğe bağlı `business_id` filtresi eklendi; SQL sonucu sınırlandırılmadan önce uygulanır. Bu güncelleme migration gerektirmez, ancak yeni filtre için API proje sahibi tarafından yeniden başlatılmalıdır.
 
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.

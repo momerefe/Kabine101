@@ -245,23 +245,30 @@ func (q *Queries) ManagementGetBusiness(ctx context.Context, id pgtype.UUID) (Bu
 const managementListBenefit = `-- name: ManagementListBenefit :many
 SELECT benefits.id, benefits.business_id, benefits.title, benefits.description, benefits.perk, benefits.conditions, benefits.instructions, benefits.products, benefits.branches, benefits.exceptions, benefits.minimum_spend, benefits.currency, benefits.verification_requirement, benefits.valid_from, benefits.valid_until, benefits.method, benefits.code, benefits.target_url, benefits.qr_content, benefits.membership_label, benefits.support_contact, benefits.publication_status, benefits.suspension_reason, benefits.reviewed_at, benefits.reviewed_by, benefits.published_at, benefits.featured, benefits.revision, benefits.created_at, benefits.updated_at FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE ($1::text='' OR strpos(lower(title||' '||benefits.description||' '||perk||' '||businesses.name),lower($1::text))>0)
-AND ($2::text='' OR businesses.category=$2::text)
-AND ($3::text='' OR
-CASE $3::text
+AND ($2::uuid IS NULL OR benefits.business_id=$2::uuid)
+AND ($3::text='' OR businesses.category=$3::text)
+AND ($4::text='' OR
+CASE $4::text
 WHEN 'published' THEN publication_status='published'
 WHEN 'archived' THEN publication_status='suspended' OR (publication_status='published' AND valid_until < (now() AT TIME ZONE 'Europe/Istanbul')::date)
-ELSE $3::text=CASE WHEN publication_status<>'published' THEN publication_status WHEN valid_until<(now() AT TIME ZONE 'Europe/Istanbul')::date THEN 'expired' WHEN valid_from>(now() AT TIME ZONE 'Europe/Istanbul')::date THEN 'scheduled' ELSE 'active' END END)
+ELSE $4::text=CASE WHEN publication_status<>'published' THEN publication_status WHEN valid_until<(now() AT TIME ZONE 'Europe/Istanbul')::date THEN 'expired' WHEN valid_from>(now() AT TIME ZONE 'Europe/Istanbul')::date THEN 'scheduled' ELSE 'active' END END)
 ORDER BY benefits.updated_at DESC,benefits.id LIMIT 1001
 `
 
 type ManagementListBenefitParams struct {
-	Q        string `json:"q"`
-	Category string `json:"category"`
-	Status   string `json:"status"`
+	Q          string      `json:"q"`
+	BusinessID pgtype.UUID `json:"business_id"`
+	Category   string      `json:"category"`
+	Status     string      `json:"status"`
 }
 
 func (q *Queries) ManagementListBenefit(ctx context.Context, arg ManagementListBenefitParams) ([]Benefit, error) {
-	rows, err := q.db.Query(ctx, managementListBenefit, arg.Q, arg.Category, arg.Status)
+	rows, err := q.db.Query(ctx, managementListBenefit,
+		arg.Q,
+		arg.BusinessID,
+		arg.Category,
+		arg.Status,
+	)
 	if err != nil {
 		return nil, err
 	}

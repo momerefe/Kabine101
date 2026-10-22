@@ -136,7 +136,7 @@ def main():
             button('Düzenle'); present('#edit-method'); matrix('benefit-form-'+method)
             assert dev.evaluate('document.querySelector("#edit-method").value')==method
             if method=='code':
-                button('Koşulları incele ve yayımla'); present('dialog[open]'); matrix('publish-dialog')
+                button('Yayınla'); present('dialog[open]'); matrix('publish-dialog')
                 size(390,430); layout('publish-dialog-keyboard',390,430)
                 button('Vazgeç',"document.querySelector('dialog[open]')")
             button('Vazgeç',"document.querySelector('.management-editor')")

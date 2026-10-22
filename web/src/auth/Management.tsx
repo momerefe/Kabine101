@@ -419,6 +419,17 @@ function Records({
   const [editing, setEditing] = useState<Business | Benefit | null>(null);
   const [detail, setDetail] = useState<Business | Benefit | null>(null);
   const [notice, setNotice] = useState('');
+  const [publishingBusiness, setPublishingBusiness] = useState<Business | null>(
+    null,
+  );
+  const [publicationContext, setPublicationContext] = useState<Business | null>(
+    null,
+  );
+  function openBusinessPublication(b: Business) {
+    setEditing(null);
+    setDetail(null);
+    setPublishingBusiness(b);
+  }
   const businesses = useQuery({
     queryKey: [
       'management-businesses',
@@ -476,6 +487,8 @@ function Records({
           onClick={() => {
             setEditing(businessMode ? blankBusiness() : blankBenefit());
             setDetail(null);
+            setPublishingBusiness(null);
+            setPublicationContext(null);
           }}
         >
           {businessMode ? 'İşletme ekle' : 'Avantaj taslağı ekle'} +
@@ -609,10 +622,35 @@ function Records({
                         onClick={() => {
                           setEditing(item);
                           setDetail(null);
+                          setPublishingBusiness(null);
+                          setPublicationContext(null);
                         }}
                       >
                         Düzenle
                       </button>
+                      {('partnership_status' in item
+                        ? item.partnership_status === 'active'
+                        : item.publication_status !== 'published' &&
+                          businesses.data?.businesses.some(
+                            (b) =>
+                              b.id === item.business_id &&
+                              b.partnership_status === 'active',
+                          )) && (
+                        <button
+                          className="btn btn-primary publication-button"
+                          onClick={() => {
+                            if ('name' in item) openBusinessPublication(item);
+                            else {
+                              setPublishingBusiness(null);
+                              setPublicationContext(null);
+                              setDetail(null);
+                              setEditing(item);
+                            }
+                          }}
+                        >
+                          Yayınla
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -706,13 +744,37 @@ function Records({
           </dl>
         </section>
       )}
+      {publishingBusiness && (
+        <BusinessPublication
+          key={publishingBusiness.id}
+          business={publishingBusiness}
+          accountId={accountId}
+          onClose={() => setPublishingBusiness(null)}
+          onSelect={(benefit, business) => {
+            setPublishingBusiness(null);
+            // Keep the selected business available even when the table has filters.
+            setPublicationContext(business);
+            setEditing(benefit);
+          }}
+        />
+      )}
       {editing && (
         <Editor
           key={editing.id}
           initial={editing}
           csrf={csrf}
-          businesses={businesses.data?.businesses || []}
+          businesses={
+            publicationContext
+              ? [
+                  publicationContext,
+                  ...(businesses.data?.businesses || []).filter(
+                    (b) => b.id !== publicationContext.id,
+                  ),
+                ]
+              : businesses.data?.businesses || []
+          }
           onClose={() => setEditing(null)}
+          onPublishBusiness={openBusinessPublication}
           onSaved={async (message) => {
             setNotice(message);
             setEditing(null);
@@ -743,6 +805,150 @@ function Records({
         />
       )}
     </>
+  );
+}
+function BusinessPublication({
+  business,
+  accountId,
+  onSelect,
+  onClose,
+}: {
+  business: Business;
+  accountId: string;
+  onSelect: (benefit: Benefit, business: Business) => void;
+  onClose: () => void;
+}) {
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    panel.current?.focus();
+    panel.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+  }, []);
+  const result = useQuery({
+    queryKey: [
+      'management-benefits',
+      accountId,
+      'business-publication',
+      business.id,
+    ],
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const [current, offers] = await Promise.all([
+        api.GET('/api/admin/businesses/{id}', {
+          params: { path: { id: business.id } },
+        }),
+        api.GET('/api/admin/benefits', {
+          params: { query: { business_id: business.id } },
+        }),
+      ]);
+      return { business: check(current).business, ...check(offers) };
+    },
+  });
+  const current = result.data?.business;
+  const active = current?.partnership_status === 'active';
+  return (
+    <section
+      ref={panel}
+      tabIndex={-1}
+      className="surface management-intro business-publication"
+      aria-label="İşletmenin avantajını yayımla"
+    >
+      <h2>{business.name} — Sponsorluk yayını</h2>
+      <p>
+        Öğrencilere sunulacak avantajı seç, koşullarını incele ve yayını onayla.
+        Henüz avantaj yoksa indirim bilgilerini ekleyerek oluştur.
+      </p>
+      {result.isPending ? (
+        <p role="status">Avantajlar yükleniyor…</p>
+      ) : result.isError ? (
+        <div role="alert" className="form-error">
+          {friendlyError(result.error)}{' '}
+          <button
+            className="btn btn-secondary"
+            onClick={() => void result.refetch()}
+          >
+            Yeniden dene
+          </button>
+        </div>
+      ) : (
+        current && (
+          <>
+            {!active && (
+              <p role="alert">
+                İş ortaklığı durumu: {partnership[current.partnership_status]}.
+                Yayın için işletme aktif olmalı.
+              </p>
+            )}
+            {result.data.truncated && (
+              <p role="status">
+                İlk 1000 avantaj gösteriliyor. Tüm avantajlar sekmesindeki
+                aramayla diğer kayıtlara ulaşabilirsin.
+              </p>
+            )}
+            {result.data.benefits.length ? (
+              <ul className="business-publication-list">
+                {result.data.benefits.map((benefit) => (
+                  <li key={benefit.id} data-benefit-id={benefit.id}>
+                    <div>
+                      <strong>{benefit.title}</strong>
+                      <p>
+                        {benefit.perk || 'İndirim / ayrıcalık henüz girilmedi.'}
+                      </p>
+                      <span className="status-badge">
+                        {states[benefit.status]}
+                      </span>
+                    </div>
+                    {benefit.publication_status === 'published' &&
+                    benefit.status !== 'expired' ? (
+                      <a
+                        className="btn btn-secondary"
+                        href={`#benefit/${benefit.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Öğrenci sayfası
+                      </a>
+                    ) : (
+                      <button
+                        className="btn btn-primary publication-button"
+                        disabled={!active}
+                        onClick={() => onSelect(benefit, current)}
+                      >
+                        Yayınla
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Bu işletmeye henüz avantaj eklenmemiş.</p>
+            )}
+            {active && (
+              <button
+                className="btn btn-primary"
+                onClick={() =>
+                  onSelect(
+                    {
+                      ...blankBenefit(),
+                      business_id: current.id,
+                      business_name: current.name,
+                      category: current.category,
+                    },
+                    current,
+                  )
+                }
+              >
+                Avantaj oluştur
+              </button>
+            )}
+          </>
+        )
+      )}
+      <button className="btn btn-secondary" onClick={onClose}>
+        Kapat
+      </button>
+    </section>
   );
 }
 const fieldLabels: Record<string, string> = {
@@ -792,20 +998,23 @@ function Editor({
   businesses,
   onClose,
   onSaved,
+  onPublishBusiness,
 }: {
   initial: Business | Benefit;
   csrf: string;
   businesses: Business[];
   onClose: () => void;
   onSaved: (message: string) => Promise<void>;
+  onPublishBusiness: (business: Business) => void;
 }) {
   const [value, setValue] = useState(initial);
+  const client = useQueryClient();
   const [baseline, setBaseline] = useState(initial);
   const business = 'name' in value;
   const dirty = JSON.stringify(value) !== JSON.stringify(baseline);
-  const [action, setAction] = useState<'save' | 'publish' | 'suspend' | null>(
-    null,
-  );
+  const [action, setAction] = useState<
+    'save' | 'publish' | 'suspend' | 'business-publish' | null
+  >(null);
   const [reason, setReason] = useState('');
   const [reviewed, setReviewed] = useState(false);
   const [error, setError] = useState('');
@@ -913,19 +1122,39 @@ function Editor({
         header: { 'X-CSRF-Token': csrf, Origin: location.origin },
       };
       if ('name' in value) {
-        check(
+        if (action === 'business-publish' && !dirty && value.revision > 0)
+          return value;
+        return check(
           await api.PUT('/api/admin/businesses/{id}', {
             params,
             body: writeBody(value),
           }),
-        );
+        ).business;
       } else if (action === 'publish') {
-        check(
-          await api.POST('/api/admin/benefits/{id}/publish', {
-            params,
-            body: { revision: value.revision, conditions_reviewed: true },
-          }),
-        );
+        let saved = value;
+        if (dirty || value.revision === 0) {
+          saved = check(
+            await api.PUT('/api/admin/benefits/{id}', {
+              params,
+              body: writeBody(value),
+            }),
+          ).benefit;
+          setValue(saved);
+          setBaseline(saved);
+        }
+        try {
+          check(
+            await api.POST('/api/admin/benefits/{id}/publish', {
+              params,
+              body: { revision: saved.revision, conditions_reviewed: true },
+            }),
+          );
+        } catch (e) {
+          throw new Error(
+            `${saved.publication_status === 'draft' ? 'Bilgiler taslak olarak kaydedildi; yayın tamamlanamadı. ' : ''}${friendlyError(e)}`,
+            { cause: e },
+          );
+        }
       } else if (action === 'suspend') {
         check(
           await api.POST('/api/admin/benefits/{id}/suspend', {
@@ -942,8 +1171,8 @@ function Editor({
         );
       }
     },
-    onSuccess: () =>
-      onSaved(
+    onSuccess: async (savedBusiness) => {
+      await onSaved(
         action === 'publish'
           ? 'Avantaj yayımlandı. Öğrenciler Avantajları Keşfet bölümünden ulaşabilir.'
           : action === 'suspend'
@@ -951,10 +1180,26 @@ function Editor({
             : business
               ? 'İşletme kaydedildi.'
               : 'Avantaj taslak olarak kaydedildi.',
-      ),
+      );
+      if (action === 'business-publish' && savedBusiness)
+        onPublishBusiness(savedBusiness);
+    },
     onError: (e) => {
       setError(friendlyError(e));
       setAction(null);
+      // A save can succeed before publication fails. Refresh lists without losing the saved revision.
+      for (const key of [
+        'management-benefits',
+        'management-businesses',
+        'management-overview',
+        'management-audit',
+        'student-catalog',
+        'student-favorites',
+        'student-benefit',
+        'student-redemption',
+      ]) {
+        void client.invalidateQueries({ queryKey: [key] });
+      }
     },
   });
   async function reload() {
@@ -1073,6 +1318,25 @@ function Editor({
     setReviewed(false);
     setAction('save');
   }
+  function requestPublication() {
+    setError('');
+    setShowPublicationErrors(true);
+    if (publicationIssues.length) {
+      setError(
+        'Yayın için aşağıda belirtilen alanları veya iş ortaklığı durumunu düzelt.',
+      );
+      const firstField = publicationIssues.find(
+        (issue) => issue.field !== 'business_id' || value.revision === 0,
+      );
+      if (firstField)
+        document.getElementById(`edit-${firstField.field}`)?.focus();
+      else editor.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      return;
+    }
+    if (!editor.current?.querySelector('form')?.reportValidity()) return;
+    setReviewed(false);
+    setAction('publish');
+  }
   const needsWarning = business
     ? 'name' in initial &&
       initial.partnership_status === 'active' &&
@@ -1154,8 +1418,8 @@ function Editor({
             </>
           ) : (
             <p>
-              {dirty
-                ? 'Yayın alanları tamam. Değişiklikleri taslak olarak kaydettikten sonra koşulları inceleyip yayımlayabilirsin.'
+              {dirty || value.revision === 0
+                ? 'Yayın alanları tamam. Kaydet ve yayımla düğmesiyle koşulları inceleyip yayını onaylayabilirsin.'
                 : 'Yayın alanları tamam. Koşulları inceleyip yayını onaylayabilirsin.'}
             </p>
           )}
@@ -1274,49 +1538,40 @@ function Editor({
             >
               Vazgeç
             </button>
-            {!business && dirty && (
-              <p role="status">Önce değişiklikleri taslak olarak kaydet.</p>
+            {business &&
+              'partnership_status' in value &&
+              value.partnership_status === 'active' && (
+                <button
+                  type="button"
+                  className="btn btn-primary publication-button"
+                  onClick={() => {
+                    if (
+                      !editor.current?.querySelector('form')?.reportValidity()
+                    )
+                      return;
+                    if (!dirty && value.revision > 0 && 'name' in value)
+                      onPublishBusiness(value);
+                    else setAction('business-publish');
+                  }}
+                >
+                  {dirty || value.revision === 0
+                    ? 'Kaydet ve yayına devam et'
+                    : 'Yayınla'}
+                </button>
+              )}
+            {!business && (
+              <button
+                type="button"
+                className="btn btn-primary publication-button"
+                onClick={requestPublication}
+              >
+                {dirty || value.revision === 0
+                  ? 'Kaydet ve yayımla'
+                  : 'Yayınla'}
+              </button>
             )}
             {!business && value.revision > 0 && (
               <>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={dirty}
-                  onClick={() => {
-                    if (dirty) {
-                      setError(
-                        'Yayın işleminden önce değişiklikleri taslak olarak kaydet.',
-                      );
-                      return;
-                    }
-                    setError('');
-                    setShowPublicationErrors(true);
-                    if (publicationIssues.length) {
-                      setError(
-                        'Yayın için aşağıda belirtilen alanları veya iş ortaklığı durumunu düzelt.',
-                      );
-                      const firstField = publicationIssues.find(
-                        (issue) =>
-                          issue.field !== 'business_id' || value.revision === 0,
-                      );
-                      if (firstField)
-                        document
-                          .getElementById(`edit-${firstField.field}`)
-                          ?.focus();
-                      else
-                        editor.current?.scrollIntoView({
-                          block: 'start',
-                          behavior: 'auto',
-                        });
-                      return;
-                    }
-                    setReviewed(false);
-                    setAction('publish');
-                  }}
-                >
-                  Koşulları incele ve yayımla
-                </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -1354,22 +1609,26 @@ function Editor({
           <h2>
             {action === 'publish'
               ? 'Yayını onayla'
-              : action === 'suspend'
-                ? 'Askıya almayı onayla'
-                : 'Kaydetmeyi onayla'}
+              : action === 'business-publish'
+                ? 'Kaydet ve yayına devam et'
+                : action === 'suspend'
+                  ? 'Askıya almayı onayla'
+                  : 'Kaydetmeyi onayla'}
           </h2>
           <p>
-            {action === 'save'
-              ? needsWarning
-                ? business
-                  ? 'Aktif iş ortaklığını kapatmak bağlı yayımlanmış avantajları askıya alır. Yeniden açmak otomatik yayımlamaz.'
-                  : 'Yayımlanmış avantajı düzenlemek yayını kapatır ve taslak kaydeder. Yeniden koşul incelemesi ve yayın gerekir.'
-                : business
-                  ? 'İşletme bilgileri kaydedilecek.'
-                  : 'Avantaj yalnızca taslak olarak kaydedilecek.'
-              : action === 'publish'
-                ? 'İşletmenin aktif olduğunu, tarihleri, koşulları ve kullanım yöntemini kontrol et.'
-                : 'Avantaj öğrenci erişiminden kaldırılacak.'}
+            {action === 'business-publish'
+              ? 'İşletme bilgileri kaydedilecek. Ardından öğrencilerin göreceği avantajı seçip yayınını onaylayabilirsin.'
+              : action === 'save'
+                ? needsWarning
+                  ? business
+                    ? 'Aktif iş ortaklığını kapatmak bağlı yayımlanmış avantajları askıya alır. Yeniden açmak otomatik yayımlamaz.'
+                    : 'Yayımlanmış avantajı düzenlemek yayını kapatır ve taslak kaydeder. Yeniden koşul incelemesi ve yayın gerekir.'
+                  : business
+                    ? 'İşletme bilgileri kaydedilecek.'
+                    : 'Avantaj yalnızca taslak olarak kaydedilecek.'
+                : action === 'publish'
+                  ? 'İşletmenin aktif olduğunu, tarihleri, koşulları ve kullanım yöntemini kontrol et. Onayladığında değişiklikler kaydedilip bu avantaj yayımlanacak.'
+                  : 'Avantaj öğrenci erişiminden kaldırılacak.'}
           </p>
           {action === 'publish' && (
             <>

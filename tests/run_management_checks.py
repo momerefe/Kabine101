@@ -49,12 +49,17 @@ def main():
         dev.call('Emulation.setFocusEmulationEnabled', {'enabled':True})
         dev.call('Page.addScriptToEvaluateOnNewDocument', {'source': '''
             window.__publishRequests=0;
+            window.__managementWrites=[];
             const originalFetch=window.fetch.bind(window);
             window.fetch=async(input,options)=>{
                 const path=new URL(typeof input==='string'?input:input.url,location.href).pathname;
                 const method=options?.method||(input instanceof Request?input.method:'GET');
                 if(path.endsWith('/publish')&&method==='POST')window.__publishRequests++;
-                return originalFetch(input,options);
+                const entry={path,method};
+                if(path.startsWith('/api/admin/')&&['PUT','POST'].includes(method))window.__managementWrites.push(entry);
+                const response=await originalFetch(input,options);
+                entry.status=response.status;
+                return response;
             };
         '''})
         def present(selector, page=None):
@@ -98,11 +103,18 @@ def main():
                 assert dev.evaluate(f"!document.querySelector({json.dumps(selector)}).closest('label').querySelector('.required-mark')"), 'optional field is marked required: '+key
         def blocked_publication(missing):
             before = dev.evaluate('window.__publishRequests')
-            click('Koşulları incele ve yayımla')
+            publish()
             present('.publication-readiness.has-errors')
             wait(lambda:dev.evaluate(f'document.querySelector(".publication-readiness").textContent.includes({json.dumps(missing)})'), 'missing publication guidance: '+missing)
             assert not dev.evaluate("!!document.querySelector('dialog[open]')"), 'incomplete publication opened a confirmation'
             assert dev.evaluate('window.__publishRequests') == before, 'incomplete publication reached the API'
+        def red_button(label, scope='document'):
+            assert dev.evaluate(f"""(()=>{{const root={scope};const button=root&&[...root.querySelectorAll('button')].find(b=>b.textContent.trim()==={json.dumps(label)});if(!button||button.disabled)return false;const rgb=getComputedStyle(button).backgroundColor.match(/[\\d.]+/g).map(Number);return rgb[0]>rgb[1]+30&&rgb[0]>rgb[2]+30}})()"""), 'publication action must be enabled and red: '+label
+        def publish():
+            present('.management-editor')
+            label = dev.evaluate("[...document.querySelectorAll('.management-editor button')].some(b=>b.textContent.trim()==='Kaydet ve yayımla')?'Kaydet ve yayımla':'Yayınla'")
+            red_button(label, "document.querySelector('.management-editor')")
+            click(label, "document.querySelector('.management-editor')")
         def api(path):
             return dev.evaluate(f"fetch({json.dumps(path)}).then(r=>r.json())")
         def viewport(width, page=None):
@@ -163,7 +175,13 @@ def main():
         fill('.admin-toolbar input[type=search]','eşleşmeyen-arama'); text('Eşleşen kayıt bulunamadı')
         fill('.admin-toolbar input[type=search]',''); text('Tarayıcı Test Kafesi')
         business = api('/api/admin/businesses')['businesses'][0]
-        nav('benefits'); click('Avantaj taslağı ekle', prefix=True)
+        red_button('Yayınla', "document.querySelector('.admin-table tbody tr')")
+        click('Yayınla', "document.querySelector('.admin-table tbody tr')")
+        present('.business-publication')
+        assert api('/api/admin/benefits')['benefits']==[], 'opening publication created or published an advantage'
+        click('Avantaj oluştur', "document.querySelector('.business-publication')")
+        present('#edit-business_id')
+        assert dev.evaluate("document.querySelector('#edit-business_id').value") == business['id'], 'business publication did not preselect its business'
         required_marks(('business_id','title','method','description','perk','conditions','instructions','code'), ('products','branches','exceptions','minimum_spend','valid_from','valid_until','verification_requirement','support_contact'))
         assert dev.evaluate("document.querySelector('#edit-title').required&&!document.querySelector('#edit-perk').required"), 'publication requirements must still permit incomplete draft saves'
         fill('#edit-method','link')
@@ -173,6 +191,7 @@ def main():
         # Drafts may be incomplete; publishing requires a separate reviewed form.
         click('Taslak olarak kaydet'); confirm(); saved()
         benefit=api('/api/admin/benefits')['benefits'][0]
+        nav('benefits')
 
         # A separate Chrome profile keeps a normal student's HTTP session alive
         # while the administrator publishes and suspends the same isolated offer.
@@ -227,7 +246,7 @@ def main():
         fill('#edit-instructions','Kasada kodu göster.'); fill('#edit-code','SYNTHETIC-COFFEE')
         fill('#edit-products','Kahveler'); fill('#edit-exceptions','Paketli ürünler hariç.')
         fill('#edit-minimum_spend','25.50')
-        assert dev.evaluate("Array.from(document.querySelectorAll('.management-editor button')).find(b=>b.textContent.includes('Koşulları incele')).disabled"), 'unsaved conditions could be published'
+        red_button('Kaydet ve yayımla', "document.querySelector('.management-editor')")
         for width in (390,320): viewport(width)
         shot('management-form-320.png')
         viewport(1440); click('Taslak olarak kaydet'); confirm(); saved()
@@ -242,10 +261,12 @@ def main():
             viewport(width)
             shot(f'management-publication-missing-perk-{width}.png')
         fill('#edit-perk','%10 indirim')
-        click('Taslak olarak kaydet'); confirm(); saved()
-        click('Düzenle'); click('Koşulları incele ve yayımla')
+        writes_before = dev.evaluate('window.__managementWrites.length')
+        publish()
         present('dialog[open]'); dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
         confirm(); saved()
+        operations=dev.evaluate('window.__managementWrites.slice('+str(writes_before)+')')
+        assert [(op['method'],op.get('status')) for op in operations]==[('PUT',200),('POST',200)], 'dirty publication must save and publish after one confirmation'
         benefit=api('/api/admin/benefits')['benefits'][0]
         assert benefit['status']=='active' and benefit['minimum_spend']=='25.50'
         student_catalog(True)
@@ -269,12 +290,19 @@ def main():
         suspended = student_api('/api/student/benefits/'+benefit['id'])
         assert suspended['status']==404 and 'benefit' not in suspended['body'], 'suspended detail retained a student payload'
         nav('archived'); text('Test için geçici askı.')
-        click('Düzenle'); click('Koşulları incele ve yayımla')
+        click('Düzenle'); publish()
         dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
         confirm(); saved()
         nav('partners'); click('Düzenle'); fill('#edit-partnership_status','ended')
         click('Kaydet'); present('dialog[open]'); text('bağlı yayımlanmış avantajları askıya alır'); confirm(); saved()
         assert api('/api/admin/benefits')['benefits'][0]['status']=='suspended'
+        wait(lambda:dev.evaluate("document.querySelector('.admin-table tbody')?.textContent.includes('Sonlandırıldı')"), 'inactive business row did not refresh')
+        assert dev.evaluate("![...document.querySelectorAll('.admin-table tbody tr button')].some(b=>b.textContent.trim()==='Yayınla')"), 'inactive business retained its row publication action'
+        click('Düzenle')
+        present('#edit-partnership_status')
+        assert dev.evaluate("document.querySelector('#edit-partnership_status').value==='ended'")
+        assert dev.evaluate("![...document.querySelectorAll('.management-editor button')].some(b=>['Yayınla','Kaydet ve yayına devam et'].includes(b.textContent.trim()))"), 'inactive business retained its form publication action'
+        click('Vazgeç', "document.querySelector('.management-editor')")
         nav('benefits'); click('Düzenle')
         present('.publication-business-status')
         wait(lambda:dev.evaluate("document.querySelector('.publication-business-status').textContent.includes('Sonlandırıldı')"), 'inactive business status is not explained inline')
@@ -292,6 +320,79 @@ def main():
         click('Kaydet'); confirm(); text('Girdiğin bilgiler korundu')
         assert dev.evaluate("document.querySelector('#edit-name').value==='Korunması gereken yerel düzenleme'")
         click('Vazgeç', "document.querySelector('.management-editor')")
+
+        # Business form continuation saves only the business, then asks which
+        # advantage to publish. A new offer requires its own reviewed approval.
+        nav('businesses'); click('Düzenle')
+        red_button('Yayınla', "document.querySelector('.management-editor')")
+        fill('#edit-notes','Synthetic business publication continuation')
+        red_button('Kaydet ve yayına devam et', "document.querySelector('.management-editor')")
+        before = dev.evaluate('window.__publishRequests')
+        click('Kaydet ve yayına devam et', "document.querySelector('.management-editor')")
+        wait(lambda:dev.evaluate("!!document.querySelector('.business-publication')||!!document.querySelector('dialog[open]')"), 'business save did not continue to publication')
+        if dev.evaluate("!!document.querySelector('dialog[open]')"):
+            confirm()
+        present('.business-publication')
+        assert api('/api/admin/businesses')['businesses'][0]['notes']=='Synthetic business publication continuation'
+        assert dev.evaluate('window.__publishRequests')==before, 'business form automatically published an advantage'
+        click('Avantaj oluştur', "document.querySelector('.business-publication')")
+        assert dev.evaluate("document.querySelector('#edit-business_id').value")==business['id']
+        fill('#edit-title','İkinci sentetik yayın')
+        fill('#edit-description','Yalnızca izole yeni yayın testi.')
+        fill('#edit-perk','%5 test indirimi')
+        fill('#edit-conditions','Yalnızca sentetik test koşulu.')
+        fill('#edit-instructions','Test bilgilerini göster.')
+        fill('#edit-code','SYNTHETIC-SECOND')
+        red_button('Kaydet ve yayımla', "document.querySelector('.management-editor')")
+        # A failed POST must retain the successful real PUT and its new revision.
+        writes_before=dev.evaluate('window.__managementWrites.length')
+        dev.call('Network.setBlockedURLs', {'urls':['*/api/admin/benefits/*/publish']})
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm()
+        present('.management-editor [role=alert]')
+        second=next(b for b in api('/api/admin/benefits')['benefits'] if b['title']=='İkinci sentetik yayın')
+        assert second['publication_status']=='draft' and second['revision']>=1, 'failed publication discarded its saved draft'
+        assert dev.evaluate("document.querySelector('#edit-title').value==='İkinci sentetik yayın'&&document.querySelector('#edit-perk').value==='%5 test indirimi'"), 'failed publication discarded form values'
+        operations=dev.evaluate('window.__managementWrites.slice('+str(writes_before)+')')
+        assert [op['method'] for op in operations]==['PUT','POST'] and operations[0].get('status')==200, 'new publication must save once before attempting publication'
+        dev.call('Network.setBlockedURLs', {'urls':[]})
+        writes_before=dev.evaluate('window.__managementWrites.length')
+        red_button('Yayınla', "document.querySelector('.management-editor')")
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm(); saved()
+        operations=dev.evaluate('window.__managementWrites.slice('+str(writes_before)+')')
+        assert [(op['method'],op.get('status')) for op in operations]==[('POST',200)], 'publication retry duplicated the saved draft'
+        second=next(b for b in api('/api/admin/benefits')['benefits'] if b['id']==second['id'])
+        assert second['publication_status']=='published'
+
+        nav('benefits'); click('Avantaj taslağı ekle', prefix=True)
+        fill('#edit-business_id',business['id']); fill('#edit-title','Seçilmeyen sentetik taslak')
+        click('Taslak olarak kaydet'); confirm(); saved()
+        unselected=next(b for b in api('/api/admin/benefits')['benefits'] if b['title']=='Seçilmeyen sentetik taslak')
+        nav('businesses')
+        before=dev.evaluate('window.__publishRequests')
+        click('Yayınla', "document.querySelector('.admin-table tbody tr')")
+        present('.business-publication')
+        for title in ('Test kahve avantajı','İkinci sentetik yayın','Seçilmeyen sentetik taslak'):
+            wait(lambda title=title:dev.evaluate('document.querySelector(".business-publication").textContent.includes('+json.dumps(title)+')'), 'business publication omitted an advantage')
+        assert dev.evaluate('window.__publishRequests')==before, 'opening multi-advantage selection performed a bulk publication'
+        for width in (320,390,1440):
+            viewport(width); shot(f'management-business-publication-selection-{width}.png')
+        selection='document.querySelector('+json.dumps('.business-publication [data-benefit-id="'+benefit['id']+'"]')+')'
+        click('Yayınla',selection)
+        present('#edit-title')
+        assert dev.evaluate("document.querySelector('#edit-title').value")==benefit['title'], 'business publication selected the wrong advantage'
+        publish(); present('dialog[open]')
+        dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
+        confirm(); saved()
+        after={b['id']:b for b in api('/api/admin/benefits')['benefits']}
+        assert after[benefit['id']]['publication_status']=='published'
+        assert after[unselected['id']]['publication_status']=='draft' and after[unselected['id']]['revision']==unselected['revision'], 'publishing one selection changed another draft'
+        assert after[second['id']]['revision']==second['revision'], 'publishing one selection republished another offer'
+        assert dev.evaluate('window.__publishRequests')==before+1, 'selected publication affected more than one advantage'
+        student_catalog(True)
 
         # Desktop rail expands without moving content; mobile closes on selection.
         nav('businesses'); dev.evaluate('document.activeElement.blur()')
@@ -329,7 +430,7 @@ def main():
         click('Çıkış yap'); present('#password')
         assert not dev.errors, 'browser runtime error'
         assert not student_dev.errors, 'student browser runtime error'
-        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, red required-field marks, saveable incomplete drafts, specific missing-perk publication guidance, inactive-business guard, real isolated publish/suspend and normal-student visibility, search, conflicts, network retry and logout.')
+        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, red business row/form publication, preselected creation, single-confirmation save and publish, failed POST draft retention, explicit multi-offer selection, required fields, inactive-business guard, normal-student visibility, conflicts, network retry and logout.')
     except Exception:
         if dev:
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)

@@ -3330,6 +3330,8 @@ export interface operations {
         q?: string;
         category?: string;
         status?: string;
+        /** @description Filter by business before the result limit. Empty values leave the list unfiltered; invalid UUIDs return 400. */
+        business_id?: string;
       };
       header?: never;
       path?: never;

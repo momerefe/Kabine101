@@ -26,6 +26,7 @@ SELECT * FROM benefits WHERE id=$1 FOR UPDATE;
 -- name: ManagementListBenefit :many
 SELECT benefits.* FROM benefits JOIN businesses ON businesses.id=benefits.business_id
 WHERE (sqlc.arg(q)::text='' OR strpos(lower(title||' '||benefits.description||' '||perk||' '||businesses.name),lower(sqlc.arg(q)::text))>0)
+AND (sqlc.narg(business_id)::uuid IS NULL OR benefits.business_id=sqlc.narg(business_id)::uuid)
 AND (sqlc.arg(category)::text='' OR businesses.category=sqlc.arg(category)::text)
 AND (sqlc.arg(status)::text='' OR
 CASE sqlc.arg(status)::text

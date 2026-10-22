@@ -57,6 +57,36 @@
   line-height: 1.8;
   margin: 12px 0;
 }
+.business-publication {
+  scroll-margin-top: 90px;
+}
+.business-publication > .btn {
+  margin: 12px 8px 0 0;
+}
+.business-publication-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.business-publication-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.business-publication-list li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.business-publication-list .btn {
+  flex-shrink: 0;
+}
+.publication-button {
+  white-space: nowrap;
+}
 .management-editor {
   margin-top: 32px;
   scroll-margin-top: 90px;

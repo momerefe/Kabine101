@@ -1114,6 +1114,9 @@ type ListBenefitsParams struct {
 	Q        *string `form:"q,omitempty" json:"q,omitempty"`
 	Category *string `form:"category,omitempty" json:"category,omitempty"`
 	Status   *string `form:"status,omitempty" json:"status,omitempty"`
+
+	// BusinessId Filter by business before the result limit. Empty values leave the list unfiltered; invalid UUIDs return 400.
+	BusinessId *string `form:"business_id,omitempty" json:"business_id,omitempty"`
 }
 
 // PutBenefitParams defines parameters for PutBenefit.

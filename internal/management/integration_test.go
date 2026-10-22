@@ -227,6 +227,78 @@ func TestManagementAuthorizationAndValidation(t *testing.T) {
 	admin.send("GET", "/api/admin/businesses", nil).denied(t)
 }
 
+func TestManagementBenefitBusinessFilter(t *testing.T) {
+	h := newHarness(t)
+	admin, _ := h.account("admin@ogrenci.example", "admin")
+	student, _ := h.account("student@ogrenci.example", "student")
+	businesses := []string{h.uuid(), h.uuid()}
+	benefits := make([]string, 0, len(businesses))
+	for _, business := range businesses {
+		admin.send("PUT", "/api/admin/businesses/"+business, businessBody(0)).want(t, 200)
+		benefit := h.uuid()
+		admin.send("PUT", "/api/admin/benefits/"+benefit, benefitBody(business, 0)).want(t, 200)
+		benefits = append(benefits, benefit)
+	}
+	for i, business := range businesses {
+		for _, suffix := range []string{"", "&q=Synthetic&category=food&status=draft"} {
+			result := admin.send("GET", "/api/admin/benefits?business_id="+business+suffix, nil).want(t, 200)
+			var list struct {
+				Benefits  []map[string]any `json:"benefits"`
+				Truncated bool             `json:"truncated"`
+			}
+			if err := json.Unmarshal(result.Body, &list); err != nil {
+				t.Fatal(err)
+			}
+			if len(list.Benefits) != 1 || list.Benefits[0]["id"] != benefits[i] || list.Benefits[0]["business_id"] != business || list.Truncated {
+				t.Fatalf("business filter leaked or omitted a benefit: %s", result.Body)
+			}
+		}
+	}
+	for _, path := range []string{"/api/admin/benefits", "/api/admin/benefits?business_id="} {
+		result := admin.send("GET", path, nil).want(t, 200)
+		var list struct {
+			Benefits []map[string]any `json:"benefits"`
+		}
+		if err := json.Unmarshal(result.Body, &list); err != nil {
+			t.Fatal(err)
+		}
+		if len(list.Benefits) != 2 {
+			t.Fatalf("empty filter changed existing list: %s", result.Body)
+		}
+	}
+	unknown := admin.send("GET", "/api/admin/benefits?business_id="+h.uuid(), nil).want(t, 200)
+	var empty struct {
+		Benefits []map[string]any `json:"benefits"`
+	}
+	if err := json.Unmarshal(unknown.Body, &empty); err != nil {
+		t.Fatal(err)
+	}
+	if len(empty.Benefits) != 0 {
+		t.Fatalf("unknown business returned benefits: %s", unknown.Body)
+	}
+	for _, value := range []string{"not-a-uuid", "%20", "00000000-0000-4000-8000-00000000000z"} {
+		admin.send("GET", "/api/admin/benefits?business_id="+value, nil).want(t, 400)
+	}
+	student.send("GET", "/api/admin/benefits?business_id="+businesses[0], nil).want(t, 403)
+	student.send("GET", "/api/admin/benefits?business_id=invalid", nil).want(t, 403)
+	// Newer unrelated rows exceed the global limit. Filtering must still find
+	// the original business's benefit and compute truncation within that business.
+	if _, err := h.pool.Exec(context.Background(), "INSERT INTO benefits(business_id,title,method) SELECT $1::uuid,'Unrelated draft','code' FROM generate_series(1,1001)", businesses[1]); err != nil {
+		t.Fatal(err)
+	}
+	filtered := admin.send("GET", "/api/admin/benefits?business_id="+businesses[0], nil).want(t, 200)
+	var limited struct {
+		Benefits  []map[string]any `json:"benefits"`
+		Truncated bool             `json:"truncated"`
+	}
+	if err := json.Unmarshal(filtered.Body, &limited); err != nil {
+		t.Fatal(err)
+	}
+	if len(limited.Benefits) != 1 || limited.Benefits[0]["id"] != benefits[0] || limited.Truncated {
+		t.Fatalf("filter applied after result limit: %s", filtered.Body)
+	}
+}
+
 func TestManagementPublicationAndRevisionIsolation(t *testing.T) {
 	h := newHarness(t)
 	b, _ := h.account("admin@ogrenci.example", "admin")

@@ -189,7 +189,14 @@ func (s *Service) benefits(w http.ResponseWriter, r *http.Request) {
 	if _, _, ok := s.auth.RequireAdmin(w, r); !ok {
 		return
 	}
-	rows, e := s.q.ManagementListBenefit(r.Context(), database.ManagementListBenefitParams{Q: strings.TrimSpace(r.URL.Query().Get("q")), Category: r.URL.Query().Get("category"), Status: r.URL.Query().Get("status")})
+	var businessID pgtype.UUID
+	if raw := r.URL.Query().Get("business_id"); raw != "" {
+		if businessID.Scan(raw) != nil || !businessID.Valid {
+			fail(w, 400, "invalid_request")
+			return
+		}
+	}
+	rows, e := s.q.ManagementListBenefit(r.Context(), database.ManagementListBenefitParams{Q: strings.TrimSpace(r.URL.Query().Get("q")), BusinessID: businessID, Category: r.URL.Query().Get("category"), Status: r.URL.Query().Get("status")})
 	if e != nil {
 		handleError(w, e)
 		return
