@@ -89,4 +89,6 @@ powershell -ExecutionPolicy Bypass -File tools/dev.ps1 api
 
 Bu komutlar son kullanılan localhost düzeni içindir. Açık frontend sayfası yenilenir. LAN kullanılıyorsa mevcut API/frontend adres eşleşmesi korunarak aynı `-LanAddress` değeriyle başlatılır. Ajan yerel migration veya sunucu başlatma işlemi yapmaz. Yeni yedekler görselleri de içerir; üretim kapasite ve geri yükleme denemesi pilot hazırlığında değerlendirilir.
 
+`e0015db` için [tüm GitHub Actions kontrolleri geçti](https://github.com/momerefe/Kabine101/actions/runs/39808440043). JPEG/PNG doğrulaması ve boyut sınırları, atomik kayıt/sürüm çakışması, taslak/yayın/askı erişimi ve oturum iptali entegrasyon testleriyle doğrulandı. Tarayıcı testinde dosya seçme/önizleme, JPEG yönü, taslak kaydetme, öğrenci kartı/detayında gerçek görsel yükleme, başarısız değiştirme sonrası yeniden deneme ve kaldırma akışları geçti. Mobil/masaüstü yerleşimleri, TypeScript/ESLint, derleme ve üretilen dosya kontrolleri de başarılıdır. Yerel veritabanına migration uygulanmadı; proje sahibi yukarıdaki komutlarla günceller.
+
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.
