@@ -60,6 +60,8 @@ Bu düzenleme yeni migration veya backend yeniden başlatması gerektirmez. Önc
 
 Yayına hazırlık alanı eksik bilgileri ve işletmenin iş ortaklığı durumunu açıklar. Eksik alanla yayın denenirse ilgili alana odaklanılır; kayıt kendiliğinden yayımlanmaz veya işletme aktif yapılmaz. Sunucu da kendi kontrollerini sürdürür ve genel hata yerine eksik alanların adlarını döndürür. Değişiklikler önce taslak olarak kaydedilir, ardından koşullar incelenerek yayın onaylanır.
 
+`f5f4d9b` için [GitHub Actions kontrollerinin tamamı geçti](https://github.com/momerefe/Kabine101/actions/runs/39759058534). Go birim/entegrasyon testleri ve gerçek API ile tarayıcı testleri; eksik ayrıcalıkla taslak kaydetmeyi, açıklayıcı yayın engelini, kırmızı yıldızları, aktif olmayan işletme kontrolünü ve tamamlanan yayının normal öğrenciye açılmasını doğruladı. Form 320/390/1440 px boyutlarında kontrol edildi; TypeScript/ESLint, üretim derlemesi ve biçim kontrolü de geçti.
+
 Bu düzeltme migration gerektirmez. Güncel sunucu hata mesajlarını almak için proje sahibi açık API terminalinde `Ctrl+C` ile durdurup kullandığı API başlatma komutunu yeniden çalıştırmalı; tarayıcı yenilenmelidir. Yerel sunucular ajan tarafından başlatılmaz ve mevcut sponsorluk bilgileri değiştirilmez.
 
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.
