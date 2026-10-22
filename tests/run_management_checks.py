@@ -47,6 +47,16 @@ def main():
         dev = DevTools(next(t['webSocketDebuggerUrl'] for t in targets if t['type']=='page'))
         for method in ('Runtime.enable','Page.enable','Network.enable'): dev.call(method)
         dev.call('Emulation.setFocusEmulationEnabled', {'enabled':True})
+        dev.call('Page.addScriptToEvaluateOnNewDocument', {'source': '''
+            window.__publishRequests=0;
+            const originalFetch=window.fetch.bind(window);
+            window.fetch=async(input,options)=>{
+                const path=new URL(typeof input==='string'?input:input.url,location.href).pathname;
+                const method=options?.method||(input instanceof Request?input.method:'GET');
+                if(path.endsWith('/publish')&&method==='POST')window.__publishRequests++;
+                return originalFetch(input,options);
+            };
+        '''})
         def present(selector, page=None):
             page = page or dev
             wait(lambda: page.evaluate(f'!!document.querySelector({json.dumps(selector)})'), 'missing '+selector)
@@ -76,6 +86,23 @@ def main():
             wait(lambda: not dev.evaluate("!!document.querySelector('dialog[open]')"), 'confirmation not closed')
         def saved():
             wait(lambda: not dev.evaluate("!!document.querySelector('.management-editor')"), 'editor did not close after save')
+        def required_marks(required, optional):
+            for key in required:
+                selector = '#edit-'+key
+                present(selector)
+                assert dev.evaluate(f"""(()=>{{const label=document.querySelector({json.dumps(selector)}).closest('label');const mark=label.querySelector('.required-mark');if(!mark||mark.getAttribute('aria-hidden')!=='true'||mark.textContent.trim()!=='*')return false;const rgb=getComputedStyle(mark).color.match(/[\\d.]+/g).map(Number);return rgb[0]>rgb[1]+30&&rgb[0]>rgb[2]+30}})()"""), 'required field lacks a red visible star: '+key
+                assert dev.evaluate(f"(()=>{{const field=document.querySelector({json.dumps(selector)});return field.required||field.getAttribute('aria-required')==='true'}})()"), 'required field lacks an accessible requirement: '+key
+            for key in optional:
+                selector = '#edit-'+key
+                present(selector)
+                assert dev.evaluate(f"!document.querySelector({json.dumps(selector)}).closest('label').querySelector('.required-mark')"), 'optional field is marked required: '+key
+        def blocked_publication(missing):
+            before = dev.evaluate('window.__publishRequests')
+            click('Koşulları incele ve yayımla')
+            present('.publication-readiness.has-errors')
+            wait(lambda:dev.evaluate(f'document.querySelector(".publication-readiness").textContent.includes({json.dumps(missing)})'), 'missing publication guidance: '+missing)
+            assert not dev.evaluate("!!document.querySelector('dialog[open]')"), 'incomplete publication opened a confirmation'
+            assert dev.evaluate('window.__publishRequests') == before, 'incomplete publication reached the API'
         def api(path):
             return dev.evaluate(f"fetch({json.dumps(path)}).then(r=>r.json())")
         def viewport(width, page=None):
@@ -128,6 +155,7 @@ def main():
         viewport(1440)
         nav('businesses'); text('Eşleşen kayıt bulunamadı')
         click('İşletme ekle', prefix=True)
+        required_marks(('name','category','partnership_status'), ('description','image_path','contact_person','contact_info','last_contact','notes','branches'))
         fill('#edit-name','Tarayıcı Test Kafesi'); fill('#edit-description','Yalnızca izole test kaydı.')
         fill('#edit-partnership_status','active'); fill('#edit-contact_person','Test Yetkilisi')
         fill('#edit-notes','Gerçek sponsor değildir.')
@@ -136,6 +164,11 @@ def main():
         fill('.admin-toolbar input[type=search]',''); text('Tarayıcı Test Kafesi')
         business = api('/api/admin/businesses')['businesses'][0]
         nav('benefits'); click('Avantaj taslağı ekle', prefix=True)
+        required_marks(('business_id','title','method','description','perk','conditions','instructions','code'), ('products','branches','exceptions','minimum_spend','valid_from','valid_until','verification_requirement','support_contact'))
+        assert dev.evaluate("document.querySelector('#edit-title').required&&!document.querySelector('#edit-perk').required"), 'publication requirements must still permit incomplete draft saves'
+        fill('#edit-method','link')
+        required_marks(('target_url',), ('products','support_contact'))
+        fill('#edit-method','code')
         fill('#edit-business_id', business['id']); fill('#edit-title','Test kahve avantajı')
         # Drafts may be incomplete; publishing requires a separate reviewed form.
         click('Taslak olarak kaydet'); confirm(); saved()
@@ -190,7 +223,7 @@ def main():
         student_catalog(False)
         assert student_api('/api/student/benefits/'+benefit['id'])['status']==404, 'student opened an unpublished draft'
         click('Düzenle'); fill('#edit-description','Test için kahvelerde indirim.')
-        fill('#edit-perk','%10 indirim'); fill('#edit-conditions','Öğrenci kimliği gösterilir.\nYalnızca test şubesinde.')
+        fill('#edit-conditions','Öğrenci kimliği gösterilir.\nYalnızca test şubesinde.')
         fill('#edit-instructions','Kasada kodu göster.'); fill('#edit-code','SYNTHETIC-COFFEE')
         fill('#edit-products','Kahveler'); fill('#edit-exceptions','Paketli ürünler hariç.')
         fill('#edit-minimum_spend','25.50')
@@ -198,6 +231,18 @@ def main():
         for width in (390,320): viewport(width)
         shot('management-form-320.png')
         viewport(1440); click('Taslak olarak kaydet'); confirm(); saved()
+        incomplete = api('/api/admin/benefits')['benefits'][0]
+        assert incomplete['perk']=='' and incomplete['publication_status']=='draft', 'incomplete draft did not remain saveable'
+        click('Düzenle')
+        blocked_publication('İndirim / ayrıcalık')
+        present('#edit-perk[aria-invalid="true"]')
+        assert dev.evaluate("document.activeElement.id==='edit-perk'"), 'missing publication field did not receive focus'
+        assert api('/api/admin/benefits')['benefits'][0]['publication_status']=='draft', 'failed local publication changed the draft'
+        for width in (320,390,1440):
+            viewport(width)
+            shot(f'management-publication-missing-perk-{width}.png')
+        fill('#edit-perk','%10 indirim')
+        click('Taslak olarak kaydet'); confirm(); saved()
         click('Düzenle'); click('Koşulları incele ve yayımla')
         present('dialog[open]'); dev.evaluate("document.querySelector('dialog input[type=checkbox]').click()")
         confirm(); saved()
@@ -230,6 +275,14 @@ def main():
         nav('partners'); click('Düzenle'); fill('#edit-partnership_status','ended')
         click('Kaydet'); present('dialog[open]'); text('bağlı yayımlanmış avantajları askıya alır'); confirm(); saved()
         assert api('/api/admin/benefits')['benefits'][0]['status']=='suspended'
+        nav('benefits'); click('Düzenle')
+        present('.publication-business-status')
+        wait(lambda:dev.evaluate("document.querySelector('.publication-business-status').textContent.includes('Sonlandırıldı')"), 'inactive business status is not explained inline')
+        blocked_publication('Yayın için Aktif olmalı.')
+        assert api('/api/admin/businesses')['businesses'][0]['partnership_status']=='ended', 'publication automatically activated the business'
+        assert api('/api/admin/benefits')['benefits'][0]['status']=='suspended', 'inactive business publication bypassed the guard'
+        click('Vazgeç', "document.querySelector('.management-editor')")
+        nav('partners')
         click('Düzenle'); fill('#edit-partnership_status','active'); click('Kaydet'); confirm(); saved()
         assert api('/api/admin/benefits')['benefits'][0]['status']=='suspended', 'reopening republished offer'
 
@@ -276,7 +329,7 @@ def main():
         click('Çıkış yap'); present('#password')
         assert not dev.errors, 'browser runtime error'
         assert not student_dev.errors, 'student browser runtime error'
-        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, preserved filtered URLs, real isolated CRUD/publish/suspend, normal-student draft/publication/suspension boundary, search, conflicts, partnership cascade, network retry and logout.')
+        print('Management browser acceptance passed: 9 sidebar destinations, 4 sponsorship tabs at 320/390/1440 px, red required-field marks, saveable incomplete drafts, specific missing-perk publication guidance, inactive-business guard, real isolated publish/suspend and normal-student visibility, search, conflicts, network retry and logout.')
     except Exception:
         if dev:
             output=ROOT/'tests'/'artifacts'; output.mkdir(exist_ok=True)

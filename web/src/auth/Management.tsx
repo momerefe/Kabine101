@@ -428,6 +428,7 @@ function Records({
       status,
       businessMode,
     ],
+    refetchOnWindowFocus: true,
     queryFn: async () =>
       check(
         await api.GET('/api/admin/businesses', {
@@ -808,7 +809,98 @@ function Editor({
   const [reason, setReason] = useState('');
   const [reviewed, setReviewed] = useState(false);
   const [error, setError] = useState('');
+  const [showPublicationErrors, setShowPublicationErrors] = useState(false);
   const [loading, setLoading] = useState(false);
+  const requirementsId = useId();
+  const selectedBusiness =
+    'business_id' in value
+      ? businesses.find((item) => item.id === value.business_id)
+      : undefined;
+  const publicationFields = [
+    'perk',
+    'description',
+    'conditions',
+    'instructions',
+    'code',
+    'target_url',
+    'qr_content',
+    'membership_label',
+  ];
+  const publicationIssues: { field: string; message: string }[] = [];
+  if ('business_id' in value) {
+    if (!selectedBusiness || selectedBusiness.partnership_status !== 'active') {
+      publicationIssues.push({
+        field: 'business_id',
+        message: selectedBusiness
+          ? `İş ortaklığı durumu: ${partnership[selectedBusiness.partnership_status]}. Yayın için Aktif olmalı.`
+          : 'Yayın için aktif bir işletme seçilmeli; işletme bilgileri yüklenmiş olmalı.',
+      });
+    }
+    for (const key of ['title', 'description', 'perk'] as const) {
+      if (!value[key].trim())
+        publicationIssues.push({
+          field: key,
+          message: `${fieldLabels[key]} alanını doldur.`,
+        });
+    }
+    for (const key of ['conditions', 'instructions'] as const) {
+      if (!value[key].some((line) => line.trim()))
+        publicationIssues.push({
+          field: key,
+          message: `${fieldLabels[key]} alanına en az bir satır ekle.`,
+        });
+    }
+    const payloadKey = {
+      code: 'code',
+      link: 'target_url',
+      qr: 'qr_content',
+      membership: 'membership_label',
+    }[value.method] as
+      'code' | 'target_url' | 'qr_content' | 'membership_label';
+    if (!value[payloadKey].trim()) {
+      publicationIssues.push({
+        field: payloadKey,
+        message: `${fieldLabels[payloadKey]} alanını doldur.`,
+      });
+    } else if (value.method === 'link') {
+      try {
+        const url = new URL(value.target_url);
+        if (
+          !['http:', 'https:'].includes(url.protocol) ||
+          !url.hostname ||
+          url.username ||
+          url.password
+        )
+          throw new Error('invalid');
+      } catch {
+        publicationIssues.push({
+          field: 'target_url',
+          message:
+            'Hedef bağlantı geçerli bir http:// veya https:// adresi olmalı.',
+        });
+      }
+    }
+    const today = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Istanbul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    if (value.valid_until && value.valid_until < today)
+      publicationIssues.push({
+        field: 'valid_until',
+        message: 'Bitiş tarihi geçmiş. Bugünü veya sonraki bir tarihi seç.',
+      });
+    if (
+      value.valid_from &&
+      value.valid_until &&
+      value.valid_from > value.valid_until
+    )
+      publicationIssues.push({
+        field: 'valid_until',
+        message: 'Bitiş tarihi başlangıçtan önce olamaz.',
+      });
+  }
   const editor = useRef<HTMLElement>(null);
   useEffect(() => {
     editor.current?.focus();
@@ -891,16 +983,25 @@ function Editor({
   }
   function field(key: string, type = 'text', required = false) {
     const current = value[key as keyof typeof value];
+    const publicationRequired = !business && publicationFields.includes(key);
+    const issue =
+      showPublicationErrors &&
+      publicationIssues.find((item) => item.field === key);
     return (
       <label className="field" key={key}>
         {fieldLabels[key]}
-        {required ? ' *' : ''}
+        {(required || publicationRequired) && (
+          <RequiredMark publication={publicationRequired} />
+        )}
         {type === 'textarea' ? (
           <textarea
             name={key}
             id={`edit-${key}`}
             rows={3}
             required={required}
+            aria-required={required || publicationRequired || undefined}
+            aria-invalid={!!issue || undefined}
+            aria-describedby={issue ? `edit-${key}-error` : undefined}
             maxLength={2500}
             value={
               Array.isArray(current)
@@ -922,6 +1023,9 @@ function Editor({
             id={`edit-${key}`}
             type={type}
             required={required}
+            aria-required={required || publicationRequired || undefined}
+            aria-invalid={!!issue || undefined}
+            aria-describedby={issue ? `edit-${key}-error` : undefined}
             step={type === 'number' ? '0.01' : undefined}
             min={type === 'number' ? '0' : undefined}
             maxLength={2500}
@@ -929,18 +1033,28 @@ function Editor({
             onChange={(e) => setValue({ ...value, [key]: e.target.value })}
           />
         )}
+        {issue && (
+          <small className="field-validation" id={`edit-${key}-error`}>
+            {issue.message}
+          </small>
+        )}
       </label>
     );
   }
-  function select(key: string, entries: Record<string, string>) {
+  function select(
+    key: string,
+    entries: Record<string, string>,
+    required = true,
+  ) {
     return (
       <label className="field" key={key}>
         {fieldLabels[key]}
+        {required && <RequiredMark />}
         <select
           name={key}
           id={`edit-${key}`}
           disabled={key === 'business_id' && value.revision > 0}
-          required
+          required={required}
           value={String(value[key as keyof typeof value] ?? '')}
           onChange={(e) => setValue({ ...value, [key]: e.target.value })}
         >
@@ -973,6 +1087,12 @@ function Editor({
       aria-label="Kayıt formu"
     >
       <h2>{value.revision ? 'Kaydı düzenle' : 'Yeni kayıt'}</h2>
+      <p className="required-help">
+        <RequiredMark />{' '}
+        {business
+          ? 'işaretli alanlar kayıt için zorunlu.'
+          : 'işaretli alanlar yayın için zorunlu. Eksik bilgilerle taslak kaydedebilirsin; taslak için işletme, avantaj başlığı ve kullanım yöntemi yeterli.'}
+      </p>
       <p>
         İsteğe bağlı tarihler boş bırakılabilir. Tarihler Europe/Istanbul saat
         dilimindedir.
@@ -1004,6 +1124,43 @@ function Editor({
           </button>
         </div>
       )}
+      {!business && (
+        <section
+          className={`publication-readiness ${showPublicationErrors && publicationIssues.length ? 'has-errors' : ''}`}
+          aria-labelledby={requirementsId}
+        >
+          <h3 id={requirementsId}>Yayına hazırlık</h3>
+          <p className="publication-business-status">
+            İş ortaklığı:{' '}
+            {selectedBusiness
+              ? `${selectedBusiness.name} · ${partnership[selectedBusiness.partnership_status]}`
+              : 'İşletme seçilmedi veya bilgileri yüklenemedi.'}
+          </p>
+          {publicationIssues.length ? (
+            <>
+              <ul>
+                {publicationIssues.map((issue, index) => (
+                  <li key={`${issue.field}-${index}`}>{issue.message}</li>
+                ))}
+              </ul>
+              {selectedBusiness &&
+                selectedBusiness.partnership_status !== 'active' && (
+                  <p>
+                    İşletmeler sekmesinden iş ortaklığı durumunu kontrol et.
+                    Avantaj alanlarını doldurmak işletmeyi kendiliğinden aktif
+                    yapmaz.
+                  </p>
+                )}
+            </>
+          ) : (
+            <p>
+              {dirty
+                ? 'Yayın alanları tamam. Değişiklikleri taslak olarak kaydettikten sonra koşulları inceleyip yayımlayabilirsin.'
+                : 'Yayın alanları tamam. Koşulları inceleyip yayını onaylayabilirsin.'}
+            </p>
+          )}
+        </section>
+      )}
       <form onSubmit={submit}>
         <fieldset disabled={mutation.isPending || loading || action !== null}>
           {business ? (
@@ -1024,6 +1181,7 @@ function Editor({
                       'books',
                     ].map((x) => [`assets/${x}.svg`, x]),
                   ),
+                  false,
                 )}
                 {field('branches', 'textarea')}
               </Group>
@@ -1132,6 +1290,27 @@ function Editor({
                       );
                       return;
                     }
+                    setError('');
+                    setShowPublicationErrors(true);
+                    if (publicationIssues.length) {
+                      setError(
+                        'Yayın için aşağıda belirtilen alanları veya iş ortaklığı durumunu düzelt.',
+                      );
+                      const firstField = publicationIssues.find(
+                        (issue) =>
+                          issue.field !== 'business_id' || value.revision === 0,
+                      );
+                      if (firstField)
+                        document
+                          .getElementById(`edit-${firstField.field}`)
+                          ?.focus();
+                      else
+                        editor.current?.scrollIntoView({
+                          block: 'start',
+                          behavior: 'auto',
+                        });
+                      return;
+                    }
                     setReviewed(false);
                     setAction('publish');
                   }}
@@ -1211,12 +1390,14 @@ function Editor({
                 />
                 Koşulları, kapsamı ve kullanım bilgilerini inceledim; yayını
                 onaylıyorum.
+                <RequiredMark />
               </label>
             </>
           )}
           {action === 'suspend' && (
             <label className="field">
               Askıya alma nedeni
+              <RequiredMark />
               <textarea
                 required
                 value={reason}
@@ -1228,6 +1409,19 @@ function Editor({
         </Confirmation>
       )}
     </section>
+  );
+}
+function RequiredMark({ publication = false }: { publication?: boolean }) {
+  return (
+    <>
+      <span className="required-mark" aria-hidden="true">
+        {' '}
+        *
+      </span>
+      <span className="sr-only">
+        {publication ? ' (Yayın için zorunlu)' : ' (Zorunlu)'}
+      </span>
+    </>
   );
 }
 function Group({ title, children }: { title: string; children: ReactNode }) {

@@ -323,15 +323,31 @@ func TestManagementPublishPrerequisitesAndBusinessCloseRace(t *testing.T) {
 		t.Fatal(err)
 	}
 	yesterday := time.Now().In(loc).AddDate(0, 0, -1).Format("2006-01-02")
-	for _, change := range []map[string]any{{"code": ""}, {"description": ""}, {"conditions": []string{}}, {"instructions": []string{}}, {"valid_until": yesterday}} {
+	for _, tc := range []struct {
+		change map[string]any
+		issue  string
+	}{
+		{map[string]any{"code": ""}, "İndirim kodunu girin."},
+		{map[string]any{"description": ""}, "Açıklama alanını doldurun."},
+		{map[string]any{"perk": ""}, "İndirim / ayrıcalık alanını doldurun."},
+		{map[string]any{"conditions": []string{}}, "En az bir koşul ekleyin."},
+		{map[string]any{"instructions": []string{}}, "En az bir kullanım adımı ekleyin."},
+		{map[string]any{"valid_until": yesterday}, "Bitiş tarihi geçmiş; bugünü veya sonraki bir tarihi seçin."},
+		{map[string]any{"perk": "", "code": ""}, "İndirim / ayrıcalık alanını doldurun.; İndirim kodunu girin."},
+	} {
 		id := h.uuid()
 		p := "/api/admin/benefits/" + id
 		body := benefitBody(business, 0)
-		for k, v := range change {
+		for k, v := range tc.change {
 			body[k] = v
 		}
 		rev := revision(b.send("PUT", p, body).want(t, 200), "benefit")
-		b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).denied(t)
+		result := b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).want(t, 400)
+		assertPublicationIssue(t, result, tc.issue)
+		saved := b.send("GET", p, nil).want(t, 200)
+		if revision(saved, "benefit") != rev || entity(saved, "benefit")["publication_status"] != "draft" {
+			t.Fatalf("failed publication changed saved draft: %s", saved.Body)
+		}
 	}
 	closed := businessBody(br)
 	closed["partnership_status"] = "ended"
@@ -339,7 +355,7 @@ func TestManagementPublishPrerequisitesAndBusinessCloseRace(t *testing.T) {
 	id := h.uuid()
 	p := "/api/admin/benefits/" + id
 	rev := revision(b.send("PUT", p, benefitBody(business, 0)).want(t, 200), "benefit")
-	b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).denied(t)
+	assertPublicationIssue(t, b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).want(t, 400), "İş ortaklığı aktif olmalıdır (mevcut durum: Sonlandırıldı).")
 	br = revision(b.send("PUT", bp, businessBody(br)).want(t, 200), "business")
 	closed = businessBody(br)
 	closed["partnership_status"] = "ended"
@@ -364,6 +380,33 @@ func TestManagementPublishPrerequisitesAndBusinessCloseRace(t *testing.T) {
 	}
 }
 
+func assertPublicationIssue(t *testing.T, r response, issue string) {
+	t.Helper()
+	var body map[string]string
+	if err := json.Unmarshal(r.Body, &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body) != 2 || body["code"] != "invalid_request" || body["message"] != "Yayımlanamadı: "+issue {
+		t.Fatalf("unexpected publication error: %s", r.Body)
+	}
+}
+
+func TestManagementMalformedSavedPublicationLink(t *testing.T) {
+	h := newHarness(t)
+	b, _ := h.account("admin@ogrenci.example", "admin")
+	business := h.uuid()
+	b.send("PUT", "/api/admin/businesses/"+business, businessBody(0)).want(t, 200)
+	p := "/api/admin/benefits/" + h.uuid()
+	body := benefitBody(business, 0)
+	body["method"], body["target_url"] = "link", "https://example.com/benefit"
+	rev := revision(b.send("PUT", p, body).want(t, 200), "benefit")
+	// A legacy draft can satisfy the database's URL prefix check but lack a host.
+	if _, err := h.pool.Exec(context.Background(), "UPDATE benefits SET target_url='https://' WHERE id=$1", strings.TrimPrefix(p, "/api/admin/benefits/")); err != nil {
+		t.Fatal(err)
+	}
+	assertPublicationIssue(t, b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).want(t, 400), "Hedef bağlantı geçerli bir http:// veya https:// adresi olmalıdır.")
+}
+
 func TestManagementDatesAreInclusiveAndExpiryIsReadDerived(t *testing.T) {
 	h := newHarness(t)
 	b, _ := h.account("admin@ogrenci.example", "admin")
@@ -377,12 +420,27 @@ func TestManagementDatesAreInclusiveAndExpiryIsReadDerived(t *testing.T) {
 	today := now.Format("2006-01-02")
 	tomorrow := now.AddDate(0, 0, 1).Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
-	for _, tc := range []struct{ from, until, want string }{{tomorrow, "", "scheduled"}, {today, today, "active"}} {
+	for _, tc := range []struct{ from, until, want, method string }{
+		{tomorrow, "", "scheduled", "code"},
+		{today, today, "active", "code"},
+		{today, today, "active", "link"},
+		{today, today, "active", "qr"},
+		{today, today, "active", "membership"},
+	} {
 		id := h.uuid()
 		p := "/api/admin/benefits/" + id
 		body := benefitBody(business, 0)
 		body["valid_from"] = tc.from
 		body["valid_until"] = tc.until
+		body["method"] = tc.method
+		switch tc.method {
+		case "link":
+			body["target_url"] = "https://example.com/benefit"
+		case "qr":
+			body["qr_content"] = "synthetic-qr"
+		case "membership":
+			body["membership_label"] = "Öğrenci kartı"
+		}
 		rev := revision(b.send("PUT", p, body).want(t, 200), "benefit")
 		r := b.send("POST", p+"/publish", map[string]any{"revision": rev, "conditions_reviewed": true}).want(t, 200)
 		if entity(r, "benefit")["status"] != tc.want {

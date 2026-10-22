@@ -61,6 +61,36 @@
   margin-top: 32px;
   scroll-margin-top: 90px;
 }
+.required-mark,
+.field-validation {
+  color: var(--red-dark);
+  font-weight: 700;
+}
+.required-help {
+  margin: 12px 0;
+}
+.publication-readiness {
+  margin: 18px 0;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  line-height: 1.8;
+}
+.publication-readiness h3 {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+.publication-readiness ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.publication-readiness.has-errors {
+  border-color: var(--red);
+}
+.management-editor [aria-invalid='true'] {
+  border-color: var(--red);
+}
 .management-editor fieldset {
   border: 0;
   padding: 0;

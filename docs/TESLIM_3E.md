@@ -54,4 +54,12 @@ Proje sahibinin isteğiyle işletme detayları, avantaj yönetimi, yayımlanmı�
 
 Bu düzenleme yeni migration veya backend yeniden başlatması gerektirmez. Önceki 3E kurulumunun şema 6 ile çalışması gerekir. Açık Vite sunucusunda tarayıcıyı yenilemek yeterlidir; yerel sunucular ajan tarafından başlatılmadı ve gerçek hesaplara test kaydı eklenmedi.
 
+### 22 Ekim 2026 — Yayın gereksinimlerinin açıklanması
+
+İşletme ve avantaj formlarında zorunlu alanlar kırmızı yıldızla gösterilir. Avantaj formu taslak kaydı ile yayın gereksinimlerini ayırır: işletme, başlık ve kullanım yöntemiyle taslak kaydedilebilir; yayın için açıklama, indirim/ayrıcalık, koşullar, kullanım adımları ve seçilen yöntemin bilgisi tamamlanmalıdır. İsteğe bağlı alanlar yıldızla işaretlenmez.
+
+Yayına hazırlık alanı eksik bilgileri ve işletmenin iş ortaklığı durumunu açıklar. Eksik alanla yayın denenirse ilgili alana odaklanılır; kayıt kendiliğinden yayımlanmaz veya işletme aktif yapılmaz. Sunucu da kendi kontrollerini sürdürür ve genel hata yerine eksik alanların adlarını döndürür. Değişiklikler önce taslak olarak kaydedilir, ardından koşullar incelenerek yayın onaylanır.
+
+Bu düzeltme migration gerektirmez. Güncel sunucu hata mesajlarını almak için proje sahibi açık API terminalinde `Ctrl+C` ile durdurup kullandığı API başlatma komutunu yeniden çalıştırmalı; tarayıcı yenilenmelidir. Yerel sunucular ajan tarafından başlatılmaz ve mevcut sponsorluk bilgileri değiştirilmez.
+
 Gerçek e-posta teslimatı, barındırma, TLS, yedekleme/geri yükleme denemesi ve pilot kullanıcı grubu 3F kapsamında ayrıca değerlendirilecektir. Bu teslim otomatik yayına alma veya yeni bir aşama onayı değildir.

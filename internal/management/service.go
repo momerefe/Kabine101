@@ -517,6 +517,70 @@ func (s *Service) putBenefit(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Service) publish(w http.ResponseWriter, r *http.Request) { s.transition(w, r, true) }
 func (s *Service) suspend(w http.ResponseWriter, r *http.Request) { s.transition(w, r, false) }
+
+// publishIssues explains the canonical saved draft's publication requirements.
+// A future start date is allowed; the inclusive end date uses Istanbul's day.
+func publishIssues(v database.Benefit, b database.Business, now time.Time) []string {
+	issues := []string{}
+	if b.PartnershipStatus != "active" {
+		status := map[string]string{"discussing": "Görüşülüyor", "contacted": "İletişim kuruldu", "awaiting": "Anlaşma bekleniyor", "ended": "Sonlandırıldı"}[b.PartnershipStatus]
+		if status == "" {
+			status = "Bilinmiyor"
+		}
+		issues = append(issues, "İş ortaklığı aktif olmalıdır (mevcut durum: "+status+").")
+	}
+	if v.ValidUntil.Valid && v.ValidUntil.Time.Format("2006-01-02") < now.In(istanbul).Format("2006-01-02") {
+		issues = append(issues, "Bitiş tarihi geçmiş; bugünü veya sonraki bir tarihi seçin.")
+	}
+	if strings.TrimSpace(v.Description) == "" {
+		issues = append(issues, "Açıklama alanını doldurun.")
+	}
+	if strings.TrimSpace(v.Perk) == "" {
+		issues = append(issues, "İndirim / ayrıcalık alanını doldurun.")
+	}
+	for _, field := range []struct {
+		values         []string
+		missing, blank string
+	}{
+		{v.Conditions, "En az bir koşul ekleyin.", "Koşullar boş satır içermemelidir."},
+		{v.Instructions, "En az bir kullanım adımı ekleyin.", "Kullanım adımları boş satır içermemelidir."},
+	} {
+		if len(field.values) == 0 {
+			issues = append(issues, field.missing)
+			continue
+		}
+		for _, value := range field.values {
+			if strings.TrimSpace(value) == "" {
+				issues = append(issues, field.blank)
+				break
+			}
+		}
+	}
+	switch v.Method {
+	case "code":
+		if strings.TrimSpace(v.Code.String) == "" {
+			issues = append(issues, "İndirim kodunu girin.")
+		}
+	case "link":
+		if strings.TrimSpace(v.TargetUrl.String) == "" {
+			issues = append(issues, "Hedef bağlantıyı girin.")
+		} else if !safeURL(v.TargetUrl.String) {
+			issues = append(issues, "Hedef bağlantı geçerli bir http:// veya https:// adresi olmalıdır.")
+		}
+	case "qr":
+		if strings.TrimSpace(v.QrContent.String) == "" {
+			issues = append(issues, "QR içeriğini girin.")
+		}
+	case "membership":
+		if strings.TrimSpace(v.MembershipLabel.String) == "" {
+			issues = append(issues, "Üyelik kartı metnini girin.")
+		}
+	default:
+		issues = append(issues, "Geçerli bir kullanım yöntemi seçin.")
+	}
+	return issues
+}
+
 func (s *Service) transition(w http.ResponseWriter, r *http.Request, publish bool) {
 	var revision *int32
 	var reviewed bool
@@ -580,10 +644,8 @@ func (s *Service) transition(w http.ResponseWriter, r *http.Request, publish boo
 			fail(w, 409, "conflict")
 			return
 		}
-		today := time.Now().In(istanbul).Format("2006-01-02")
-		payload := map[string]string{"code": v.Code.String, "link": v.TargetUrl.String, "qr": v.QrContent.String, "membership": v.MembershipLabel.String}[v.Method]
-		if b.PartnershipStatus != "active" || (v.ValidUntil.Valid && v.ValidUntil.Time.Format("2006-01-02") < today) || strings.TrimSpace(v.Description) == "" || strings.TrimSpace(v.Perk) == "" || len(v.Conditions) == 0 || len(v.Instructions) == 0 || strings.TrimSpace(payload) == "" || (v.Method == "link" && !safeURL(payload)) {
-			reply(w, 400, map[string]string{"code": "invalid_request", "message": "Yayın için aktif iş ortaklığı, geçerli tarihler, açıklama, ayrıcalık, koşullar, kullanım adımları ve seçilen yöntemin kullanım bilgisi gerekiyor."})
+		if issues := publishIssues(v, b, time.Now()); len(issues) > 0 {
+			reply(w, 400, map[string]string{"code": "invalid_request", "message": "Yayımlanamadı: " + strings.Join(issues, "; ")})
 			return
 		}
 		v, e = q.ManagementPublish(r.Context(), database.ManagementPublishParams{ID: id, ReviewedBy: actor})
