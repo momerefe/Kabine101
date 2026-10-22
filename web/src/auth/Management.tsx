@@ -842,7 +842,14 @@ function BusinessPublication({
           params: { query: { business_id: business.id } },
         }),
       ]);
-      return { business: check(current).business, ...check(offers) };
+      const list = check(offers);
+      return {
+        business: check(current).business,
+        ...list,
+        benefits: list.benefits.filter(
+          (offer) => offer.business_id === business.id,
+        ),
+      };
     },
   });
   const current = result.data?.business;
